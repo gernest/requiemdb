@@ -5,26 +5,19 @@ import "opentelemetry/proto/metrics/v1/metrics.proto";
 import "opentelemetry/proto/logs/v1/logs.proto";
 import "opentelemetry/proto/trace/v1/trace.proto";
 
-message Labels {
-  repeated bytes key = 1;
-  repeated bytes value = 2;
-}
-
 message Sample {
-  Labels labels = 1;
-
   // Serialized Data object, compressed with zstd. We use bytes here because we
   // automatically sore Sample as a arrow.Record.
-  bytes data = 2;
+  bytes data = 1;
 
   // Minimum timetamp observed in this sample in milliseconds
-  uint64 min_ts = 3;
+  uint64 min_ts = 2;
 
   // Maximum timestamp observed in this sample in milliseconds
-  uint64 max_ts = 4;
+  uint64 max_ts = 3;
 
   // Date in nillisecond in which the sample was taken
-  uint64 date = 5;
+  uint64 date = 4;
 }
 
 message Data {
