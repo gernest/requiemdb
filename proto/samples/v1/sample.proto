@@ -25,6 +25,12 @@ enum PREFIX {
   LOGS_ATTRIBUTES = 17;
 }
 
+enum SampleKind {
+  METRICS = 0;
+  TRACES = 2;
+  LOGS = 3;
+}
+
 message Sample {
   // Serialized Data object, compressed with zstd. We use bytes here because we
   // automatically sore Sample as a arrow.Record.
