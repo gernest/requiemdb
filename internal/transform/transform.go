@@ -9,6 +9,7 @@ import (
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/times"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
+	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracev1 "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/protobuf/proto"
@@ -50,6 +51,24 @@ func (c *Context) Process(data proto.Message) (*v1.Sample, *labels.Labels, error
 	case *tracev1.TracesData:
 		for _, s := range e.ResourceSpans {
 			c.transformTrace(s)
+		}
+		b, err := proto.Marshal(data)
+		if err != nil {
+			return nil, nil, err
+		}
+		compressedData, err := compress.Compress(b)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &v1.Sample{
+			Data:  compressedData,
+			MinTs: c.maxTs,
+			MaxTs: c.maxTs,
+			Date:  times.Date(),
+		}, c.getLabels(), nil
+	case *logsv1.LogsData:
+		for _, s := range e.ResourceLogs {
+			c.transformLogs(s)
 		}
 		b, err := proto.Marshal(data)
 		if err != nil {

@@ -4,7 +4,7 @@ import (
 	"github.com/apache/arrow/go/v16/arrow"
 	"github.com/apache/arrow/go/v16/arrow/array"
 	"github.com/apache/arrow/go/v16/arrow/memory"
-	"github.com/requiemdb/requiemdb/logger"
+	"github.com/requiemdb/requiemdb/internal/logger"
 )
 
 func Merge(records []arrow.Record) arrow.Record {
