@@ -1,6 +1,7 @@
 package transform
 
 import (
+	v1 "github.com/requiemdb/requiemdb/gen/go/samples/v1"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
@@ -8,35 +9,34 @@ import (
 func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 	if rm.SchemaUrl != "" {
 		c.label(
-			labels.NewBytes().Add(labels.ResourceSchema).Value(rm.SchemaUrl),
+			labels.NewBytes(v1.PREFIX_RESOURCE_SCHEMA).Value(rm.SchemaUrl),
 		)
 	}
 	if rm.Resource != nil {
-		c.attributes(labels.ResourceAttributes, rm.Resource.Attributes)
+		c.attributes(v1.PREFIX_RESOURCE_ATTRIBUTES, rm.Resource.Attributes)
 	}
 	for _, sm := range rm.ScopeMetrics {
 		if sm.SchemaUrl != "" {
 			c.label(
-				labels.NewBytes().Add(labels.ScopeSchema).Value(sm.SchemaUrl),
+				labels.NewBytes(v1.PREFIX_SCOPE_SCHEMA).Value(sm.SchemaUrl),
 			)
 		}
 		if sc := sm.Scope; sc != nil {
 			if sc.Name != "" {
 				c.label(
-					labels.NewBytes().Add(labels.ScopeName).Value(sc.Name),
+					labels.NewBytes(v1.PREFIX_SCOPE_NAME).Value(sc.Name),
 				)
 			}
 			if sc.Version != "" {
 				c.label(
-					labels.NewBytes().Add(labels.ScopeVersion).Value(sc.Version),
+					labels.NewBytes(v1.PREFIX_SCOPE_VERSION).Value(sc.Version),
 				)
 			}
-			c.attributes(labels.ScopeAttributes, sc.Attributes)
+			c.attributes(v1.PREFIX_SCOPE_ATTRIBUTES, sc.Attributes)
 		}
-
 		for _, m := range sm.Metrics {
 			c.label(
-				labels.NewBytes().Add(labels.MetricName).Value(m.Name),
+				labels.NewBytes(v1.PREFIX_METRICS_NAME).Value(m.Name),
 			)
 			switch e := m.Data.(type) {
 			case *metricsv1.Metric_Gauge:
@@ -46,17 +46,17 @@ func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 			case *metricsv1.Metric_Histogram:
 				for _, p := range e.Histogram.DataPoints {
 					c.Timestamp(p.TimeUnixNano)
-					c.attributes(labels.Attribute, p.Attributes)
+					c.attributes(v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
 				}
 			case *metricsv1.Metric_ExponentialHistogram:
 				for _, p := range e.ExponentialHistogram.DataPoints {
 					c.Timestamp(p.TimeUnixNano)
-					c.attributes(labels.Attribute, p.Attributes)
+					c.attributes(v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
 				}
 			case *metricsv1.Metric_Summary:
 				for _, p := range e.Summary.DataPoints {
 					c.Timestamp(p.TimeUnixNano)
-					c.attributes(labels.Attribute, p.Attributes)
+					c.attributes(v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
 				}
 			}
 		}
@@ -66,6 +66,6 @@ func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 func transFormDataPoints(ctx *Context, dp []*metricsv1.NumberDataPoint) {
 	for _, p := range dp {
 		ctx.Timestamp(p.TimeUnixNano)
-		ctx.attributes(labels.Attribute, p.Attributes)
+		ctx.attributes(v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
 	}
 }

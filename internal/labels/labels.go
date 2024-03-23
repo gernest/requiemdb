@@ -3,17 +3,8 @@ package labels
 import (
 	"bytes"
 	"sync"
-)
 
-const (
-	ResourceSchema     = "resource.schema"
-	ResourceAttributes = "resource.attributes"
-	ScopeSchema        = "scope.schema"
-	ScopeName          = "scope.name"
-	ScopeVersion       = "scope.version"
-	ScopeAttributes    = "scope.attributes"
-	MetricName         = "name"
-	Attribute          = "attribute"
+	v1 "github.com/requiemdb/requiemdb/gen/go/samples/v1"
 )
 
 type Labels struct {
@@ -61,13 +52,25 @@ func (b *Bytes) Value(value string) *Bytes {
 	return b
 }
 
+func (b *Bytes) ValueBytes(value []byte) *Bytes {
+	b.WriteByte('=')
+	b.Write(value)
+	return b
+}
+
 func (b *Bytes) Release() {
 	b.Reset()
 	bytesPool.Put(b)
 }
 
-func NewBytes() *Bytes {
-	return bytesPool.Get().(*Bytes)
+var namespace [8]byte
+
+func NewBytes(prefix v1.PREFIX) *Bytes {
+	b := bytesPool.Get().(*Bytes)
+	// Reserve the first 8 bytes for namespace
+	b.Write(namespace[:])
+	b.WriteByte(byte(prefix))
+	return b
 }
 
 var bytesPool = &sync.Pool{New: func() any { return new(Bytes) }}

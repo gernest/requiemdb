@@ -10,6 +10,7 @@ import (
 	"github.com/requiemdb/requiemdb/internal/times"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
+	tracev1 "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -45,6 +46,26 @@ func (c *Context) Process(data proto.Message) (*v1.Sample, *labels.Labels, error
 			MaxTs: c.maxTs,
 			Date:  times.Date(),
 		}, c.getLabels(), nil
+
+	case *tracev1.TracesData:
+		for _, s := range e.ResourceSpans {
+			c.transformTrace(s)
+		}
+		b, err := proto.Marshal(data)
+		if err != nil {
+			return nil, nil, err
+		}
+		compressedData, err := compress.Compress(b)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &v1.Sample{
+			Data:  compressedData,
+			MinTs: c.maxTs,
+			MaxTs: c.maxTs,
+			Date:  times.Date(),
+		}, c.getLabels(), nil
+
 	default:
 		return nil, nil, fmt.Errorf("transform: %T is not supported", e)
 	}
@@ -60,12 +81,12 @@ func (c *Context) label(value *labels.Bytes) {
 	c.labels.Add(value)
 }
 
-func (c *Context) attributes(prefix string, kv []*commonv1.KeyValue) {
+func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
 	for _, v := range kv {
 		s := v.Value.GetStringValue()
 		if s != "" {
 			c.label(
-				labels.NewBytes().Add(prefix).Add(v.Key).Value(s),
+				labels.NewBytes(prefix).Add(v.Key).Value(s),
 			)
 		}
 	}
@@ -90,4 +111,12 @@ func (c *Context) Timestamp(ts uint64) {
 	}
 	c.minTs = min(c.minTs, ts)
 	c.maxTs = max(c.maxTs, ts)
+}
+
+func (c *Context) Range(start, end uint64) {
+	if c.minTs == 0 {
+		c.minTs = start
+	}
+	c.minTs = min(c.minTs, start)
+	c.maxTs = max(c.maxTs, end)
 }

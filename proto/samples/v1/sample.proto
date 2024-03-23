@@ -5,6 +5,22 @@ import "opentelemetry/proto/metrics/v1/metrics.proto";
 import "opentelemetry/proto/logs/v1/logs.proto";
 import "opentelemetry/proto/trace/v1/trace.proto";
 
+enum PREFIX {
+  RESOURCE_SCHEMA = 0;
+  RESOURCE_ATTRIBUTES = 1;
+  SCOPE_SCHEMA = 2;
+  SCOPE_NAME = 3;
+  SCOPE_VERSION = 4;
+  SCOPE_ATTRIBUTES = 5;
+  METRICS_NAME = 6;
+  METRICS_ATTRIBUTES = 7;
+  SPAN_TRACE_ID = 8;
+  SPAN_SPAN_ID = 9;
+  SPAN_NAME = 10;
+  SPAN_ATTRIBUTES = 11;
+  SPAN_PARENT_SPAN_ID = 13;
+}
+
 message Sample {
   // Serialized Data object, compressed with zstd. We use bytes here because we
   // automatically sore Sample as a arrow.Record.
