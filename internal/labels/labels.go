@@ -38,6 +38,12 @@ type Bytes struct {
 	bytes.Buffer
 }
 
+func (b *Bytes) Namespaced(ns *[8]byte) []byte {
+	o := b.Bytes()
+	copy(o, ns[:])
+	return o
+}
+
 func (b *Bytes) Add(part string) *Bytes {
 	if b.Len() > 0 {
 		b.WriteByte('.')
@@ -65,10 +71,11 @@ func (b *Bytes) Release() {
 
 var namespace [8]byte
 
-func NewBytes(prefix v1.PREFIX) *Bytes {
+func NewBytes(kind v1.SampleKind, prefix v1.PREFIX) *Bytes {
 	b := bytesPool.Get().(*Bytes)
 	// Reserve the first 8 bytes for namespace
 	b.Write(namespace[:])
+	b.WriteByte(byte(kind))
 	b.WriteByte(byte(prefix))
 	return b
 }

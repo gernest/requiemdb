@@ -100,12 +100,12 @@ func (c *Context) label(value *labels.Bytes) {
 	c.labels.Add(value)
 }
 
-func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
+func (c *Context) attributes(kind v1.SampleKind, prefix v1.PREFIX, kv []*commonv1.KeyValue) {
 	for _, v := range kv {
 		s := v.Value.GetStringValue()
 		if s != "" {
 			c.label(
-				labels.NewBytes(prefix).Add(v.Key).Value(s),
+				labels.NewBytes(kind, prefix).Add(v.Key).Value(s),
 			)
 		}
 	}
