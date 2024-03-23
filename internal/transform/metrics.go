@@ -36,7 +36,7 @@ func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 		}
 		for _, m := range sm.Metrics {
 			c.label(
-				labels.NewBytes(v1.SampleKind_METRICS, v1.PREFIX_METRICS_NAME).Value(m.Name),
+				labels.NewBytes(v1.SampleKind_METRICS, v1.PREFIX_NAME).Value(m.Name),
 			)
 			switch e := m.Data.(type) {
 			case *metricsv1.Metric_Gauge:
@@ -46,17 +46,17 @@ func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 			case *metricsv1.Metric_Histogram:
 				for _, p := range e.Histogram.DataPoints {
 					c.Timestamp(p.TimeUnixNano)
-					c.attributes(v1.SampleKind_METRICS, v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
+					c.attributes(v1.SampleKind_METRICS, v1.PREFIX_ATTRIBUTES, p.Attributes)
 				}
 			case *metricsv1.Metric_ExponentialHistogram:
 				for _, p := range e.ExponentialHistogram.DataPoints {
 					c.Timestamp(p.TimeUnixNano)
-					c.attributes(v1.SampleKind_METRICS, v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
+					c.attributes(v1.SampleKind_METRICS, v1.PREFIX_ATTRIBUTES, p.Attributes)
 				}
 			case *metricsv1.Metric_Summary:
 				for _, p := range e.Summary.DataPoints {
 					c.Timestamp(p.TimeUnixNano)
-					c.attributes(v1.SampleKind_METRICS, v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
+					c.attributes(v1.SampleKind_METRICS, v1.PREFIX_ATTRIBUTES, p.Attributes)
 				}
 			}
 		}
@@ -66,6 +66,6 @@ func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 func transFormDataPoints(ctx *Context, dp []*metricsv1.NumberDataPoint) {
 	for _, p := range dp {
 		ctx.Timestamp(p.TimeUnixNano)
-		ctx.attributes(v1.SampleKind_METRICS, v1.PREFIX_METRICS_ATTRIBUTES, p.Attributes)
+		ctx.attributes(v1.SampleKind_METRICS, v1.PREFIX_ATTRIBUTES, p.Attributes)
 	}
 }

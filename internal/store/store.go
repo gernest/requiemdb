@@ -43,7 +43,7 @@ func Store(
 	binary.LittleEndian.PutUint64(key[9:], id)
 
 	err = txn.SetEntry(badger.NewEntry(key[:], data).
-		WithTTL(ttl).WithMeta(byte(meta)))
+		WithTTL(ttl))
 	if err != nil {
 		return err
 	}

@@ -42,15 +42,15 @@ func (c *Context) transformLogs(rm *logsv1.ResourceLogs) {
 					labels.NewBytes(v1.SampleKind_LOGS, v1.PREFIX_LOGS_LEVEL).Value(r.SeverityText),
 				)
 			}
-			c.attributes(v1.SampleKind_LOGS, v1.PREFIX_LOGS_ATTRIBUTES, r.Attributes)
+			c.attributes(v1.SampleKind_LOGS, v1.PREFIX_ATTRIBUTES, r.Attributes)
 			if r.SpanId != nil {
 				c.label(
-					labels.NewBytes(v1.SampleKind_LOGS, v1.PREFIX_LOGS_SPAN_ID).ValueBytes(r.SpanId),
+					labels.NewBytes(v1.SampleKind_LOGS, v1.PREFIX_SPAN_ID).ValueBytes(r.SpanId),
 				)
 			}
 			if r.TraceId != nil {
 				c.label(
-					labels.NewBytes(v1.SampleKind_LOGS, v1.PREFIX_LOGS_TRACE_ID).ValueBytes(r.TraceId),
+					labels.NewBytes(v1.SampleKind_LOGS, v1.PREFIX_TRACE_ID).ValueBytes(r.TraceId),
 				)
 			}
 		}

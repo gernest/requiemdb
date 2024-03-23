@@ -36,16 +36,16 @@ func (c *Context) transformTrace(rm *tracev1.ResourceSpans) {
 		}
 		for _, span := range sm.Spans {
 			if span.Name != "" {
-				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_SPAN_NAME).Value(span.Name))
+				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_NAME).Value(span.Name))
 			}
 			if span.TraceId != nil {
-				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_SPAN_TRACE_ID).ValueBytes(span.TraceId))
+				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_TRACE_ID).ValueBytes(span.TraceId))
 			}
 			if span.SpanId != nil {
-				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_SPAN_SPAN_ID).ValueBytes(span.SpanId))
+				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_SPAN_ID).ValueBytes(span.SpanId))
 			}
 			if span.ParentSpanId != nil {
-				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_SPAN_PARENT_SPAN_ID).ValueBytes(span.ParentSpanId))
+				c.label(labels.NewBytes(v1.SampleKind_TRACES, v1.PREFIX_PARENT_SPAN_ID).ValueBytes(span.ParentSpanId))
 			}
 			c.Range(span.StartTimeUnixNano, span.EndTimeUnixNano)
 		}

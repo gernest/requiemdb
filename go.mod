@@ -3,19 +3,20 @@ module github.com/requiemdb/requiemdb
 go 1.22.0
 
 require (
+	github.com/RoaringBitmap/roaring v1.9.1
 	github.com/apache/arrow/go/v16 v16.0.0-20240322222433-fa36cde1105c
+	github.com/dgraph-io/badger/v4 v4.2.0
+	github.com/klauspost/compress v1.17.7
 	go.opentelemetry.io/proto/otlp v1.1.0
 	google.golang.org/protobuf v1.33.0
 )
 
 require (
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
-	github.com/RoaringBitmap/roaring v1.9.1 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/apache/thrift v0.19.0 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/dgraph-io/badger/v4 v4.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
@@ -26,7 +27,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v24.3.7+incompatible // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
-	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
