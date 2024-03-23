@@ -1,0 +1,36 @@
+syntax = "proto3";
+package v1;
+
+import "opentelemetry/proto/metrics/v1/metrics.proto";
+import "opentelemetry/proto/logs/v1/logs.proto";
+import "opentelemetry/proto/trace/v1/trace.proto";
+
+message Labels {
+  repeated bytes key = 1;
+  repeated bytes value = 2;
+}
+
+message Sample {
+  Labels labels = 1;
+
+  // Serialized Data object, compressed with zstd. We use bytes here because we
+  // automatically sore Sample as a arrow.Record.
+  bytes data = 2;
+
+  // Minimum timetamp observed in this sample in milliseconds
+  uint64 min_ts = 3;
+
+  // Maximum timestamp observed in this sample in milliseconds
+  uint64 max_ts = 4;
+
+  // Date in nillisecond in which the sample was taken
+  uint64 date = 5;
+}
+
+message Data {
+  oneof data {
+    opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
+    opentelemetry.proto.logs.v1.LogsData logs = 2;
+    opentelemetry.proto.trace.v1.TracesData traces = 3;
+  }
+}

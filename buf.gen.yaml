@@ -1,0 +1,11 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/requiemdb/requiemdb/gen/go
+    except:
+      - buf.build/opentelemetry/opentelemetry
+plugins:
+  - plugin: go
+    out: gen/go
+    opt: paths=source_relative
