@@ -26,8 +26,10 @@ type Visit interface {
 	AcceptName(name string) bool
 	AcceptAttributes(attr []*commonV1.KeyValue) bool
 	TimeRange() (start, end uint64)
-
 	AcceptLogLevel(lvl string) bool
+	AcceptTraceID(id []byte) bool
+	AcceptSpanID(id []byte) bool
+	AcceptParentSpanID(id []byte) bool
 }
 
 type BaseResource interface {
