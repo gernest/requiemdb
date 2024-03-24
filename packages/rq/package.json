@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && go run ../../internal/defs/main.go dist/rq.d.ts ../../ui/src/components/editor/defs.ts ",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
