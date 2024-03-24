@@ -22,12 +22,13 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 			if !AcceptScope(sm.SchemaUrl, sm.Scope, visitor) {
 				continue
 			}
+			var scope *metricsV1.ScopeMetrics
+
 			// We have the right scope now we need to select data points
 			for _, ms := range sm.Metrics {
 				if !visitor.AcceptName(ms.Name) {
 					continue
 				}
-				var scope *metricsV1.ScopeMetrics
 				if v := ms.GetGauge(); v != nil {
 					var points []*metricsV1.NumberDataPoint
 					for _, d := range v.DataPoints {
@@ -157,15 +158,16 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 						})
 					}
 				}
-				if scope != nil {
-					if a == nil {
-						a = &metricsV1.ResourceMetrics{
-							Resource:  rm.Resource,
-							SchemaUrl: rm.SchemaUrl,
-						}
+
+			}
+			if scope != nil {
+				if a == nil {
+					a = &metricsV1.ResourceMetrics{
+						Resource:  rm.Resource,
+						SchemaUrl: rm.SchemaUrl,
 					}
-					a.ScopeMetrics = append(a.ScopeMetrics, scope)
 				}
+				a.ScopeMetrics = append(a.ScopeMetrics, scope)
 			}
 		}
 		if a != nil {
