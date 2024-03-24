@@ -24,6 +24,7 @@ enum SampleKind {
   METRICS = 0;
   TRACES = 2;
   LOGS = 3;
+  SNIPPETS = 4;
 }
 
 message Sample {
