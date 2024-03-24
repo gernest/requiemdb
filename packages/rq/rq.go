@@ -5,4 +5,6 @@ import (
 )
 
 //go:embed dist/rq.js
-var RQ string
+var RQ []byte
+
+const Module = "@requiemdb/rq"
