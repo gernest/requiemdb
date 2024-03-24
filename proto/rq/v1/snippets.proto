@@ -1,0 +1,18 @@
+syntax = "proto3";
+package v1;
+import "google/protobuf/timestamp.proto";
+
+message Snippet {
+
+  // has .js or .ts extension
+  string name = 1;
+
+  // zstd copressed file data
+  bytes raw = 2;
+
+  // Bundled js of raw file. This is compressed with zstd.
+  bytes compiled = 3;
+
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	v1 "github.com/requiemdb/requiemdb/gen/go/samples/v1"
+	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/compress"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/times"

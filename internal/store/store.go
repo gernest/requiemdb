@@ -7,7 +7,7 @@ import (
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/dgraph-io/badger/v4"
-	v1 "github.com/requiemdb/requiemdb/gen/go/samples/v1"
+	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"google.golang.org/protobuf/proto"
 )
