@@ -6,6 +6,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.9.1
 	github.com/apache/arrow/go/v16 v16.0.0-20240322222433-fa36cde1105c
 	github.com/dgraph-io/badger/v4 v4.2.0
+	github.com/evanw/esbuild v0.20.2
 	github.com/klauspost/compress v1.17.7
 	go.opentelemetry.io/proto/otlp v1.1.0
 	google.golang.org/protobuf v1.33.0
