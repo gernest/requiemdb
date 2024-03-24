@@ -18,6 +18,7 @@ export const Editor = (props: BoxProps) => {
                     fontSize: 18,
                     value: welcome,
                     automaticLayout: true,
+                    minimap: { enabled: false }
                 });
             });
         }
