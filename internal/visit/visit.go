@@ -1,6 +1,8 @@
 package visit
 
 import (
+	"math"
+
 	commonV1 "go.opentelemetry.io/proto/otlp/common/v1"
 	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
@@ -62,3 +64,21 @@ func AcceptDataPoint(tsn BaseDataPoint, start, end uint64, a Visit) bool {
 	ts := tsn.GetTimeUnixNano()
 	return ts >= start && ts < end
 }
+
+type All struct{}
+
+func (All) AcceptResourceSchema(schema string) bool                 { return true }
+func (All) AcceptResourceAttributes(attr []*commonV1.KeyValue) bool { return true }
+func (All) AcceptScopeSchema(schema string) bool                    { return true }
+func (All) AcceptScopeName(name string) bool                        { return true }
+func (All) AcceptScopeVersion(version string) bool                  { return true }
+func (All) AcceptScopeAttributes(attr []*commonV1.KeyValue) bool    { return true }
+func (All) AcceptName(name string) bool                             { return true }
+func (All) AcceptAttributes(attr []*commonV1.KeyValue) bool         { return true }
+func (All) TimeRange() (start, end uint64) {
+	return 0, math.MaxUint64
+}
+func (All) AcceptLogLevel(lvl string) bool    { return true }
+func (All) AcceptTraceID(id []byte) bool      { return true }
+func (All) AcceptSpanID(id []byte) bool       { return true }
+func (All) AcceptParentSpanID(id []byte) bool { return true }
