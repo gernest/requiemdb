@@ -17,6 +17,6 @@ const createTransport = () => {
     return transport
 }
 
-export const createOTSClient = () => {
+export const createRQClient = () => {
     return new RQClient(createTransport())
 }
