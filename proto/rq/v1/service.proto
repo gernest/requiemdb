@@ -14,9 +14,10 @@ message GetSnippetRequest { string name = 1; }
 
 message GetSnippetResponse {
   string name = 1;
-  bytes raw = 2;
-  google.protobuf.Timestamp created_at = 3;
-  google.protobuf.Timestamp updated_at = 4;
+  string description = 2;
+  bytes raw = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
 }
 
 message ListStippetsRequest {}
@@ -25,8 +26,9 @@ message ListSnippetsResponse { repeated SnippetInfo snippets = 1; }
 
 message SnippetInfo {
   string name = 1;
-  google.protobuf.Timestamp created_at = 4;
-  google.protobuf.Timestamp updated_at = 5;
+  string description = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
 }
 
 message UploadSnippetRequest {
