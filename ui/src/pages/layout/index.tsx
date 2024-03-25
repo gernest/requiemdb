@@ -1,28 +1,21 @@
-import styled from 'styled-components';
-import { Footer, Sidebar, Editor } from "../../components";
-import { PageLayout } from '@primer/react';
-import { ApiProvider } from "../../providers";
-const Wrapper = styled.div``
+import { Outlet } from "react-router-dom";
 
+import { Footer, Sidebar } from "../../components";
+import { PageLayout } from '@primer/react';
 
 export const Layout = () => {
     return (
-        <Wrapper>
-            <ApiProvider>
-                <PageLayout containerWidth='full'>
-                    <PageLayout.Header></PageLayout.Header>
-                    <PageLayout.Pane position={"start"} resizable sticky>
-                        <Sidebar />
-                    </PageLayout.Pane>
-                    <PageLayout.Content>
-                        <Editor height={500} />
-                    </PageLayout.Content>
-                    <PageLayout.Footer>
-                        <Footer />
-                    </PageLayout.Footer>
-                </PageLayout>
-            </ApiProvider>
-
-        </Wrapper>
+        <PageLayout containerWidth='full'>
+            <PageLayout.Header></PageLayout.Header>
+            <PageLayout.Pane position={"start"} resizable sticky>
+                <Sidebar />
+            </PageLayout.Pane>
+            <PageLayout.Content>
+                <Outlet />
+            </PageLayout.Content>
+            <PageLayout.Footer>
+                <Footer />
+            </PageLayout.Footer>
+        </PageLayout>
     )
 }
