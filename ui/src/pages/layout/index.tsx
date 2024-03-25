@@ -11,7 +11,7 @@ export const Layout = () => {
             <ApiProvider>
                 <PageLayout containerWidth='full'>
                     <PageLayout.Header></PageLayout.Header>
-                    <PageLayout.Pane position={"start"} resizable>
+                    <PageLayout.Pane position={"start"} resizable sticky>
                         <Sidebar />
                     </PageLayout.Pane>
                     <PageLayout.Content>
