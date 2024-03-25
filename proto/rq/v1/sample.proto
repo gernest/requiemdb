@@ -1,10 +1,6 @@
 syntax = "proto3";
 package v1;
 
-import "opentelemetry/proto/metrics/v1/metrics.proto";
-import "opentelemetry/proto/logs/v1/logs.proto";
-import "opentelemetry/proto/trace/v1/trace.proto";
-
 enum PREFIX {
   RESOURCE_SCHEMA = 0;
   RESOURCE_ATTRIBUTES = 1;
@@ -40,12 +36,4 @@ message Sample {
 
   // Date in nillisecond in which the sample was taken
   uint64 date = 4;
-}
-
-message Data {
-  oneof data {
-    opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
-    opentelemetry.proto.logs.v1.LogsData logs = 2;
-    opentelemetry.proto.trace.v1.TracesData traces = 3;
-  }
 }
