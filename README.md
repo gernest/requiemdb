@@ -1,3 +1,3 @@
 # requiemdb
 
-Open Source , Open Telemetry Database.
+Open Source  OpenTelemetry Database.
