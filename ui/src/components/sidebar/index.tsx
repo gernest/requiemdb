@@ -1,15 +1,35 @@
-import { Box } from "@primer/react"
-import { TitleBar } from "./title"
-
+import { Box, NavList } from "@primer/react"
+import { DotIcon, HomeIcon, CodeIcon, GearIcon } from "@primer/octicons-react";
 
 export const Sidebar = () => {
     return (
         <Box>
-            <aside>
-                <Box display={"flex"} flexDirection={"column"} width={"100%"} flexGrow={1}>
-                    <TitleBar />
-                </Box>
-            </aside>
+            <NavList>
+                <NavList.Item>
+                    <NavList.LeadingVisual>
+                        <HomeIcon />
+                    </NavList.LeadingVisual>
+                    Home
+                </NavList.Item>
+                <NavList.Item>
+                    <NavList.LeadingVisual>
+                        <DotIcon />
+                    </NavList.LeadingVisual>
+                    Console
+                </NavList.Item>
+                <NavList.Item>
+                    <NavList.LeadingVisual>
+                        <CodeIcon />
+                    </NavList.LeadingVisual>
+                    Snippets
+                </NavList.Item>
+                <NavList.Item>
+                    <NavList.LeadingVisual>
+                        <GearIcon />
+                    </NavList.LeadingVisual>
+                    Settings
+                </NavList.Item>
+            </NavList>
         </Box>
     )
 }
