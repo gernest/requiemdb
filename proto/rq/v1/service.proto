@@ -2,12 +2,32 @@ syntax = "proto3";
 package v1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "buf/validate/validate.proto";
 
 service RQ {
-  rpc Query(QueryRequest) returns (QueryResponse);
-  rpc UploadSnippet(UploadSnippetRequest) returns (UploadSnippetResponse);
-  rpc ListSnippets(ListStippetsRequest) returns (ListSnippetsResponse);
-  rpc GetSnippet(GetSnippetRequest) returns (GetSnippetResponse);
+  rpc Query(QueryRequest) returns (QueryResponse) {
+    option (google.api.http) = {
+      post : "/api/v1/query",
+      body : "*"
+    };
+  };
+  rpc UploadSnippet(UploadSnippetRequest) returns (UploadSnippetResponse) {
+    option (google.api.http) = {
+      post : "/api/v1/upload",
+      body : "*"
+    };
+  };
+  rpc ListSnippets(ListStippetsRequest) returns (ListSnippetsResponse) {
+    option (google.api.http) = {
+      get : "/api/v1/list",
+    };
+  };
+  rpc GetSnippet(GetSnippetRequest) returns (GetSnippetResponse) {
+    option (google.api.http) = {
+      get : "/api/v1/snippet/{name}",
+    };
+  };
 }
 
 message GetSnippetRequest { string name = 1; }
