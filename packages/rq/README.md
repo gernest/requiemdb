@@ -1,3 +1,3 @@
 # @requiemdb/rq
 
-Runtime library for `@requiemdb`
+OpenTelemetry database

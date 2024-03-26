@@ -1,19 +1,26 @@
 {
   "name": "@requiemdb/rq",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "OpenTelemetry database",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc && go run ../../internal/defs/main.go dist/rq.d.ts ../../ui/src/components/editor/defs.ts ",
+    "build": "tsc && node build.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "http-cache"
+    "requiemdb"
   ],
   "author": "Geofrey Ernest",
   "license": "MIT",
   "devDependencies": {
+    "esbuild": "^0.20.2",
     "typescript": "^5.4.3"
+  },
+  "dependencies": {
+    "@protobuf-ts/runtime": "^2.9.4"
   }
 }
