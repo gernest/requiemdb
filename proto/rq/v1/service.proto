@@ -94,4 +94,10 @@ message Timings {
   google.protobuf.Duration evaluating = 2;
 }
 
-message Result {}
+message Result {
+  oneof value {
+    opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
+    opentelemetry.proto.logs.v1.LogsData logs = 2;
+    opentelemetry.proto.trace.v1.TracesData trace = 3;
+  }
+}

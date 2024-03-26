@@ -12,6 +12,9 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { TracesData } from "../../opentelemetry/proto/trace/v1/trace";
+import { LogsData } from "../../opentelemetry/proto/logs/v1/logs";
+import { MetricsData } from "../../opentelemetry/proto/metrics/v1/metrics";
 import { Duration } from "../../google/protobuf/duration";
 import { Timestamp } from "../../google/protobuf/timestamp";
 /**
@@ -180,6 +183,30 @@ export interface Timings {
  * @generated from protobuf message v1.Result
  */
 export interface Result {
+    /**
+     * @generated from protobuf oneof: value
+     */
+    value: {
+        oneofKind: "metrics";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
+         */
+        metrics: MetricsData;
+    } | {
+        oneofKind: "logs";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.logs.v1.LogsData logs = 2;
+         */
+        logs: LogsData;
+    } | {
+        oneofKind: "trace";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.trace.v1.TracesData trace = 3;
+         */
+        trace: TracesData;
+    } | {
+        oneofKind: undefined;
+    };
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSnippetRequest$Type extends MessageType<GetSnippetRequest> {
@@ -716,19 +743,63 @@ export const Timings = new Timings$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Result$Type extends MessageType<Result> {
     constructor() {
-        super("v1.Result", []);
+        super("v1.Result", [
+            { no: 1, name: "metrics", kind: "message", oneof: "value", T: () => MetricsData },
+            { no: 2, name: "logs", kind: "message", oneof: "value", T: () => LogsData },
+            { no: 3, name: "trace", kind: "message", oneof: "value", T: () => TracesData }
+        ]);
     }
     create(value?: PartialMessage<Result>): Result {
-        const message = {};
+        const message = { value: { oneofKind: undefined } };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Result>(this, message, value);
         return message;
     }
     internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Result): Result {
-        return target ?? this.create();
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* opentelemetry.proto.metrics.v1.MetricsData metrics */ 1:
+                    message.value = {
+                        oneofKind: "metrics",
+                        metrics: MetricsData.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).metrics)
+                    };
+                    break;
+                case /* opentelemetry.proto.logs.v1.LogsData logs */ 2:
+                    message.value = {
+                        oneofKind: "logs",
+                        logs: LogsData.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).logs)
+                    };
+                    break;
+                case /* opentelemetry.proto.trace.v1.TracesData trace */ 3:
+                    message.value = {
+                        oneofKind: "trace",
+                        trace: TracesData.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).trace)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
     }
     internalBinaryWrite(message: Result, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* opentelemetry.proto.metrics.v1.MetricsData metrics = 1; */
+        if (message.value.oneofKind === "metrics")
+            MetricsData.internalBinaryWrite(message.value.metrics, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* opentelemetry.proto.logs.v1.LogsData logs = 2; */
+        if (message.value.oneofKind === "logs")
+            LogsData.internalBinaryWrite(message.value.logs, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* opentelemetry.proto.trace.v1.TracesData trace = 3; */
+        if (message.value.oneofKind === "trace")
+            TracesData.internalBinaryWrite(message.value.trace, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
