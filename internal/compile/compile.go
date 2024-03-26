@@ -2,6 +2,7 @@ package compile
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -15,17 +16,15 @@ const (
 )
 
 func Compile(data []byte) ([]byte, error) {
-	dir, err := writeRq(data)
+	dir, alias, err := createPackage(data)
 	if err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(dir)
 	slog.Info("Compiling file", "path", dir)
 	result := api.Build(api.BuildOptions{
-		Bundle: true,
-		Alias: map[string]string{
-			rq.Module: "./rq",
-		},
+		Bundle:        true,
+		Alias:         alias,
 		AbsWorkingDir: dir,
 		EntryPoints: []string{
 			"index.ts",
@@ -37,18 +36,34 @@ func Compile(data []byte) ([]byte, error) {
 	return result.OutputFiles[0].Contents, nil
 }
 
-func writeRq(data []byte) (string, error) {
+func createPackage(data []byte) (string, map[string]string, error) {
 	f, err := os.MkdirTemp("", pattern)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	err = os.WriteFile(filepath.Join(f, "rq.js"), rq.RQ, 0600)
+	alias, err := setup(f)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	err = os.WriteFile(filepath.Join(f, "index.ts"), data, 0600)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return f, nil
+	return f, alias, nil
+}
+
+func setup(dir string) (alias map[string]string, err error) {
+	alias = make(map[string]string)
+	for name, data := range rq.PKG {
+		path := filepath.Base(name) + ".js"
+		fmt.Println(path)
+		err = os.WriteFile(filepath.Join(dir, path), data, 0600)
+		if err != nil {
+			fmt.Println("====", err)
+			return
+		}
+		// relative path to working directory
+		alias[name] = "./" + path
+	}
+	return
 }

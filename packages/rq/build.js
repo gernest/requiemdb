@@ -2,10 +2,10 @@ const { build } = require("esbuild");
 
 
 build({
-    entryPoints: ["src/runtime.ts"],
+    entryPoints: ["src/index.ts"],
     bundle: true,
     minify: true,
     platform: 'node', // for CJS
-    outfile: "dist/runtime.js",
+    outfile: "dist/index.js",
 });
 

@@ -27,3 +27,4 @@ plugins:
     out: ui/src/rq/proto
     opt:
       - generate_dependencies
+      - long_type_string

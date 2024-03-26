@@ -1,4 +1,4 @@
 //@ts-ignore
-import { Attribute } from "@requiemdb/rq";
-
-console.log(Attribute.name);
+import { MetricsData } from "@requiemdb/rq";
+const meta = MetricsData.create();
+console.log(meta);

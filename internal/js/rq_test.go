@@ -17,6 +17,7 @@ func TestConsole(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "hello,world", b.String())
 }
+
 func TestRequire(t *testing.T) {
 	var b bytes.Buffer
 	r, err := New(&b)
@@ -27,5 +28,5 @@ func TestRequire(t *testing.T) {
 	require.NoError(t, err)
 	_, err = r.RunString(string(data))
 	require.NoError(t, err)
-	require.Equal(t, "Attribute2", b.String())
+	require.Equal(t, "map[resourceMetrics:[]]", b.String())
 }
