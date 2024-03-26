@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/dgraph-io/badger/v4"
@@ -13,6 +14,9 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/snippets"
+	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
+	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -21,13 +25,14 @@ import (
 )
 
 type Service struct {
-	db       *badger.DB
-	snippets *snippets.Snippets
-	hand     http.Handler
+	db        *badger.DB
+	snippets  *snippets.Snippets
+	retention time.Duration
+	hand      http.Handler
 	v1.UnimplementedRQServer
 }
 
-func NewService(ctx context.Context, db *badger.DB, listen string) (*Service, error) {
+func NewService(ctx context.Context, db *badger.DB, listen string, retention time.Duration) (*Service, error) {
 	valid, err := protovalidate.New()
 	if err != nil {
 		return nil, err
@@ -45,7 +50,7 @@ func NewService(ctx context.Context, db *badger.DB, listen string) (*Service, er
 		),
 	)
 
-	service := &Service{db: db, snippets: sn}
+	service := &Service{db: db, snippets: sn, retention: retention}
 	v1.RegisterRQServer(svr, service)
 	web := grpcweb.WrapServer(svr,
 		grpcweb.WithAllowNonRootResource(true),
@@ -114,4 +119,33 @@ func corsMiddleware() *cors.Cors {
 		},
 		AllowCredentials: true,
 	})
+}
+
+func (s *Service) Metrics() *Metrics {
+	return &Metrics{db: s.db, retention: s.retention}
+}
+func (s *Service) Trace() *Trace {
+	return &Trace{db: s.db, retention: s.retention}
+}
+
+func (s *Service) Logs() *Logs {
+	return &Logs{db: s.db, retention: s.retention}
+}
+
+type Metrics struct {
+	collector_metrics.UnimplementedMetricsServiceServer
+	db        *badger.DB
+	retention time.Duration
+}
+
+type Logs struct {
+	collector_logs.UnimplementedLogsServiceServer
+	db        *badger.DB
+	retention time.Duration
+}
+
+type Trace struct {
+	collector_trace.UnimplementedTraceServiceServer
+	db        *badger.DB
+	retention time.Duration
 }

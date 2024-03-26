@@ -8,12 +8,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	"github.com/requiemdb/requiemdb/internal/logger"
 	"github.com/requiemdb/requiemdb/internal/service"
 	"github.com/urfave/cli/v3"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
+	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -33,10 +39,15 @@ func main() {
 				Sources: cli.EnvVars("RQ_LISTEN"),
 			},
 			&cli.StringFlag{
-				Name:    "otlp-listen",
+				Name:    "otlpListen",
 				Value:   ":4317",
 				Usage:   "host:port address to listen to otlp collector grpc service",
 				Sources: cli.EnvVars("RQ_OTLP_LISTEN"),
+			},
+			&cli.DurationFlag{
+				Name:    "retentionPeriod",
+				Value:   7 * 24 * time.Hour, //one week
+				Sources: cli.EnvVars("RQ_DATA_RETENTION_PERIOD"),
 			},
 		},
 		Action: run,
@@ -65,7 +76,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	}
 	defer db.Close()
 	lsn := cmd.String("listen")
-	api, err := service.NewService(ctx, db, lsn)
+	api, err := service.NewService(ctx, db, lsn, cmd.Duration("retentionPeriod"))
 	if err != nil {
 		return err
 	}
@@ -76,6 +87,19 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		Handler:     api,
 		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
+
+	otelAddress := cmd.String("otlpListen")
+	otelGRPC, err := net.Listen("tcp", otelAddress)
+	if err != nil {
+		logger.Fail("failed listening otlp address", "addr", otelAddress, "err", err)
+	}
+	defer otelGRPC.Close()
+
+	oSvr := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	collector_metrics.RegisterMetricsServiceServer(oSvr, api.Metrics())
+	collector_logs.RegisterLogsServiceServer(oSvr, api.Logs())
+	collector_trace.RegisterTraceServiceServer(oSvr, api.Trace())
+
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
@@ -84,7 +108,17 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		slog.Info("starting http server", "address", lsn)
 		exit = svr.ListenAndServe()
 	}()
+	go func() {
+		defer cancel()
+		slog.Info("starting gROC otel collector server", "address", otelAddress)
+		err := oSvr.Serve(otelGRPC)
+		if err != nil {
+			slog.Error("exited grpc service", "err", err)
+		}
+	}()
 	<-ctx.Done()
+	svr.Shutdown(context.Background())
+	oSvr.GracefulStop()
 	return
 }
 
