@@ -9,14 +9,11 @@ export const Footer = () => {
         <Box
             sx={{
                 display: "flex",
-                position: "absolute",
                 height: "45px",
-                bottom: "0",
-                left: "0",
-                right: "0",
                 backgroundColor: 'canvas.subtle',
                 zIndex: 2000,
             }}
+            width={"100%"}
         >
             <Box
                 sx={{
