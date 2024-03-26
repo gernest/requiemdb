@@ -9,7 +9,14 @@ export const Layout = () => {
             <PageLayout.Header>
                 <MainHeader />
             </PageLayout.Header>
-            <PageLayout.Pane position={"start"} resizable sticky>
+            <PageLayout.Pane position={"start"} sticky
+                width={{
+                    min: "126px",
+                    default: "126px",
+                    max: "126px",
+                }}
+                divider={"line"}
+            >
                 <Sidebar />
             </PageLayout.Pane>
             <PageLayout.Content>
