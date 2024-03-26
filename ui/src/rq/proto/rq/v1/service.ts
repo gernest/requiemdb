@@ -151,19 +151,13 @@ export interface QueryRequest {
  */
 export interface QueryResponse {
     /**
-     * @generated from protobuf field: v1.AnyValue value = 1;
+     * @generated from protobuf field: v1.Result value = 1;
      */
-    value?: AnyValue;
+    value?: Result;
     /**
      * @generated from protobuf field: v1.Timings timings = 2;
      */
-    timings?: Timings;
-    /**
-     * Number of samples processed by the query snippet.
-     *
-     * @generated from protobuf field: int32 samples = 3;
-     */
-    samples: number;
+    timings?: Timings; // Number of samples processed by the query snippet.
 }
 /**
  * @generated from protobuf message v1.Timings
@@ -183,101 +177,9 @@ export interface Timings {
     evaluating?: Duration;
 }
 /**
- * @generated from protobuf message v1.AnyValue
+ * @generated from protobuf message v1.Result
  */
-export interface AnyValue {
-    /**
-     * @generated from protobuf oneof: value
-     */
-    value: {
-        oneofKind: "stringValue";
-        /**
-         * @generated from protobuf field: string string_value = 1;
-         */
-        stringValue: string;
-    } | {
-        oneofKind: "boolValue";
-        /**
-         * @generated from protobuf field: bool bool_value = 2;
-         */
-        boolValue: boolean;
-    } | {
-        oneofKind: "intValue";
-        /**
-         * @generated from protobuf field: int64 int_value = 3;
-         */
-        intValue: bigint;
-    } | {
-        oneofKind: "doubleValue";
-        /**
-         * @generated from protobuf field: double double_value = 4;
-         */
-        doubleValue: number;
-    } | {
-        oneofKind: "arrayValue";
-        /**
-         * @generated from protobuf field: v1.ArrayValue array_value = 5;
-         */
-        arrayValue: ArrayValue;
-    } | {
-        oneofKind: "kvlistValue";
-        /**
-         * @generated from protobuf field: v1.KeyValueList kvlist_value = 6;
-         */
-        kvlistValue: KeyValueList;
-    } | {
-        oneofKind: "mapValue";
-        /**
-         * @generated from protobuf field: v1.MapValue map_value = 7;
-         */
-        mapValue: MapValue;
-    } | {
-        oneofKind: undefined;
-    };
-}
-/**
- * @generated from protobuf message v1.KeyValueList
- */
-export interface KeyValueList {
-    /**
-     * @generated from protobuf field: repeated v1.KeyValue values = 1;
-     */
-    values: KeyValue[];
-}
-/**
- * @generated from protobuf message v1.KeyValue
- */
-export interface KeyValue {
-    /**
-     * @generated from protobuf field: string key = 1;
-     */
-    key: string;
-    /**
-     * @generated from protobuf field: v1.AnyValue value = 2;
-     */
-    value?: AnyValue;
-}
-/**
- * @generated from protobuf message v1.ArrayValue
- */
-export interface ArrayValue {
-    /**
-     * Array of values. The array may be empty (contain 0 elements).
-     *
-     * @generated from protobuf field: repeated v1.AnyValue values = 1;
-     */
-    values: AnyValue[];
-}
-/**
- * @generated from protobuf message v1.MapValue
- */
-export interface MapValue {
-    /**
-     * @generated from protobuf field: map<string, v1.AnyValue> value = 1;
-     */
-    value: {
-        [key: string]: AnyValue;
-    };
+export interface Result {
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSnippetRequest$Type extends MessageType<GetSnippetRequest> {
@@ -707,13 +609,12 @@ export const QueryRequest = new QueryRequest$Type();
 class QueryResponse$Type extends MessageType<QueryResponse> {
     constructor() {
         super("v1.QueryResponse", [
-            { no: 1, name: "value", kind: "message", T: () => AnyValue },
-            { no: 2, name: "timings", kind: "message", T: () => Timings },
-            { no: 3, name: "samples", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+            { no: 1, name: "value", kind: "message", T: () => Result },
+            { no: 2, name: "timings", kind: "message", T: () => Timings }
         ]);
     }
     create(value?: PartialMessage<QueryResponse>): QueryResponse {
-        const message = { samples: 0 };
+        const message = {};
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<QueryResponse>(this, message, value);
@@ -724,14 +625,11 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* v1.AnyValue value */ 1:
-                    message.value = AnyValue.internalBinaryRead(reader, reader.uint32(), options, message.value);
+                case /* v1.Result value */ 1:
+                    message.value = Result.internalBinaryRead(reader, reader.uint32(), options, message.value);
                     break;
                 case /* v1.Timings timings */ 2:
                     message.timings = Timings.internalBinaryRead(reader, reader.uint32(), options, message.timings);
-                    break;
-                case /* int32 samples */ 3:
-                    message.samples = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -745,15 +643,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         return message;
     }
     internalBinaryWrite(message: QueryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* v1.AnyValue value = 1; */
+        /* v1.Result value = 1; */
         if (message.value)
-            AnyValue.internalBinaryWrite(message.value, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+            Result.internalBinaryWrite(message.value, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         /* v1.Timings timings = 2; */
         if (message.timings)
             Timings.internalBinaryWrite(message.timings, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* int32 samples = 3; */
-        if (message.samples !== 0)
-            writer.tag(3, WireType.Varint).int32(message.samples);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -819,105 +714,21 @@ class Timings$Type extends MessageType<Timings> {
  */
 export const Timings = new Timings$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class AnyValue$Type extends MessageType<AnyValue> {
+class Result$Type extends MessageType<Result> {
     constructor() {
-        super("v1.AnyValue", [
-            { no: 1, name: "string_value", kind: "scalar", oneof: "value", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "bool_value", kind: "scalar", oneof: "value", T: 8 /*ScalarType.BOOL*/ },
-            { no: 3, name: "int_value", kind: "scalar", oneof: "value", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 4, name: "double_value", kind: "scalar", oneof: "value", T: 1 /*ScalarType.DOUBLE*/ },
-            { no: 5, name: "array_value", kind: "message", oneof: "value", T: () => ArrayValue },
-            { no: 6, name: "kvlist_value", kind: "message", oneof: "value", T: () => KeyValueList },
-            { no: 7, name: "map_value", kind: "message", oneof: "value", T: () => MapValue }
-        ]);
+        super("v1.Result", []);
     }
-    create(value?: PartialMessage<AnyValue>): AnyValue {
-        const message = { value: { oneofKind: undefined } };
+    create(value?: PartialMessage<Result>): Result {
+        const message = {};
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
-            reflectionMergePartial<AnyValue>(this, message, value);
+            reflectionMergePartial<Result>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AnyValue): AnyValue {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string string_value */ 1:
-                    message.value = {
-                        oneofKind: "stringValue",
-                        stringValue: reader.string()
-                    };
-                    break;
-                case /* bool bool_value */ 2:
-                    message.value = {
-                        oneofKind: "boolValue",
-                        boolValue: reader.bool()
-                    };
-                    break;
-                case /* int64 int_value */ 3:
-                    message.value = {
-                        oneofKind: "intValue",
-                        intValue: reader.int64().toBigInt()
-                    };
-                    break;
-                case /* double double_value */ 4:
-                    message.value = {
-                        oneofKind: "doubleValue",
-                        doubleValue: reader.double()
-                    };
-                    break;
-                case /* v1.ArrayValue array_value */ 5:
-                    message.value = {
-                        oneofKind: "arrayValue",
-                        arrayValue: ArrayValue.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).arrayValue)
-                    };
-                    break;
-                case /* v1.KeyValueList kvlist_value */ 6:
-                    message.value = {
-                        oneofKind: "kvlistValue",
-                        kvlistValue: KeyValueList.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).kvlistValue)
-                    };
-                    break;
-                case /* v1.MapValue map_value */ 7:
-                    message.value = {
-                        oneofKind: "mapValue",
-                        mapValue: MapValue.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).mapValue)
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Result): Result {
+        return target ?? this.create();
     }
-    internalBinaryWrite(message: AnyValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string string_value = 1; */
-        if (message.value.oneofKind === "stringValue")
-            writer.tag(1, WireType.LengthDelimited).string(message.value.stringValue);
-        /* bool bool_value = 2; */
-        if (message.value.oneofKind === "boolValue")
-            writer.tag(2, WireType.Varint).bool(message.value.boolValue);
-        /* int64 int_value = 3; */
-        if (message.value.oneofKind === "intValue")
-            writer.tag(3, WireType.Varint).int64(message.value.intValue);
-        /* double double_value = 4; */
-        if (message.value.oneofKind === "doubleValue")
-            writer.tag(4, WireType.Bit64).double(message.value.doubleValue);
-        /* v1.ArrayValue array_value = 5; */
-        if (message.value.oneofKind === "arrayValue")
-            ArrayValue.internalBinaryWrite(message.value.arrayValue, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
-        /* v1.KeyValueList kvlist_value = 6; */
-        if (message.value.oneofKind === "kvlistValue")
-            KeyValueList.internalBinaryWrite(message.value.kvlistValue, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
-        /* v1.MapValue map_value = 7; */
-        if (message.value.oneofKind === "mapValue")
-            MapValue.internalBinaryWrite(message.value.mapValue, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+    internalBinaryWrite(message: Result, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -925,224 +736,9 @@ class AnyValue$Type extends MessageType<AnyValue> {
     }
 }
 /**
- * @generated MessageType for protobuf message v1.AnyValue
+ * @generated MessageType for protobuf message v1.Result
  */
-export const AnyValue = new AnyValue$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class KeyValueList$Type extends MessageType<KeyValueList> {
-    constructor() {
-        super("v1.KeyValueList", [
-            { no: 1, name: "values", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => KeyValue }
-        ]);
-    }
-    create(value?: PartialMessage<KeyValueList>): KeyValueList {
-        const message = { values: [] };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<KeyValueList>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: KeyValueList): KeyValueList {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated v1.KeyValue values */ 1:
-                    message.values.push(KeyValue.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: KeyValueList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated v1.KeyValue values = 1; */
-        for (let i = 0; i < message.values.length; i++)
-            KeyValue.internalBinaryWrite(message.values[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message v1.KeyValueList
- */
-export const KeyValueList = new KeyValueList$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class KeyValue$Type extends MessageType<KeyValue> {
-    constructor() {
-        super("v1.KeyValue", [
-            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "value", kind: "message", T: () => AnyValue }
-        ]);
-    }
-    create(value?: PartialMessage<KeyValue>): KeyValue {
-        const message = { key: "" };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<KeyValue>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: KeyValue): KeyValue {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string key */ 1:
-                    message.key = reader.string();
-                    break;
-                case /* v1.AnyValue value */ 2:
-                    message.value = AnyValue.internalBinaryRead(reader, reader.uint32(), options, message.value);
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: KeyValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string key = 1; */
-        if (message.key !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.key);
-        /* v1.AnyValue value = 2; */
-        if (message.value)
-            AnyValue.internalBinaryWrite(message.value, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message v1.KeyValue
- */
-export const KeyValue = new KeyValue$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class ArrayValue$Type extends MessageType<ArrayValue> {
-    constructor() {
-        super("v1.ArrayValue", [
-            { no: 1, name: "values", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => AnyValue }
-        ]);
-    }
-    create(value?: PartialMessage<ArrayValue>): ArrayValue {
-        const message = { values: [] };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<ArrayValue>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ArrayValue): ArrayValue {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated v1.AnyValue values */ 1:
-                    message.values.push(AnyValue.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: ArrayValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated v1.AnyValue values = 1; */
-        for (let i = 0; i < message.values.length; i++)
-            AnyValue.internalBinaryWrite(message.values[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message v1.ArrayValue
- */
-export const ArrayValue = new ArrayValue$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class MapValue$Type extends MessageType<MapValue> {
-    constructor() {
-        super("v1.MapValue", [
-            { no: 1, name: "value", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "message", T: () => AnyValue } }
-        ]);
-    }
-    create(value?: PartialMessage<MapValue>): MapValue {
-        const message = { value: {} };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<MapValue>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: MapValue): MapValue {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* map<string, v1.AnyValue> value */ 1:
-                    this.binaryReadMap1(message.value, reader, options);
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    private binaryReadMap1(map: MapValue["value"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof MapValue["value"] | undefined, val: MapValue["value"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = AnyValue.internalBinaryRead(reader, reader.uint32(), options);
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for field v1.MapValue.value");
-            }
-        }
-        map[key ?? ""] = val ?? AnyValue.create();
-    }
-    internalBinaryWrite(message: MapValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* map<string, v1.AnyValue> value = 1; */
-        for (let k of Object.keys(message.value)) {
-            writer.tag(1, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k);
-            writer.tag(2, WireType.LengthDelimited).fork();
-            AnyValue.internalBinaryWrite(message.value[k], writer, options);
-            writer.join().join();
-        }
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message v1.MapValue
- */
-export const MapValue = new MapValue$Type();
+export const Result = new Result$Type();
 /**
  * @generated ServiceType for protobuf service v1.RQ
  */
