@@ -14,9 +14,14 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/snippets"
+	"github.com/requiemdb/requiemdb/internal/store"
+	"github.com/requiemdb/requiemdb/internal/transform"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
+	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
+	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
+	tracev1 "go.opentelemetry.io/proto/otlp/trace/v1"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -123,30 +128,93 @@ func corsMiddleware() *cors.Cors {
 }
 
 func (s *Service) Metrics() *Metrics {
-	return &Metrics{db: s.db, retention: s.retention}
+	return &Metrics{db: s.db, seq: s.seq, retention: s.retention}
 }
 func (s *Service) Trace() *Trace {
-	return &Trace{db: s.db, retention: s.retention}
+	return &Trace{db: s.db, seq: s.seq, retention: s.retention}
 }
 
 func (s *Service) Logs() *Logs {
-	return &Logs{db: s.db, retention: s.retention}
+	return &Logs{db: s.db, seq: s.seq, retention: s.retention}
 }
 
 type Metrics struct {
-	collector_metrics.UnimplementedMetricsServiceServer
+	collector_metrics.UnsafeMetricsServiceServer
 	db        *badger.DB
+	seq       *badger.Sequence
 	retention time.Duration
+}
+
+var _ collector_metrics.MetricsServiceServer = (*Metrics)(nil)
+
+func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetricsServiceRequest) (*collector_metrics.ExportMetricsServiceResponse, error) {
+	o := transform.NewContext()
+	defer o.Release()
+
+	sample, labels, err := o.Process(&metricsv1.MetricsData{
+		ResourceMetrics: req.ResourceMetrics,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer labels.Release()
+	err = store.Store(r.db, r.seq, labels, sample, r.retention, v1.RESOURCE_METRICS)
+	if err != nil {
+		return nil, err
+	}
+	return &collector_metrics.ExportMetricsServiceResponse{}, nil
 }
 
 type Logs struct {
-	collector_logs.UnimplementedLogsServiceServer
+	collector_logs.UnsafeLogsServiceServer
 	db        *badger.DB
+	seq       *badger.Sequence
 	retention time.Duration
 }
 
+var _ collector_logs.LogsServiceServer = (*Logs)(nil)
+
+func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsServiceRequest) (*collector_logs.ExportLogsServiceResponse, error) {
+	o := transform.NewContext()
+	defer o.Release()
+
+	sample, labels, err := o.Process(&logsv1.LogsData{
+		ResourceLogs: req.ResourceLogs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer labels.Release()
+	err = store.Store(r.db, r.seq, labels, sample, r.retention, v1.RESOURCE_LOGS)
+	if err != nil {
+		return nil, err
+	}
+	return &collector_logs.ExportLogsServiceResponse{}, nil
+}
+
 type Trace struct {
-	collector_trace.UnimplementedTraceServiceServer
+	collector_trace.UnsafeTraceServiceServer
 	db        *badger.DB
+	seq       *badger.Sequence
 	retention time.Duration
+}
+
+var _ collector_trace.TraceServiceServer = (*Trace)(nil)
+
+func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServiceRequest) (*collector_trace.ExportTraceServiceResponse, error) {
+	o := transform.NewContext()
+	defer o.Release()
+
+	sample, labels, err := o.Process(&tracev1.TracesData{
+		ResourceSpans: req.ResourceSpans,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer labels.Release()
+	err = store.Store(r.db, r.seq, labels, sample, r.retention, v1.RESOURCE_TRACES)
+	if err != nil {
+		return nil, err
+	}
+	return &collector_trace.ExportTraceServiceResponse{}, nil
 }

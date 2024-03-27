@@ -19,8 +19,6 @@ func Store(
 	ttl time.Duration,
 	meta v1.RESOURCE,
 ) error {
-	defer lbs.Release()
-
 	next, err := seq.Next()
 	if err != nil {
 		return err
