@@ -94,27 +94,6 @@ export enum PREFIX {
      */
     LOGS_LEVEL = 11
 }
-/**
- * @generated from protobuf enum v1.SampleKind
- */
-export enum SampleKind {
-    /**
-     * @generated from protobuf enum value: METRICS = 0;
-     */
-    METRICS = 0,
-    /**
-     * @generated from protobuf enum value: TRACES = 2;
-     */
-    TRACES = 2,
-    /**
-     * @generated from protobuf enum value: LOGS = 3;
-     */
-    LOGS = 3,
-    /**
-     * @generated from protobuf enum value: SNIPPETS = 4;
-     */
-    SNIPPETS = 4
-}
 // @generated message type with reflection information, may provide speed optimized methods
 class Sample$Type extends MessageType<Sample> {
     constructor() {

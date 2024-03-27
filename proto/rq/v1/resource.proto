@@ -1,0 +1,10 @@
+syntax = "proto3";
+package v1;
+
+enum RESOURCE {
+  METRICS = 0;
+  TRACES = 2;
+  LOGS = 3;
+  SNIPPETS = 4;
+  ID = 5;
+}

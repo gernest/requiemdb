@@ -83,7 +83,7 @@ func (s *Snippets) GetProgram(name string) (*goja.Program, error) {
 
 func buildKey(name string) []byte {
 	key := make([]byte, 9)
-	key[len(key)-1] = byte(v1.SampleKind_SNIPPETS)
+	key[len(key)-1] = byte(v1.RESOURCE_SNIPPETS)
 	key = append(key, []byte(name)...)
 	return key
 }

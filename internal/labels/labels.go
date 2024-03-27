@@ -71,7 +71,7 @@ func (b *Bytes) Release() {
 
 var namespace [8]byte
 
-func NewBytes(kind v1.SampleKind, prefix v1.PREFIX) *Bytes {
+func NewBytes(kind v1.RESOURCE, prefix v1.PREFIX) *Bytes {
 	b := bytesPool.Get().(*Bytes)
 	// Reserve the first 8 bytes for namespace
 	b.Write(namespace[:])

@@ -17,7 +17,7 @@ func Store(
 	seq *badger.Sequence,
 	lbs *labels.Labels, sample *v1.Sample,
 	ttl time.Duration,
-	meta v1.SampleKind,
+	meta v1.RESOURCE,
 ) error {
 	defer lbs.Release()
 

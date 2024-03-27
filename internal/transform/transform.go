@@ -100,7 +100,7 @@ func (c *Context) label(value *labels.Bytes) {
 	c.labels.Add(value)
 }
 
-func (c *Context) attributes(kind v1.SampleKind, prefix v1.PREFIX, kv []*commonv1.KeyValue) {
+func (c *Context) attributes(kind v1.RESOURCE, prefix v1.PREFIX, kv []*commonv1.KeyValue) {
 	for _, v := range kv {
 		s := v.Value.GetStringValue()
 		if s != "" {
