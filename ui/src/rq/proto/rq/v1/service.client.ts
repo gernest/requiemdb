@@ -4,6 +4,8 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { RQ } from "./service";
+import type { Version } from "./service";
+import type { GetVersionRequest } from "./service";
 import type { GetSnippetResponse } from "./service";
 import type { GetSnippetRequest } from "./service";
 import type { ListSnippetsResponse } from "./service";
@@ -35,6 +37,10 @@ export interface IRQClient {
      * @generated from protobuf rpc: GetSnippet(v1.GetSnippetRequest) returns (v1.GetSnippetResponse);
      */
     getSnippet(input: GetSnippetRequest, options?: RpcOptions): UnaryCall<GetSnippetRequest, GetSnippetResponse>;
+    /**
+     * @generated from protobuf rpc: GetVersion(v1.GetVersionRequest) returns (v1.Version);
+     */
+    getVersion(input: GetVersionRequest, options?: RpcOptions): UnaryCall<GetVersionRequest, Version>;
 }
 /**
  * @generated from protobuf service v1.RQ
@@ -72,5 +78,12 @@ export class RQClient implements IRQClient, ServiceInfo {
     getSnippet(input: GetSnippetRequest, options?: RpcOptions): UnaryCall<GetSnippetRequest, GetSnippetResponse> {
         const method = this.methods[3], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetSnippetRequest, GetSnippetResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetVersion(v1.GetVersionRequest) returns (v1.Version);
+     */
+    getVersion(input: GetVersionRequest, options?: RpcOptions): UnaryCall<GetVersionRequest, Version> {
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetVersionRequest, Version>("unary", this._transport, method, opt, input);
     }
 }

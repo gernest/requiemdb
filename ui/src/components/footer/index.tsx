@@ -1,10 +1,19 @@
 import { Box, Text, Label, Link } from "@primer/react"
 import { MarkGithubIcon } from "@primer/octicons-react"
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useApi } from "../../providers";
 
 
 export const Footer = () => {
     const [version, setVersion] = useState<string>("unknown")
+    const { client } = useApi();
+    useEffect(() => {
+        client.getVersion({}).then(build => {
+            setVersion(build.response.version)
+        }).catch(e => {
+            console.log(e)
+        })
+    }, [client])
     return (
         <Box
             sx={{

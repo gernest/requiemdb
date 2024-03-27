@@ -32,7 +32,15 @@ service RQ {
       get : "/api/v1/snippet/{name}",
     };
   };
+  rpc GetVersion(GetVersionRequest) returns (Version) {
+    option (google.api.http) = {
+      get : "/api/v1/version",
+    };
+  };
 }
+
+message GetVersionRequest {}
+message Version { string version = 1; }
 
 message GetSnippetRequest { string name = 1; }
 

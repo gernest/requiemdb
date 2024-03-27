@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io/fs"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/requiemdb/requiemdb/internal/snippets"
 	"github.com/requiemdb/requiemdb/internal/store"
 	"github.com/requiemdb/requiemdb/internal/transform"
+	"github.com/requiemdb/requiemdb/ui"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
@@ -28,6 +30,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
+
+var rootFS, _ = fs.Sub(ui.FS, "dist")
+
+var fileServer = http.FileServer(http.FS(rootFS))
 
 type Service struct {
 	db        *badger.DB
@@ -76,15 +82,15 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 	base := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/", "/index.html", "/logo.svg", "/robot.txt":
-			// fileServer.ServeHTTP(w, r)
+			fileServer.ServeHTTP(w, r)
 			return
 		default:
 			if strings.HasPrefix(r.URL.Path, "/api/v1/") {
 				api.ServeHTTP(w, r)
 				return
 			}
-			if strings.HasPrefix(r.URL.Path, "/static/") {
-				// fileServer.ServeHTTP(w, r)
+			if strings.HasPrefix(r.URL.Path, "/assets/") {
+				fileServer.ServeHTTP(w, r)
 				return
 			}
 		}

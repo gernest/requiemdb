@@ -2,12 +2,12 @@
 // @generated from protobuf file "rq/v1/service.proto" (package "v1", syntax proto3)
 // tslint:disable
 import { ServiceType } from "@protobuf-ts/runtime-rpc";
+import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryWriteOptions } from "@protobuf-ts/runtime";
 import type { IBinaryWriter } from "@protobuf-ts/runtime";
-import { WireType } from "@protobuf-ts/runtime";
+import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { BinaryReadOptions } from "@protobuf-ts/runtime";
 import type { IBinaryReader } from "@protobuf-ts/runtime";
-import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
@@ -17,6 +17,20 @@ import { LogsData } from "../../opentelemetry/proto/logs/v1/logs";
 import { MetricsData } from "../../opentelemetry/proto/metrics/v1/metrics";
 import { Duration } from "../../google/protobuf/duration";
 import { Timestamp } from "../../google/protobuf/timestamp";
+/**
+ * @generated from protobuf message v1.GetVersionRequest
+ */
+export interface GetVersionRequest {
+}
+/**
+ * @generated from protobuf message v1.Version
+ */
+export interface Version {
+    /**
+     * @generated from protobuf field: string version = 1;
+     */
+    version: string;
+}
 /**
  * @generated from protobuf message v1.GetSnippetRequest
  */
@@ -208,6 +222,79 @@ export interface Result {
         oneofKind: undefined;
     };
 }
+// @generated message type with reflection information, may provide speed optimized methods
+class GetVersionRequest$Type extends MessageType<GetVersionRequest> {
+    constructor() {
+        super("v1.GetVersionRequest", []);
+    }
+    create(value?: PartialMessage<GetVersionRequest>): GetVersionRequest {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<GetVersionRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetVersionRequest): GetVersionRequest {
+        return target ?? this.create();
+    }
+    internalBinaryWrite(message: GetVersionRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.GetVersionRequest
+ */
+export const GetVersionRequest = new GetVersionRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Version$Type extends MessageType<Version> {
+    constructor() {
+        super("v1.Version", [
+            { no: 1, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Version>): Version {
+        const message = { version: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Version>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Version): Version {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string version */ 1:
+                    message.version = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Version, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string version = 1; */
+        if (message.version !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.version);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.Version
+ */
+export const Version = new Version$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSnippetRequest$Type extends MessageType<GetSnippetRequest> {
     constructor() {
@@ -817,5 +904,6 @@ export const RQ = new ServiceType("v1.RQ", [
     { name: "Query", options: { "google.api.http": { post: "/api/v1/query", body: "*" } }, I: QueryRequest, O: QueryResponse },
     { name: "UploadSnippet", options: { "google.api.http": { post: "/api/v1/upload", body: "*" } }, I: UploadSnippetRequest, O: UploadSnippetResponse },
     { name: "ListSnippets", options: { "google.api.http": { get: "/api/v1/list" } }, I: ListStippetsRequest, O: ListSnippetsResponse },
-    { name: "GetSnippet", options: { "google.api.http": { get: "/api/v1/snippet/{name}" } }, I: GetSnippetRequest, O: GetSnippetResponse }
+    { name: "GetSnippet", options: { "google.api.http": { get: "/api/v1/snippet/{name}" } }, I: GetSnippetRequest, O: GetSnippetResponse },
+    { name: "GetVersion", options: { "google.api.http": { get: "/api/v1/version" } }, I: GetVersionRequest, O: Version }
 ]);

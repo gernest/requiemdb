@@ -23,6 +23,7 @@ const (
 	RQ_UploadSnippet_FullMethodName = "/v1.RQ/UploadSnippet"
 	RQ_ListSnippets_FullMethodName  = "/v1.RQ/ListSnippets"
 	RQ_GetSnippet_FullMethodName    = "/v1.RQ/GetSnippet"
+	RQ_GetVersion_FullMethodName    = "/v1.RQ/GetVersion"
 )
 
 // RQClient is the client API for RQ service.
@@ -33,6 +34,7 @@ type RQClient interface {
 	UploadSnippet(ctx context.Context, in *UploadSnippetRequest, opts ...grpc.CallOption) (*UploadSnippetResponse, error)
 	ListSnippets(ctx context.Context, in *ListStippetsRequest, opts ...grpc.CallOption) (*ListSnippetsResponse, error)
 	GetSnippet(ctx context.Context, in *GetSnippetRequest, opts ...grpc.CallOption) (*GetSnippetResponse, error)
+	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*Version, error)
 }
 
 type rQClient struct {
@@ -79,6 +81,15 @@ func (c *rQClient) GetSnippet(ctx context.Context, in *GetSnippetRequest, opts .
 	return out, nil
 }
 
+func (c *rQClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*Version, error) {
+	out := new(Version)
+	err := c.cc.Invoke(ctx, RQ_GetVersion_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RQServer is the server API for RQ service.
 // All implementations must embed UnimplementedRQServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type RQServer interface {
 	UploadSnippet(context.Context, *UploadSnippetRequest) (*UploadSnippetResponse, error)
 	ListSnippets(context.Context, *ListStippetsRequest) (*ListSnippetsResponse, error)
 	GetSnippet(context.Context, *GetSnippetRequest) (*GetSnippetResponse, error)
+	GetVersion(context.Context, *GetVersionRequest) (*Version, error)
 	mustEmbedUnimplementedRQServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedRQServer) ListSnippets(context.Context, *ListStippetsRequest)
 }
 func (UnimplementedRQServer) GetSnippet(context.Context, *GetSnippetRequest) (*GetSnippetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSnippet not implemented")
+}
+func (UnimplementedRQServer) GetVersion(context.Context, *GetVersionRequest) (*Version, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
 }
 func (UnimplementedRQServer) mustEmbedUnimplementedRQServer() {}
 
@@ -191,6 +206,24 @@ func _RQ_GetSnippet_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RQ_GetVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RQServer).GetVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RQ_GetVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RQServer).GetVersion(ctx, req.(*GetVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RQ_ServiceDesc is the grpc.ServiceDesc for RQ service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var RQ_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSnippet",
 			Handler:    _RQ_GetSnippet_Handler,
+		},
+		{
+			MethodName: "GetVersion",
+			Handler:    _RQ_GetVersion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -10,7 +10,7 @@ type Props = {}
 export const ApiContext = createContext<ContextProps>({ client: createRQClient() })
 
 export const ApiProvider = ({ children }: PropsWithChildren<Props>) => {
-    const [client, setClient] = useState<RQClient>(createRQClient());
+    const [client, _] = useState<RQClient>(createRQClient());
     return (
         <ApiContext.Provider value={{ client }}>
             {children}
