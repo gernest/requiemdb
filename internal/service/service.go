@@ -27,12 +27,13 @@ import (
 type Service struct {
 	db        *badger.DB
 	snippets  *snippets.Snippets
+	seq       *badger.Sequence
 	retention time.Duration
 	hand      http.Handler
 	v1.UnimplementedRQServer
 }
 
-func NewService(ctx context.Context, db *badger.DB, listen string, retention time.Duration) (*Service, error) {
+func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen string, retention time.Duration) (*Service, error) {
 	valid, err := protovalidate.New()
 	if err != nil {
 		return nil, err
@@ -50,7 +51,7 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 		),
 	)
 
-	service := &Service{db: db, snippets: sn, retention: retention}
+	service := &Service{db: db, snippets: sn, seq: seq, retention: retention}
 	v1.RegisterRQServer(svr, service)
 	web := grpcweb.WrapServer(svr,
 		grpcweb.WithAllowNonRootResource(true),
