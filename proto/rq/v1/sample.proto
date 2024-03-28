@@ -30,3 +30,17 @@ message Sample {
   // Date in nillisecond in which the sample was taken
   uint64 date = 4;
 }
+
+// Meta stores sample metaddata.
+message Meta {
+  uint64 id = 1;
+
+  // Minimum timetamp observed in this sample in milliseconds
+  uint64 min_ts = 2;
+
+  // Maximum timestamp observed in this sample in milliseconds
+  uint64 max_ts = 3;
+
+  // Date in nillisecond in which the sample was taken
+  uint64 date = 4;
+}

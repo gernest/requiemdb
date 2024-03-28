@@ -7,4 +7,5 @@ enum RESOURCE {
   LOGS = 3;
   SNIPPETS = 4;
   ID = 5;
+  META = 6;
 }

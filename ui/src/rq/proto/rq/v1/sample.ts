@@ -42,6 +42,35 @@ export interface Sample {
     date: bigint;
 }
 /**
+ * Meta stores sample metaddata.
+ *
+ * @generated from protobuf message v1.Meta
+ */
+export interface Meta {
+    /**
+     * @generated from protobuf field: uint64 id = 1;
+     */
+    id: bigint;
+    /**
+     * Minimum timetamp observed in this sample in milliseconds
+     *
+     * @generated from protobuf field: uint64 min_ts = 2;
+     */
+    minTs: bigint;
+    /**
+     * Maximum timestamp observed in this sample in milliseconds
+     *
+     * @generated from protobuf field: uint64 max_ts = 3;
+     */
+    maxTs: bigint;
+    /**
+     * Date in nillisecond in which the sample was taken
+     *
+     * @generated from protobuf field: uint64 date = 4;
+     */
+    date: bigint;
+}
+/**
  * @generated from protobuf enum v1.PREFIX
  */
 export enum PREFIX {
@@ -162,3 +191,71 @@ class Sample$Type extends MessageType<Sample> {
  * @generated MessageType for protobuf message v1.Sample
  */
 export const Sample = new Sample$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Meta$Type extends MessageType<Meta> {
+    constructor() {
+        super("v1.Meta", [
+            { no: 1, name: "id", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 2, name: "min_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 3, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 4, name: "date", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Meta>): Meta {
+        const message = { id: 0n, minTs: 0n, maxTs: 0n, date: 0n };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Meta>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Meta): Meta {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 id */ 1:
+                    message.id = reader.uint64().toBigInt();
+                    break;
+                case /* uint64 min_ts */ 2:
+                    message.minTs = reader.uint64().toBigInt();
+                    break;
+                case /* uint64 max_ts */ 3:
+                    message.maxTs = reader.uint64().toBigInt();
+                    break;
+                case /* uint64 date */ 4:
+                    message.date = reader.uint64().toBigInt();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Meta, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 id = 1; */
+        if (message.id !== 0n)
+            writer.tag(1, WireType.Varint).uint64(message.id);
+        /* uint64 min_ts = 2; */
+        if (message.minTs !== 0n)
+            writer.tag(2, WireType.Varint).uint64(message.minTs);
+        /* uint64 max_ts = 3; */
+        if (message.maxTs !== 0n)
+            writer.tag(3, WireType.Varint).uint64(message.maxTs);
+        /* uint64 date = 4; */
+        if (message.date !== 0n)
+            writer.tag(4, WireType.Varint).uint64(message.date);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.Meta
+ */
+export const Meta = new Meta$Type();
