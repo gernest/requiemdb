@@ -20,7 +20,6 @@ export const Footer = () => {
                 display: "flex",
                 height: "45px",
                 backgroundColor: 'canvas.subtle',
-                zIndex: 2000,
             }}
             width={"100%"}
         >

@@ -1,28 +1,26 @@
 import { Outlet } from "react-router-dom";
 
 import { Footer, Sidebar, MainHeader } from "../../components";
-import { Box } from '@primer/react';
+import { Box, PageLayout } from '@primer/react';
 
 export const Layout = () => {
     return (
         <Box
             minHeight={"100vh"}
-            display={"grid"}
-            gridTemplateRows={"65px calc(100vh - 110px) 45px"}
-            overflow={"hidden"}
+            overflow={"auto"}
         >
             <MainHeader />
-            <Box height={"100%"}
-                display={"grid"}
-                gridTemplateColumns={"80px calc(100vw - 80px)"}
-                overflow={"hidden"}
-            >
-                <Sidebar />
-                <Box width={"100%"} height={"100%"}>
+            <PageLayout containerWidth="full">
+                <PageLayout.Pane sticky offsetHeader={"64px"} position={"start"}>
+                    <Sidebar />
+                </PageLayout.Pane>
+                <PageLayout.Content>
                     <Outlet />
-                </Box>
-            </Box>
-            <Footer />
+                </PageLayout.Content>
+                <PageLayout.Footer>
+                    <Footer />
+                </PageLayout.Footer>
+            </PageLayout>
         </Box>
     )
 }

@@ -1,37 +1,39 @@
-import { Box, Octicon, Tooltip, TooltipProps } from "@primer/react"
+import { Box, NavList } from "@primer/react"
 import { DotIcon, HomeIcon, CodeIcon, GearIcon, Icon } from "@primer/octicons-react";
 
 export const Sidebar = () => {
     return (
-        <Box height={"100%"} padding={1}
-            backgroundColor={'header.bg'}
-            color={'header.text'}
-            display={"grid"}
-            alignItems={"center"}
-            gridTemplateRows={"auto auto auto  1fr auto"}
-        >
+        <Box>
 
-            <Item icon={HomeIcon} text="Dashboard" />
-            <Item icon={DotIcon} text="Console" />
-            <Item icon={CodeIcon} text="Snippets" />
-            <Box></Box>
-            <Item icon={GearIcon} text="Settings" />
+            <NavList>
+                <NavList>
+                    <NavList.Item href="/" aria-current="page">
+                        <NavList.LeadingVisual>
+                            <HomeIcon />
+                        </NavList.LeadingVisual>
+                        Home
+                    </NavList.Item>
+                    <NavList.Item href="/about">
+                        <NavList.LeadingVisual>
+                            <DotIcon />
+                        </NavList.LeadingVisual>
+                        Console
+                    </NavList.Item>
+                    <NavList.Item href="/about">
+                        <NavList.LeadingVisual>
+                            <CodeIcon />
+                        </NavList.LeadingVisual>
+                        Snippets
+                    </NavList.Item>
+                    <NavList.Item href="/contact">
+                        <NavList.LeadingVisual>
+                            <GearIcon />
+                        </NavList.LeadingVisual>
+                        Settings
+                    </NavList.Item>
+                </NavList>
+            </NavList>
         </Box>
     )
 }
 
-type Props = {
-    icon: Icon,
-} & TooltipProps
-
-const Item = ({ icon, ...rest }: Props) => {
-    return (
-        <Box
-            display={"flex"} alignItems={"center"} flexDirection={"column"} padding={2}
-        >
-            <Tooltip {...rest} direction="e">
-                <Octicon icon={icon} size={"medium"} />
-            </Tooltip>
-        </Box>
-    )
-}
