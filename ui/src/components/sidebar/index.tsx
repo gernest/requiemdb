@@ -1,36 +1,36 @@
 import { Box, NavList } from "@primer/react"
-import { DotIcon, HomeIcon, CodeIcon, GearIcon, Icon } from "@primer/octicons-react";
+import { DotIcon, HomeIcon, CodeIcon, GearIcon } from "@primer/octicons-react";
+import { NavItem } from "../nav";
 
 export const Sidebar = () => {
     return (
         <Box>
-
             <NavList>
                 <NavList>
-                    <NavList.Item href="/" aria-current="page">
+                    <NavItem to={"/dashboard"}>
                         <NavList.LeadingVisual>
                             <HomeIcon />
                         </NavList.LeadingVisual>
-                        Home
-                    </NavList.Item>
-                    <NavList.Item href="/about">
+                        Dashboard
+                    </NavItem>
+                    <NavItem to={"/console"}>
                         <NavList.LeadingVisual>
                             <DotIcon />
                         </NavList.LeadingVisual>
                         Console
-                    </NavList.Item>
-                    <NavList.Item href="/about">
+                    </NavItem>
+                    <NavItem to={"/snippets"}>
                         <NavList.LeadingVisual>
                             <CodeIcon />
                         </NavList.LeadingVisual>
                         Snippets
-                    </NavList.Item>
-                    <NavList.Item href="/contact">
+                    </NavItem>
+                    <NavItem to={"/settings"}>
                         <NavList.LeadingVisual>
                             <GearIcon />
                         </NavList.LeadingVisual>
                         Settings
-                    </NavList.Item>
+                    </NavItem>
                 </NavList>
             </NavList>
         </Box>
