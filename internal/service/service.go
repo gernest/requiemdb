@@ -56,6 +56,9 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 		return nil, err
 	}
 	tree, err := lsm.New(db)
+	if err != nil {
+		return nil, err
+	}
 	svr := grpc.NewServer(
 		grpc.StreamInterceptor(
 			grpc_protovalidate.StreamServerInterceptor(valid),
