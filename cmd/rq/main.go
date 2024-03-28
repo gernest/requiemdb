@@ -115,6 +115,8 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
+	go api.Start(ctx)
+
 	go func() {
 		defer cancel()
 		slog.Info("starting http server", "address", lsn)

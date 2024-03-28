@@ -6,9 +6,11 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"slices"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/apache/arrow/go/v16/arrow"
@@ -87,6 +89,25 @@ func (t *Tree) Flush() {
 	t.bufferMu.Lock()
 	defer t.bufferMu.Unlock()
 	t.unsafeSaveBuffer()
+}
+
+func (t *Tree) Start(ctx context.Context) {
+	slog.Info("Starting compaction loop")
+	defer func() {
+		slog.Info("Exit compaction loop")
+	}()
+	ts := time.NewTicker(time.Minute)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ts.C:
+			err := t.Compact()
+			if err != nil {
+				slog.Error("failed compaction", "err", err)
+			}
+		}
+	}
 }
 
 func (t *Tree) unsafeSaveBuffer() {

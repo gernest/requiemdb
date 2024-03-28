@@ -113,6 +113,10 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 	return service, nil
 }
 
+func (s *Service) Start(ctx context.Context) {
+	go s.tree.Start(ctx)
+}
+
 func (s *Service) Close() error {
 	return nil
 }
