@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/apache/arrow/go/v16/arrow"
 	"github.com/apache/arrow/go/v16/arrow/array"
 	"github.com/apache/arrow/go/v16/arrow/compute"
@@ -229,7 +230,7 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 			if err != nil {
 				return err
 			}
-			samples.K = append(samples.K, ids...)
+			samples.AddMany(ids)
 			if n.value.MaxDate < maxDate {
 				return nil
 			}
@@ -291,16 +292,10 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) ([]uint6
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 	defer and.Release()
 
 	// filter by resource
 	andRsc, err := compute.CallFunction(ctx, "and", nil, and, rsc)
-	if err != nil {
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -335,10 +330,6 @@ func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uin
 	if len(ls) == 0 {
 		return
 	}
-	if len(ls) == 1 {
-		samples.K = append(samples.K, ls[0].Id)
-		return
-	}
 	minDate := times.DateFromNano(start)
 	maxDate := times.NextDateFromNano(end)
 
@@ -358,14 +349,14 @@ func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uin
 	rsc := uint64(resource)
 	for i := from; i < to; i++ {
 		m := ls[i]
-		if m.Resource != rsc || !accept(m, start, end) {
+		if m.Resource != rsc || !accept(m, start) {
 			continue
 		}
-		samples.K = append(samples.K, m.Id)
+		samples.Add(m.Id)
 	}
 }
 
-func accept(m *v1.Meta, start, end uint64) bool {
+func accept(m *v1.Meta, start uint64) bool {
 	return m.MinTs < start && start < m.MaxTs
 }
 
@@ -381,7 +372,7 @@ func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
 }
 
 type Samples struct {
-	K []uint64
+	roaring64.Bitmap
 }
 
 func NewSamples() *Samples {
@@ -389,12 +380,10 @@ func NewSamples() *Samples {
 }
 
 func (s *Samples) Release() {
-	s.K = s.K[:0]
+	s.Clear()
 	samplesPool.Put(s)
 }
 
 var samplesPool = &sync.Pool{New: func() any {
-	return &Samples{
-		K: make([]uint64, 0, 1<<10),
-	}
+	return &Samples{}
 }}
