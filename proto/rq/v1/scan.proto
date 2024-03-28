@@ -1,0 +1,58 @@
+syntax = "proto3";
+package v1;
+import "google/protobuf/timestamp.proto";
+
+message Scan {
+  SCOPE scope = 1;
+  TimeRange time_range = 2;
+  repeated Filter filters = 3;
+
+  enum SCOPE {
+    METRICS = 0;
+    TRACES = 2;
+    LOGS = 3;
+    SNIPPETS = 4;
+  }
+
+  enum BaseProp {
+    RESOURCE_SCHEMA = 0;
+    SCOPE_SCHEMA = 2;
+    SCOPE_NAME = 3;
+    SCOPE_VERSION = 4;
+    NAME = 6;
+    TRACE_ID = 8;
+    SPAN_ID = 9;
+    PARENT_SPAN_ID = 10;
+    LOGS_LEVEL = 11;
+  }
+
+  enum AttributeProp {
+    UNKOWN_ATTR = 0;
+    RESOURCE_ATTRIBUTES = 1;
+    SCOPE_ATTRIBUTES = 5;
+    ATTRIBUTES = 7;
+  }
+
+  message Filter {
+    oneof value {
+      BaseFilter base = 1;
+      AttrFilter attr = 2;
+    }
+  }
+
+  message BaseFilter {
+    BaseProp prop = 1;
+    bytes value = 2;
+  }
+
+  message AttrFilter {
+    AttributeProp prop = 1;
+    bytes key = 2;
+    bytes value = 3;
+  }
+
+  message TimeRange {
+    google.protobuf.Timestamp start = 1;
+    google.protobuf.Timestamp end = 2;
+  }
+}
