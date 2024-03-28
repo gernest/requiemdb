@@ -6,6 +6,6 @@ build({
     bundle: true,
     minify: true,
     platform: 'node', // for CJS
-    outfile: "dist/index.js",
+    outfile: "../../internal/js/bundle/index.js",
 });
 

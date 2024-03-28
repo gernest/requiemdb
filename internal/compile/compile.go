@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/evanw/esbuild/pkg/api"
-	"github.com/requiemdb/requiemdb/packages/rq"
+	"github.com/requiemdb/requiemdb/internal/js/bundle"
 )
 
 const (
@@ -54,7 +54,7 @@ func createPackage(data []byte) (string, map[string]string, error) {
 
 func setup(dir string) (alias map[string]string, err error) {
 	alias = make(map[string]string)
-	for name, data := range rq.PKG {
+	for name, data := range bundle.PKG {
 		path := filepath.Base(name) + ".js"
 		fmt.Println(path)
 		err = os.WriteFile(filepath.Join(dir, path), data, 0600)
