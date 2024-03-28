@@ -43,4 +43,6 @@ message Meta {
 
   // Date in nillisecond in which the sample was taken
   uint64 date = 4;
+
+  uint64 resource = 5;
 }

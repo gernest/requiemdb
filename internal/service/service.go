@@ -14,6 +14,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	"github.com/requiemdb/requiemdb/internal/lsm"
 	"github.com/requiemdb/requiemdb/internal/snippets"
 	"github.com/requiemdb/requiemdb/internal/store"
 	"github.com/requiemdb/requiemdb/internal/transform"
@@ -39,6 +40,7 @@ type Service struct {
 	db        *badger.DB
 	snippets  *snippets.Snippets
 	seq       *badger.Sequence
+	tree      *lsm.Tree
 	retention time.Duration
 	hand      http.Handler
 	v1.UnimplementedRQServer
@@ -53,6 +55,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 	if err != nil {
 		return nil, err
 	}
+	tree, err := lsm.New(db)
 	svr := grpc.NewServer(
 		grpc.StreamInterceptor(
 			grpc_protovalidate.StreamServerInterceptor(valid),
@@ -62,7 +65,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 		),
 	)
 
-	service := &Service{db: db, snippets: sn, seq: seq, retention: retention}
+	service := &Service{db: db, snippets: sn, seq: seq, tree: tree, retention: retention}
 	v1.RegisterRQServer(svr, service)
 	web := grpcweb.WrapServer(svr,
 		grpcweb.WithAllowNonRootResource(true),
@@ -134,20 +137,21 @@ func corsMiddleware() *cors.Cors {
 }
 
 func (s *Service) Metrics() *Metrics {
-	return &Metrics{db: s.db, seq: s.seq, retention: s.retention}
+	return &Metrics{db: s.db, seq: s.seq, tree: s.tree, retention: s.retention}
 }
 func (s *Service) Trace() *Trace {
-	return &Trace{db: s.db, seq: s.seq, retention: s.retention}
+	return &Trace{db: s.db, seq: s.seq, tree: s.tree, retention: s.retention}
 }
 
 func (s *Service) Logs() *Logs {
-	return &Logs{db: s.db, seq: s.seq, retention: s.retention}
+	return &Logs{db: s.db, seq: s.seq, tree: s.tree, retention: s.retention}
 }
 
 type Metrics struct {
 	collector_metrics.UnsafeMetricsServiceServer
 	db        *badger.DB
 	seq       *badger.Sequence
+	tree      *lsm.Tree
 	retention time.Duration
 }
 
@@ -164,7 +168,7 @@ func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetri
 		return nil, err
 	}
 	defer labels.Release()
-	err = store.Store(r.db, r.seq, labels, sample, r.retention, v1.RESOURCE_METRICS)
+	err = store.Store(r.db, r.tree, r.seq, labels, sample, r.retention, v1.RESOURCE_METRICS)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +178,7 @@ func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetri
 type Logs struct {
 	collector_logs.UnsafeLogsServiceServer
 	db        *badger.DB
+	tree      *lsm.Tree
 	seq       *badger.Sequence
 	retention time.Duration
 }
@@ -191,7 +196,7 @@ func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsService
 		return nil, err
 	}
 	defer labels.Release()
-	err = store.Store(r.db, r.seq, labels, sample, r.retention, v1.RESOURCE_LOGS)
+	err = store.Store(r.db, r.tree, r.seq, labels, sample, r.retention, v1.RESOURCE_LOGS)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +207,7 @@ type Trace struct {
 	collector_trace.UnsafeTraceServiceServer
 	db        *badger.DB
 	seq       *badger.Sequence
+	tree      *lsm.Tree
 	retention time.Duration
 }
 
@@ -218,7 +224,7 @@ func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServ
 		return nil, err
 	}
 	defer labels.Release()
-	err = store.Store(r.db, r.seq, labels, sample, r.retention, v1.RESOURCE_TRACES)
+	err = store.Store(r.db, r.tree, r.seq, labels, sample, r.retention, v1.RESOURCE_TRACES)
 	if err != nil {
 		return nil, err
 	}

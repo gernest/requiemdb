@@ -9,11 +9,13 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/labels"
+	"github.com/requiemdb/requiemdb/internal/lsm"
 	"google.golang.org/protobuf/proto"
 )
 
 func Store(
 	db *badger.DB,
+	tree *lsm.Tree,
 	seq *badger.Sequence,
 	lbs *labels.Labels, sample *v1.Sample,
 	ttl time.Duration,
@@ -54,7 +56,19 @@ func Store(
 			return err
 		}
 	}
-	return txn.Commit()
+	err = txn.Commit()
+	if err != nil {
+		return err
+	}
+	// Add sample to index
+	tree.Append(&v1.Meta{
+		Id:       id,
+		MinTs:    sample.MinTs,
+		MaxTs:    sample.MaxTs,
+		Date:     sample.Date,
+		Resource: uint64(meta),
+	})
+	return nil
 }
 
 func saveLabel(txn *badger.Txn, key []byte, sampleID uint64, ttl time.Duration) error {

@@ -1,23 +1,33 @@
 package lsm
 
-import "sync/atomic"
+import (
+	"errors"
+	"io"
+	"sync/atomic"
+)
 
 type Node[T any] struct {
 	next  atomic.Pointer[Node[T]]
 	value T
 }
 
-func (n *Node[T]) Iterate(f func(*Node[T]) bool) {
-	if !(f(n)) {
-		return
+func (n *Node[T]) Iterate(f func(*Node[T]) error) error {
+	if err := (f(n)); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		return err
 	}
 	node := n.next.Load()
 	for {
 		if node == nil {
-			return
+			return nil
 		}
-		if !f(node) {
-			return
+		if err := (f(n)); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
 		}
 		node = node.next.Load()
 	}
