@@ -14,6 +14,7 @@ import (
 	"github.com/dgraph-io/badger/v4/options"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/logger"
+	"github.com/requiemdb/requiemdb/internal/self"
 	"github.com/requiemdb/requiemdb/internal/service"
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -111,6 +112,12 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	collector_metrics.RegisterMetricsServiceServer(oSvr, api.Metrics())
 	collector_logs.RegisterLogsServiceServer(oSvr, api.Logs())
 	collector_trace.RegisterTraceServiceServer(oSvr, api.Trace())
+
+	providers, err := self.Setup(ctx, api.Metrics(), api.Trace())
+	if err != nil {
+		return err
+	}
+	defer providers.Shutdown(context.Background())
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
