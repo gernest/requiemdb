@@ -247,11 +247,13 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 		if n.value.MinDate < minDate && minDate < n.value.MaxDate {
 			n.value.Record.Retain()
 			defer n.value.Record.Release()
-			ids, err := computeID(n.value.Record, resource, start, end)
+			dates, ids, err := computeID(n.value.Record, resource, start, end)
 			if err != nil {
 				return err
 			}
-			samples.AddMany(ids)
+			for i := range dates {
+				samples.Add(dates[i], ids[i])
+			}
 			if n.value.MaxDate < maxDate {
 				return nil
 			}
@@ -268,7 +270,7 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 	return samples, nil
 }
 
-func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) ([]uint64, error) {
+func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (dates, ids []uint64, err error) {
 	ctx := context.Background()
 
 	rsc, err := compute.CallFunction(ctx, "equal", nil, compute.NewDatumWithoutOwning(
@@ -279,11 +281,11 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) ([]uint6
 		),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rsc.Release()
 	if rsc.Len() == 0 {
-		return []uint64{}, nil
+		return []uint64{}, []uint64{}, nil
 	}
 	min, err := compute.CallFunction(ctx, "greater", nil, compute.NewDatumWithoutOwning(
 		r.Column(MinTSColumn),
@@ -293,7 +295,7 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) ([]uint6
 		),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer min.Release()
 	max, err := compute.CallFunction(ctx, "less_equal", nil, compute.NewDatumWithoutOwning(
@@ -304,21 +306,21 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) ([]uint6
 		),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer max.Release()
 
 	// filter by min_ts and max_ts
 	and, err := compute.CallFunction(ctx, "and", nil, min, max)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer and.Release()
 
 	// filter by resource
 	andRsc, err := compute.CallFunction(ctx, "and", nil, and, rsc)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer andRsc.Release()
 
@@ -338,10 +340,15 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) ([]uint6
 
 	rs, err := compute.TakeArray(ctx, r.Column(IDColumn), a)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rs.Release()
-	return rs.(*array.Uint64).Uint64Values(), nil
+	ds, err := compute.TakeArray(ctx, r.Column(DateColumn), a)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer ds.Release()
+	return rs.(*array.Uint64).Uint64Values(), ds.(*array.Uint64).Uint64Values(), nil
 }
 
 func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uint64) {
@@ -373,7 +380,7 @@ func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uin
 		if m.Resource != rsc || !accept(m, start) {
 			continue
 		}
-		samples.Add(m.Id)
+		samples.Add(m.Date, m.Id)
 	}
 }
 
@@ -393,18 +400,49 @@ func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
 }
 
 type Samples struct {
-	roaring64.Bitmap
+	dates map[uint64]*roaring64.Bitmap
+	ds    roaring64.Bitmap
 }
 
 func NewSamples() *Samples {
 	return samplesPool.Get().(*Samples)
 }
 
+func (s *Samples) Iterate(f func(date uint64, r *roaring64.Bitmap) bool) {
+	it := s.ds.Iterator()
+	for it.HasNext() {
+		date := it.Next()
+		if !f(date, s.dates[date]) {
+			return
+		}
+	}
+}
+
+func (s *Samples) IterateReverse(f func(date uint64, r *roaring64.Bitmap) bool) {
+	it := s.ds.ReverseIterator()
+	for it.HasNext() {
+		date := it.Next()
+		if !f(date, s.dates[date]) {
+			return
+		}
+	}
+}
+
+func (s *Samples) Add(date uint64, id uint64) {
+	d, ok := s.dates[date]
+	if !ok {
+		d = new(roaring64.Bitmap)
+		s.ds.Add(date)
+		s.dates[date] = d
+	}
+	d.Add(id)
+}
+
 func (s *Samples) Release() {
-	s.Clear()
+	*s = Samples{dates: make(map[uint64]*roaring64.Bitmap)}
 	samplesPool.Put(s)
 }
 
 var samplesPool = &sync.Pool{New: func() any {
-	return &Samples{}
+	return &Samples{dates: make(map[uint64]*roaring64.Bitmap)}
 }}
