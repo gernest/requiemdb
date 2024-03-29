@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"go.opentelemetry.io/contrib/instrumentation/host"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -54,6 +55,12 @@ func Setup(ctx context.Context, m collector_metrics.MetricsServiceServer, t coll
 
 	otel.SetMeterProvider(provider)
 	err := host.Start()
+	if err != nil {
+		tp.Shutdown(context.Background())
+		provider.Shutdown(context.Background())
+		return nil, err
+	}
+	err = runtime.Start()
 	if err != nil {
 		tp.Shutdown(context.Background())
 		provider.Shutdown(context.Background())
