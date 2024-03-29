@@ -14,6 +14,9 @@ func console(r *goja.Runtime, w io.Writer) goja.Value {
 }
 
 func log(w io.Writer) func(args ...any) {
+	if w == nil {
+		return func(args ...any) {}
+	}
 	return func(args ...any) {
 		fmt.Fprint(w, args...)
 	}

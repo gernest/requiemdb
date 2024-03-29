@@ -11,7 +11,9 @@ import (
 
 func TestConsole(t *testing.T) {
 	var b bytes.Buffer
-	r, err := New(&b)
+	r, err := New(Options{
+		Writer: &b,
+	})
 	require.NoError(t, err)
 	_, err = r.RunString(`console.log("hello,world")`)
 	require.NoError(t, err)
@@ -20,7 +22,7 @@ func TestConsole(t *testing.T) {
 
 func TestRequire(t *testing.T) {
 	var b bytes.Buffer
-	r, err := New(&b)
+	r, err := New(Options{Writer: &b})
 	require.NoError(t, err)
 	src, err := os.ReadFile("testdata/require.ts")
 	require.NoError(t, err)
