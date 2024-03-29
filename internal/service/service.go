@@ -19,6 +19,7 @@ import (
 	"github.com/requiemdb/requiemdb/internal/store"
 	"github.com/requiemdb/requiemdb/internal/transform"
 	"github.com/requiemdb/requiemdb/ui"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
@@ -66,6 +67,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 		grpc.UnaryInterceptor(
 			grpc_protovalidate.UnaryServerInterceptor(valid),
 		),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
 	service := &Service{db: db, snippets: sn, seq: seq, tree: tree, retention: retention}
