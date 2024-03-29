@@ -399,6 +399,21 @@ func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
 	return
 }
 
+type Iterator struct {
+	s  *Samples
+	it roaring64.IntIterable64
+}
+
+func (i *Iterator) HasNext() bool {
+	return i.it.HasNext()
+}
+
+func (i *Iterator) Next() (date uint64, sample *roaring64.Bitmap) {
+	date = i.it.Next()
+	sample = i.s.dates[date]
+	return
+}
+
 type Samples struct {
 	dates map[uint64]*roaring64.Bitmap
 	ds    roaring64.Bitmap
@@ -408,23 +423,17 @@ func NewSamples() *Samples {
 	return samplesPool.Get().(*Samples)
 }
 
-func (s *Samples) Iterate(f func(date uint64, r *roaring64.Bitmap) bool) {
-	it := s.ds.Iterator()
-	for it.HasNext() {
-		date := it.Next()
-		if !f(date, s.dates[date]) {
-			return
-		}
+func (s *Samples) Iterator() *Iterator {
+	return &Iterator{
+		s:  s,
+		it: s.ds.Iterator(),
 	}
 }
 
-func (s *Samples) IterateReverse(f func(date uint64, r *roaring64.Bitmap) bool) {
-	it := s.ds.ReverseIterator()
-	for it.HasNext() {
-		date := it.Next()
-		if !f(date, s.dates[date]) {
-			return
-		}
+func (s *Samples) ReverseIterator() *Iterator {
+	return &Iterator{
+		s:  s,
+		it: s.ds.ReverseIterator(),
 	}
 }
 

@@ -8,6 +8,7 @@ import "opentelemetry/proto/common/v1/common.proto";
 import "opentelemetry/proto/metrics/v1/metrics.proto";
 import "opentelemetry/proto/logs/v1/logs.proto";
 import "opentelemetry/proto/trace/v1/trace.proto";
+import "rq/v1/scan.proto";
 
 service RQ {
   rpc Query(QueryRequest) returns (QueryResponse) {
@@ -90,9 +91,8 @@ message QueryRequest {
 }
 
 message QueryResponse {
-  Result value = 1;
+  Data value = 1;
   Timings timings = 2;
-  // Number of samples processed by the query snippet.
 }
 
 message Timings {
@@ -100,12 +100,4 @@ message Timings {
   google.protobuf.Duration compiling = 1;
   // Time taken to evaluate compiled query.
   google.protobuf.Duration evaluating = 2;
-}
-
-message Result {
-  oneof value {
-    opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
-    opentelemetry.proto.logs.v1.LogsData logs = 2;
-    opentelemetry.proto.trace.v1.TracesData trace = 3;
-  }
 }

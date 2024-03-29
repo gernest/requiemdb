@@ -11,6 +11,7 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { Data } from "./scan";
 /**
  * @generated from protobuf message v1.Sample
  */
@@ -19,9 +20,9 @@ export interface Sample {
      * Serialized Data object, compressed with zstd. We use bytes here because we
      * automatically sore Sample as a arrow.Record.
      *
-     * @generated from protobuf field: bytes data = 1;
+     * @generated from protobuf field: v1.Data data = 1;
      */
-    data: Uint8Array;
+    data?: Data;
     /**
      * Minimum timetamp observed in this sample in milliseconds
      *
@@ -131,14 +132,14 @@ export enum PREFIX {
 class Sample$Type extends MessageType<Sample> {
     constructor() {
         super("v1.Sample", [
-            { no: 1, name: "data", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 1, name: "data", kind: "message", T: () => Data },
             { no: 2, name: "min_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 3, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 4, name: "date", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
     }
     create(value?: PartialMessage<Sample>): Sample {
-        const message = { data: new Uint8Array(0), minTs: 0n, maxTs: 0n, date: 0n };
+        const message = { minTs: 0n, maxTs: 0n, date: 0n };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Sample>(this, message, value);
@@ -149,8 +150,8 @@ class Sample$Type extends MessageType<Sample> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bytes data */ 1:
-                    message.data = reader.bytes();
+                case /* v1.Data data */ 1:
+                    message.data = Data.internalBinaryRead(reader, reader.uint32(), options, message.data);
                     break;
                 case /* uint64 min_ts */ 2:
                     message.minTs = reader.uint64().toBigInt();
@@ -173,9 +174,9 @@ class Sample$Type extends MessageType<Sample> {
         return message;
     }
     internalBinaryWrite(message: Sample, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bytes data = 1; */
-        if (message.data.length)
-            writer.tag(1, WireType.LengthDelimited).bytes(message.data);
+        /* v1.Data data = 1; */
+        if (message.data)
+            Data.internalBinaryWrite(message.data, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         /* uint64 min_ts = 2; */
         if (message.minTs !== 0n)
             writer.tag(2, WireType.Varint).uint64(message.minTs);

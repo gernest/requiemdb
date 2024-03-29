@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/compress"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/times"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
@@ -33,16 +32,12 @@ func (c *Context) Process(data proto.Message) (*v1.Sample, *labels.Labels, error
 		for _, s := range e.ResourceMetrics {
 			c.transformMetrics(s)
 		}
-		b, err := proto.Marshal(data)
-		if err != nil {
-			return nil, nil, err
-		}
-		compressedData, err := compress.Compress(b)
-		if err != nil {
-			return nil, nil, err
-		}
 		return &v1.Sample{
-			Data:  compressedData,
+			Data: &v1.Data{
+				Data: &v1.Data_Metrics{
+					Metrics: e,
+				},
+			},
 			MinTs: c.maxTs,
 			MaxTs: c.maxTs,
 			Date:  times.Date(),
@@ -52,16 +47,12 @@ func (c *Context) Process(data proto.Message) (*v1.Sample, *labels.Labels, error
 		for _, s := range e.ResourceSpans {
 			c.transformTrace(s)
 		}
-		b, err := proto.Marshal(data)
-		if err != nil {
-			return nil, nil, err
-		}
-		compressedData, err := compress.Compress(b)
-		if err != nil {
-			return nil, nil, err
-		}
 		return &v1.Sample{
-			Data:  compressedData,
+			Data: &v1.Data{
+				Data: &v1.Data_Trace{
+					Trace: e,
+				},
+			},
 			MinTs: c.maxTs,
 			MaxTs: c.maxTs,
 			Date:  times.Date(),
@@ -70,16 +61,8 @@ func (c *Context) Process(data proto.Message) (*v1.Sample, *labels.Labels, error
 		for _, s := range e.ResourceLogs {
 			c.transformLogs(s)
 		}
-		b, err := proto.Marshal(data)
-		if err != nil {
-			return nil, nil, err
-		}
-		compressedData, err := compress.Compress(b)
-		if err != nil {
-			return nil, nil, err
-		}
 		return &v1.Sample{
-			Data:  compressedData,
+			Data:  &v1.Data{Data: &v1.Data_Logs{Logs: e}},
 			MinTs: c.maxTs,
 			MaxTs: c.maxTs,
 			Date:  times.Date(),

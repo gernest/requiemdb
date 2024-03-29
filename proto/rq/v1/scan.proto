@@ -1,11 +1,20 @@
 syntax = "proto3";
 package v1;
 import "google/protobuf/timestamp.proto";
+import "opentelemetry/proto/metrics/v1/metrics.proto";
+import "opentelemetry/proto/logs/v1/logs.proto";
+import "opentelemetry/proto/trace/v1/trace.proto";
 
 message Scan {
   SCOPE scope = 1;
   TimeRange time_range = 2;
   repeated Filter filters = 3;
+  // Number of samples to process. Defauluts to no limit.
+  uint64 limit = 4;
+
+  // Scans in reverse order, with latest samples comming first.  To get the
+  // latest sample you can set reverse to true and limit 1.
+  bool reverse = 5;
 
   enum SCOPE {
     METRICS = 0;
@@ -42,17 +51,25 @@ message Scan {
 
   message BaseFilter {
     BaseProp prop = 1;
-    bytes value = 2;
+    string value = 2;
   }
 
   message AttrFilter {
     AttributeProp prop = 1;
-    bytes key = 2;
-    bytes value = 3;
+    string key = 2;
+    string value = 3;
   }
 
   message TimeRange {
     google.protobuf.Timestamp start = 1;
     google.protobuf.Timestamp end = 2;
+  }
+}
+
+message Data {
+  oneof data {
+    opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
+    opentelemetry.proto.logs.v1.LogsData logs = 2;
+    opentelemetry.proto.trace.v1.TracesData trace = 3;
   }
 }

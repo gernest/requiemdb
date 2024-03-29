@@ -11,6 +11,9 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { TracesData } from "../../opentelemetry/proto/trace/v1/trace";
+import { LogsData } from "../../opentelemetry/proto/logs/v1/logs";
+import { MetricsData } from "../../opentelemetry/proto/metrics/v1/metrics";
 import { Timestamp } from "../../google/protobuf/timestamp";
 /**
  * @generated from protobuf message v1.Scan
@@ -28,6 +31,19 @@ export interface Scan {
      * @generated from protobuf field: repeated v1.Scan.Filter filters = 3;
      */
     filters: Scan_Filter[];
+    /**
+     * Number of samples to process. Defauluts to no limit.
+     *
+     * @generated from protobuf field: uint64 limit = 4;
+     */
+    limit: bigint;
+    /**
+     * Scans in reverse order, with latest samples comming first.  To get the
+     * latest sample you can set reverse to true and limit 1.
+     *
+     * @generated from protobuf field: bool reverse = 5;
+     */
+    reverse: boolean;
 }
 /**
  * @generated from protobuf message v1.Scan.Filter
@@ -61,9 +77,9 @@ export interface Scan_BaseFilter {
      */
     prop: Scan_BaseProp;
     /**
-     * @generated from protobuf field: bytes value = 2;
+     * @generated from protobuf field: string value = 2;
      */
-    value: Uint8Array;
+    value: string;
 }
 /**
  * @generated from protobuf message v1.Scan.AttrFilter
@@ -74,13 +90,13 @@ export interface Scan_AttrFilter {
      */
     prop: Scan_AttributeProp;
     /**
-     * @generated from protobuf field: bytes key = 2;
+     * @generated from protobuf field: string key = 2;
      */
-    key: Uint8Array;
+    key: string;
     /**
-     * @generated from protobuf field: bytes value = 3;
+     * @generated from protobuf field: string value = 3;
      */
-    value: Uint8Array;
+    value: string;
 }
 /**
  * @generated from protobuf message v1.Scan.TimeRange
@@ -178,17 +194,48 @@ export enum Scan_AttributeProp {
      */
     ATTRIBUTES = 7
 }
+/**
+ * @generated from protobuf message v1.Data
+ */
+export interface Data {
+    /**
+     * @generated from protobuf oneof: data
+     */
+    data: {
+        oneofKind: "metrics";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
+         */
+        metrics: MetricsData;
+    } | {
+        oneofKind: "logs";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.logs.v1.LogsData logs = 2;
+         */
+        logs: LogsData;
+    } | {
+        oneofKind: "trace";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.trace.v1.TracesData trace = 3;
+         */
+        trace: TracesData;
+    } | {
+        oneofKind: undefined;
+    };
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class Scan$Type extends MessageType<Scan> {
     constructor() {
         super("v1.Scan", [
             { no: 1, name: "scope", kind: "enum", T: () => ["v1.Scan.SCOPE", Scan_SCOPE] },
             { no: 2, name: "time_range", kind: "message", T: () => Scan_TimeRange },
-            { no: 3, name: "filters", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Scan_Filter }
+            { no: 3, name: "filters", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Scan_Filter },
+            { no: 4, name: "limit", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 5, name: "reverse", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Scan>): Scan {
-        const message = { scope: 0, filters: [] };
+        const message = { scope: 0, filters: [], limit: 0n, reverse: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Scan>(this, message, value);
@@ -207,6 +254,12 @@ class Scan$Type extends MessageType<Scan> {
                     break;
                 case /* repeated v1.Scan.Filter filters */ 3:
                     message.filters.push(Scan_Filter.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 limit */ 4:
+                    message.limit = reader.uint64().toBigInt();
+                    break;
+                case /* bool reverse */ 5:
+                    message.reverse = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -229,6 +282,12 @@ class Scan$Type extends MessageType<Scan> {
         /* repeated v1.Scan.Filter filters = 3; */
         for (let i = 0; i < message.filters.length; i++)
             Scan_Filter.internalBinaryWrite(message.filters[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 limit = 4; */
+        if (message.limit !== 0n)
+            writer.tag(4, WireType.Varint).uint64(message.limit);
+        /* bool reverse = 5; */
+        if (message.reverse !== false)
+            writer.tag(5, WireType.Varint).bool(message.reverse);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -304,11 +363,11 @@ class Scan_BaseFilter$Type extends MessageType<Scan_BaseFilter> {
     constructor() {
         super("v1.Scan.BaseFilter", [
             { no: 1, name: "prop", kind: "enum", T: () => ["v1.Scan.BaseProp", Scan_BaseProp] },
-            { no: 2, name: "value", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Scan_BaseFilter>): Scan_BaseFilter {
-        const message = { prop: 0, value: new Uint8Array(0) };
+        const message = { prop: 0, value: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Scan_BaseFilter>(this, message, value);
@@ -322,8 +381,8 @@ class Scan_BaseFilter$Type extends MessageType<Scan_BaseFilter> {
                 case /* v1.Scan.BaseProp prop */ 1:
                     message.prop = reader.int32();
                     break;
-                case /* bytes value */ 2:
-                    message.value = reader.bytes();
+                case /* string value */ 2:
+                    message.value = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -340,9 +399,9 @@ class Scan_BaseFilter$Type extends MessageType<Scan_BaseFilter> {
         /* v1.Scan.BaseProp prop = 1; */
         if (message.prop !== 0)
             writer.tag(1, WireType.Varint).int32(message.prop);
-        /* bytes value = 2; */
-        if (message.value.length)
-            writer.tag(2, WireType.LengthDelimited).bytes(message.value);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -358,12 +417,12 @@ class Scan_AttrFilter$Type extends MessageType<Scan_AttrFilter> {
     constructor() {
         super("v1.Scan.AttrFilter", [
             { no: 1, name: "prop", kind: "enum", T: () => ["v1.Scan.AttributeProp", Scan_AttributeProp] },
-            { no: 2, name: "key", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
-            { no: 3, name: "value", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Scan_AttrFilter>): Scan_AttrFilter {
-        const message = { prop: 0, key: new Uint8Array(0), value: new Uint8Array(0) };
+        const message = { prop: 0, key: "", value: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Scan_AttrFilter>(this, message, value);
@@ -377,11 +436,11 @@ class Scan_AttrFilter$Type extends MessageType<Scan_AttrFilter> {
                 case /* v1.Scan.AttributeProp prop */ 1:
                     message.prop = reader.int32();
                     break;
-                case /* bytes key */ 2:
-                    message.key = reader.bytes();
+                case /* string key */ 2:
+                    message.key = reader.string();
                     break;
-                case /* bytes value */ 3:
-                    message.value = reader.bytes();
+                case /* string value */ 3:
+                    message.value = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -398,12 +457,12 @@ class Scan_AttrFilter$Type extends MessageType<Scan_AttrFilter> {
         /* v1.Scan.AttributeProp prop = 1; */
         if (message.prop !== 0)
             writer.tag(1, WireType.Varint).int32(message.prop);
-        /* bytes key = 2; */
-        if (message.key.length)
-            writer.tag(2, WireType.LengthDelimited).bytes(message.key);
-        /* bytes value = 3; */
-        if (message.value.length)
-            writer.tag(3, WireType.LengthDelimited).bytes(message.value);
+        /* string key = 2; */
+        if (message.key !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.key);
+        /* string value = 3; */
+        if (message.value !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.value);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -468,3 +527,73 @@ class Scan_TimeRange$Type extends MessageType<Scan_TimeRange> {
  * @generated MessageType for protobuf message v1.Scan.TimeRange
  */
 export const Scan_TimeRange = new Scan_TimeRange$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Data$Type extends MessageType<Data> {
+    constructor() {
+        super("v1.Data", [
+            { no: 1, name: "metrics", kind: "message", oneof: "data", T: () => MetricsData },
+            { no: 2, name: "logs", kind: "message", oneof: "data", T: () => LogsData },
+            { no: 3, name: "trace", kind: "message", oneof: "data", T: () => TracesData }
+        ]);
+    }
+    create(value?: PartialMessage<Data>): Data {
+        const message = { data: { oneofKind: undefined } };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Data>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Data): Data {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* opentelemetry.proto.metrics.v1.MetricsData metrics */ 1:
+                    message.data = {
+                        oneofKind: "metrics",
+                        metrics: MetricsData.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).metrics)
+                    };
+                    break;
+                case /* opentelemetry.proto.logs.v1.LogsData logs */ 2:
+                    message.data = {
+                        oneofKind: "logs",
+                        logs: LogsData.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).logs)
+                    };
+                    break;
+                case /* opentelemetry.proto.trace.v1.TracesData trace */ 3:
+                    message.data = {
+                        oneofKind: "trace",
+                        trace: TracesData.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).trace)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Data, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* opentelemetry.proto.metrics.v1.MetricsData metrics = 1; */
+        if (message.data.oneofKind === "metrics")
+            MetricsData.internalBinaryWrite(message.data.metrics, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* opentelemetry.proto.logs.v1.LogsData logs = 2; */
+        if (message.data.oneofKind === "logs")
+            LogsData.internalBinaryWrite(message.data.logs, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* opentelemetry.proto.trace.v1.TracesData trace = 3; */
+        if (message.data.oneofKind === "trace")
+            TracesData.internalBinaryWrite(message.data.trace, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.Data
+ */
+export const Data = new Data$Type();

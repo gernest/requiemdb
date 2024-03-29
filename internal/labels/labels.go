@@ -51,6 +51,13 @@ func (b *Bytes) Add(part string) *Bytes {
 	b.WriteString(part)
 	return b
 }
+func (b *Bytes) AddBytes(part []byte) *Bytes {
+	if b.Len() > 0 {
+		b.WriteByte('.')
+	}
+	b.Write(part)
+	return b
+}
 
 func (b *Bytes) Value(value string) *Bytes {
 	b.WriteByte('=')

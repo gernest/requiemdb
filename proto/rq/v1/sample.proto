@@ -1,6 +1,8 @@
 syntax = "proto3";
 package v1;
 
+import "rq/v1/scan.proto";
+
 enum PREFIX {
   RESOURCE_SCHEMA = 0;
   RESOURCE_ATTRIBUTES = 1;
@@ -19,7 +21,7 @@ enum PREFIX {
 message Sample {
   // Serialized Data object, compressed with zstd. We use bytes here because we
   // automatically sore Sample as a arrow.Record.
-  bytes data = 1;
+  Data data = 1;
 
   // Minimum timetamp observed in this sample in milliseconds
   uint64 min_ts = 2;
