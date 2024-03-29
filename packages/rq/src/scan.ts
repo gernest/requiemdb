@@ -2,6 +2,9 @@
 // @generated from protobuf file "rq/v1/scan.proto" (package "v1", syntax proto3)
 // tslint:disable
 import { MessageType } from "@protobuf-ts/runtime";
+import { TracesData } from "./trace";
+import { LogsData } from "./logs";
+import { MetricsData } from "./metrics";
 import { Timestamp } from "./timestamp";
 /**
  * @generated from protobuf message v1.Scan
@@ -19,6 +22,19 @@ export interface Scan {
      * @generated from protobuf field: repeated v1.Scan.Filter filters = 3;
      */
     filters: Scan_Filter[];
+    /**
+     * Number of samples to process. Defauluts to no limit.
+     *
+     * @generated from protobuf field: uint64 limit = 4;
+     */
+    limit: number;
+    /**
+     * Scans in reverse order, with latest samples comming first.  To get the
+     * latest sample you can set reverse to true and limit 1.
+     *
+     * @generated from protobuf field: bool reverse = 5;
+     */
+    reverse: boolean;
 }
 /**
  * @generated from protobuf message v1.Scan.Filter
@@ -52,9 +68,9 @@ export interface Scan_BaseFilter {
      */
     prop: Scan_BaseProp;
     /**
-     * @generated from protobuf field: bytes value = 2;
+     * @generated from protobuf field: string value = 2;
      */
-    value: Uint8Array;
+    value: string;
 }
 /**
  * @generated from protobuf message v1.Scan.AttrFilter
@@ -65,13 +81,13 @@ export interface Scan_AttrFilter {
      */
     prop: Scan_AttributeProp;
     /**
-     * @generated from protobuf field: bytes key = 2;
+     * @generated from protobuf field: string key = 2;
      */
-    key: Uint8Array;
+    key: string;
     /**
-     * @generated from protobuf field: bytes value = 3;
+     * @generated from protobuf field: string value = 3;
      */
-    value: Uint8Array;
+    value: string;
 }
 /**
  * @generated from protobuf message v1.Scan.TimeRange
@@ -169,13 +185,44 @@ export enum Scan_AttributeProp {
      */
     ATTRIBUTES = 7
 }
+/**
+ * @generated from protobuf message v1.Data
+ */
+export interface Data {
+    /**
+     * @generated from protobuf oneof: data
+     */
+    data: {
+        oneofKind: "metrics";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
+         */
+        metrics: MetricsData;
+    } | {
+        oneofKind: "logs";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.logs.v1.LogsData logs = 2;
+         */
+        logs: LogsData;
+    } | {
+        oneofKind: "trace";
+        /**
+         * @generated from protobuf field: opentelemetry.proto.trace.v1.TracesData trace = 3;
+         */
+        trace: TracesData;
+    } | {
+        oneofKind: undefined;
+    };
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class Scan$Type extends MessageType<Scan> {
     constructor() {
         super("v1.Scan", [
             { no: 1, name: "scope", kind: "enum", T: () => ["v1.Scan.SCOPE", Scan_SCOPE] },
             { no: 2, name: "time_range", kind: "message", T: () => Scan_TimeRange },
-            { no: 3, name: "filters", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Scan_Filter }
+            { no: 3, name: "filters", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Scan_Filter },
+            { no: 4, name: "limit", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "reverse", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
 }
@@ -201,7 +248,7 @@ class Scan_BaseFilter$Type extends MessageType<Scan_BaseFilter> {
     constructor() {
         super("v1.Scan.BaseFilter", [
             { no: 1, name: "prop", kind: "enum", T: () => ["v1.Scan.BaseProp", Scan_BaseProp] },
-            { no: 2, name: "value", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
 }
@@ -214,8 +261,8 @@ class Scan_AttrFilter$Type extends MessageType<Scan_AttrFilter> {
     constructor() {
         super("v1.Scan.AttrFilter", [
             { no: 1, name: "prop", kind: "enum", T: () => ["v1.Scan.AttributeProp", Scan_AttributeProp] },
-            { no: 2, name: "key", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
-            { no: 3, name: "value", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
 }
@@ -236,3 +283,17 @@ class Scan_TimeRange$Type extends MessageType<Scan_TimeRange> {
  * @generated MessageType for protobuf message v1.Scan.TimeRange
  */
 export const Scan_TimeRange = new Scan_TimeRange$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Data$Type extends MessageType<Data> {
+    constructor() {
+        super("v1.Data", [
+            { no: 1, name: "metrics", kind: "message", oneof: "data", T: () => MetricsData },
+            { no: 2, name: "logs", kind: "message", oneof: "data", T: () => LogsData },
+            { no: 3, name: "trace", kind: "message", oneof: "data", T: () => TracesData }
+        ]);
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.Data
+ */
+export const Data = new Data$Type();
