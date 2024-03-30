@@ -155,7 +155,6 @@ func (p *sampleIter) loadPartition() {
 			return
 		}
 	}
-	return
 }
 
 func loadLabel(txn *badger.Txn, key []byte, o *roaring64.Bitmap) (err error) {
