@@ -249,6 +249,11 @@ type BaseValue = number | string | boolean | ScanData;
 type CoreValue = BaseValue | BaseValue[];
 type Value = CoreValue | Record<string, CoreValue>;
 
+/**
+ * Serialize value and exit the script. This must only be called once, subsequent calls have
+ * no effect.
+ * @param value 
+ */
 export const render = (value: Value) => {
     //@ts-ignore
     RQ.Render(value)
