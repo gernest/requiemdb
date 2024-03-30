@@ -2,6 +2,7 @@ syntax = "proto3";
 package v1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 import "google/api/annotations.proto";
 import "buf/validate/validate.proto";
 import "opentelemetry/proto/common/v1/common.proto";
@@ -85,14 +86,20 @@ message QueryRequest {
   // when true any logs associated with script execution will be included in the
   // response.
   bool include_logs = 3;
-
-  google.protobuf.Timestamp start_date = 4;
-  google.protobuf.Timestamp end_date = 5;
 }
 
 message QueryResponse {
-  Data value = 1;
+  Result result = 1;
   Timings timings = 2;
+  // console.log output. This is gzipped stream.
+  bytes logs = 3;
+}
+
+message Result {
+  oneof result {
+    Data data = 1;
+    google.protobuf.Struct custom = 2;
+  }
 }
 
 message Timings {

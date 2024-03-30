@@ -13,6 +13,7 @@ import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
 import { Duration } from "../../google/protobuf/duration";
+import { Struct } from "../../google/protobuf/struct";
 import { Data } from "./scan";
 import { Timestamp } from "../../google/protobuf/timestamp";
 /**
@@ -152,27 +153,48 @@ export interface QueryRequest {
      * @generated from protobuf field: bool include_logs = 3;
      */
     includeLogs: boolean;
-    /**
-     * @generated from protobuf field: google.protobuf.Timestamp start_date = 4;
-     */
-    startDate?: Timestamp;
-    /**
-     * @generated from protobuf field: google.protobuf.Timestamp end_date = 5;
-     */
-    endDate?: Timestamp;
 }
 /**
  * @generated from protobuf message v1.QueryResponse
  */
 export interface QueryResponse {
     /**
-     * @generated from protobuf field: v1.Data value = 1;
+     * @generated from protobuf field: v1.Result result = 1;
      */
-    value?: Data;
+    result?: Result;
     /**
      * @generated from protobuf field: v1.Timings timings = 2;
      */
     timings?: Timings;
+    /**
+     * console.log output. This is gzipped stream.
+     *
+     * @generated from protobuf field: bytes logs = 3;
+     */
+    logs: Uint8Array;
+}
+/**
+ * @generated from protobuf message v1.Result
+ */
+export interface Result {
+    /**
+     * @generated from protobuf oneof: result
+     */
+    result: {
+        oneofKind: "data";
+        /**
+         * @generated from protobuf field: v1.Data data = 1;
+         */
+        data: Data;
+    } | {
+        oneofKind: "custom";
+        /**
+         * @generated from protobuf field: google.protobuf.Struct custom = 2;
+         */
+        custom: Struct;
+    } | {
+        oneofKind: undefined;
+    };
 }
 /**
  * @generated from protobuf message v1.Timings
@@ -613,9 +635,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         super("v1.QueryRequest", [
             { no: 1, name: "script_name", kind: "scalar", oneof: "request", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "script_data", kind: "scalar", oneof: "request", T: 12 /*ScalarType.BYTES*/ },
-            { no: 3, name: "include_logs", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 4, name: "start_date", kind: "message", T: () => Timestamp },
-            { no: 5, name: "end_date", kind: "message", T: () => Timestamp }
+            { no: 3, name: "include_logs", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -645,12 +665,6 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* bool include_logs */ 3:
                     message.includeLogs = reader.bool();
                     break;
-                case /* google.protobuf.Timestamp start_date */ 4:
-                    message.startDate = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.startDate);
-                    break;
-                case /* google.protobuf.Timestamp end_date */ 5:
-                    message.endDate = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.endDate);
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -672,12 +686,6 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* bool include_logs = 3; */
         if (message.includeLogs !== false)
             writer.tag(3, WireType.Varint).bool(message.includeLogs);
-        /* google.protobuf.Timestamp start_date = 4; */
-        if (message.startDate)
-            Timestamp.internalBinaryWrite(message.startDate, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp end_date = 5; */
-        if (message.endDate)
-            Timestamp.internalBinaryWrite(message.endDate, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -692,12 +700,13 @@ export const QueryRequest = new QueryRequest$Type();
 class QueryResponse$Type extends MessageType<QueryResponse> {
     constructor() {
         super("v1.QueryResponse", [
-            { no: 1, name: "value", kind: "message", T: () => Data },
-            { no: 2, name: "timings", kind: "message", T: () => Timings }
+            { no: 1, name: "result", kind: "message", T: () => Result },
+            { no: 2, name: "timings", kind: "message", T: () => Timings },
+            { no: 3, name: "logs", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
         ]);
     }
     create(value?: PartialMessage<QueryResponse>): QueryResponse {
-        const message = {};
+        const message = { logs: new Uint8Array(0) };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<QueryResponse>(this, message, value);
@@ -708,11 +717,14 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* v1.Data value */ 1:
-                    message.value = Data.internalBinaryRead(reader, reader.uint32(), options, message.value);
+                case /* v1.Result result */ 1:
+                    message.result = Result.internalBinaryRead(reader, reader.uint32(), options, message.result);
                     break;
                 case /* v1.Timings timings */ 2:
                     message.timings = Timings.internalBinaryRead(reader, reader.uint32(), options, message.timings);
+                    break;
+                case /* bytes logs */ 3:
+                    message.logs = reader.bytes();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -726,12 +738,15 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         return message;
     }
     internalBinaryWrite(message: QueryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* v1.Data value = 1; */
-        if (message.value)
-            Data.internalBinaryWrite(message.value, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* v1.Result result = 1; */
+        if (message.result)
+            Result.internalBinaryWrite(message.result, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         /* v1.Timings timings = 2; */
         if (message.timings)
             Timings.internalBinaryWrite(message.timings, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* bytes logs = 3; */
+        if (message.logs.length)
+            writer.tag(3, WireType.LengthDelimited).bytes(message.logs);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -742,6 +757,66 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
  * @generated MessageType for protobuf message v1.QueryResponse
  */
 export const QueryResponse = new QueryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Result$Type extends MessageType<Result> {
+    constructor() {
+        super("v1.Result", [
+            { no: 1, name: "data", kind: "message", oneof: "result", T: () => Data },
+            { no: 2, name: "custom", kind: "message", oneof: "result", T: () => Struct }
+        ]);
+    }
+    create(value?: PartialMessage<Result>): Result {
+        const message = { result: { oneofKind: undefined } };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Result>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Result): Result {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* v1.Data data */ 1:
+                    message.result = {
+                        oneofKind: "data",
+                        data: Data.internalBinaryRead(reader, reader.uint32(), options, (message.result as any).data)
+                    };
+                    break;
+                case /* google.protobuf.Struct custom */ 2:
+                    message.result = {
+                        oneofKind: "custom",
+                        custom: Struct.internalBinaryRead(reader, reader.uint32(), options, (message.result as any).custom)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Result, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* v1.Data data = 1; */
+        if (message.result.oneofKind === "data")
+            Data.internalBinaryWrite(message.result.data, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Struct custom = 2; */
+        if (message.result.oneofKind === "custom")
+            Struct.internalBinaryWrite(message.result.custom, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.Result
+ */
+export const Result = new Result$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Timings$Type extends MessageType<Timings> {
     constructor() {
