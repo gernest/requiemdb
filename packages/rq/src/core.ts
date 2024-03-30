@@ -2,12 +2,13 @@ import {
     Scan, Scan_SCOPE, Scan_TimeRange,
     Scan_Filter, Scan_BaseFilter, Scan_BaseProp,
     Scan_AttributeProp, Scan_AttrFilter,
-    Data,
 } from "./scan";
 import { Timestamp } from "./timestamp";
+import { Visitor } from "./visit";
 
 export class Config {
     base: Scan
+    range?: any
     constructor(scope: Scan_SCOPE) {
         this.base = Scan.create();
         this.base.scope = scope
@@ -145,13 +146,51 @@ export class Config {
         return this
     }
 
+    createVisitor(): Visitor {
+        const vs = new Visitor();
+        return vs.timeRange(
+            this.range.FromUnixNano(),
+            this.range.ToUnixNano(),
+        )
+    }
+
     public today() {
         //@ts-ignore
-        const ts = TimeRange.Today();
+        return this.setRange(TimeRange.Today())
+    }
+
+    public thisWeek() {
+        //@ts-ignore
+        return this.setRange(TimeRange.ThisWeek())
+    }
+
+    public thisYear() {
+        //@ts-ignore
+        return this.setRange(TimeRange.ThisYear())
+    }
+
+    /**
+     * 
+     * @param duration is ISO 8601 duration string
+     * @returns 
+     */
+    public ago(duration: string) {
+        //@ts-ignore
+        return this.setRange(TimeRange.ago(duration))
+    }
+
+    public thisMonth() {
+        //@ts-ignore
+        return this.setRange(TimeRange.ThisWeek())
+    }
+
+
+    protected setRange(ts: any) {
         this.base.timeRange = this.createTimeRange(
-            ts.FromSeconds(),
-            ts.ToSeconds(),
+            ts.FromUnix(),
+            ts.ToUnix(),
         )
+        this.range = ts
         return this
     }
 
@@ -187,6 +226,15 @@ export class ScanResult {
 
 export class ScanData {
     constructor(private ptr: any) { }
+    /**
+     * 
+     * @param visitor 
+     * @returns a new ScanData with samples matching visitor filter
+     */
+    visit(visitor: Visitor) {
+        //@ts-ignore
+        return new ScanData(RQ.Visit(this.ptr, visitor.ptr))
+    }
 }
 
 

@@ -6,13 +6,7 @@ import (
 
 type Logs struct{}
 
-var _ Visitor[*logsv1.LogsData] = (*Logs)(nil)
-
 func (Logs) Visit(data *logsv1.LogsData, visitor Visit) *logsv1.LogsData {
-	_, isAll := visitor.(All)
-	if isAll {
-		return data
-	}
 	var resources []*logsv1.ResourceLogs
 	start, end := visitor.TimeRange()
 	for _, rm := range data.ResourceLogs {

@@ -6,13 +6,7 @@ import (
 
 type Metrics struct{}
 
-var _ Visitor[*metricsV1.MetricsData] = (*Metrics)(nil)
-
 func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.MetricsData {
-	_, isAll := visitor.(All)
-	if isAll {
-		return data
-	}
 	var resources []*metricsV1.ResourceMetrics
 	start, end := visitor.TimeRange()
 	for _, rm := range data.ResourceMetrics {

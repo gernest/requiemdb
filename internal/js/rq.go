@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/dop251/goja"
+	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	"github.com/requiemdb/requiemdb/internal/visit"
 )
 
 type Options struct {
@@ -23,5 +25,18 @@ func New(o Options) (*goja.Runtime, error) {
 	return r, errors.Join(
 		r.Set("console", console(r, o.Writer)),
 		r.Set("TimeRange", &TimeRange{now: o.Now}),
+		r.Set("RQ", &RQ{opts: o}),
 	)
+}
+
+type RQ struct {
+	opts Options
+}
+
+func (*RQ) CreateVisitor() *visit.All {
+	return &visit.All{}
+}
+
+func (*RQ) Visit(data *v1.Data, all *visit.All) *v1.Data {
+	return visit.VisitData(data, all)
 }

@@ -6,13 +6,7 @@ import (
 
 type Trace struct{}
 
-var _ Visitor[*tracev1.TracesData] = (*Trace)(nil)
-
 func (Trace) Visit(data *tracev1.TracesData, visitor Visit) *tracev1.TracesData {
-	_, isAll := visitor.(All)
-	if isAll {
-		return data
-	}
 	var resources []*tracev1.ResourceSpans
 	start, end := visitor.TimeRange()
 	for _, rm := range data.ResourceSpans {
