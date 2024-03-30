@@ -245,9 +245,9 @@ export class ScanData {
     }
 }
 
-export type BaseValue = number | string | boolean | ScanData | ScanData[];
-
-export type Value = BaseValue | Record<string, BaseValue>;
+type BaseValue = number | string | boolean | ScanData;
+type CoreValue = BaseValue | BaseValue[];
+type Value = CoreValue | Record<string, CoreValue>;
 
 export const render = (value: Value) => {
     //@ts-ignore
