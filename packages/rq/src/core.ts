@@ -12,7 +12,6 @@ export class Config {
     constructor(scope: Scan_SCOPE) {
         this.base = Scan.create();
         this.base.scope = scope
-        this.latest()
     }
 
     public scan(): ScanResult {
