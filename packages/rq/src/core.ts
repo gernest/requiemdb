@@ -1,24 +1,21 @@
 import {
     Scan, Scan_SCOPE, Scan_TimeRange,
-    Scan_Filter, Scan_BaseFilter, Scan_BaseProp,
-    Scan_AttributeProp, Scan_AttrFilter,
+    Scan_Filter, Scan_BaseProp,
+    Scan_AttributeProp, Data,
 } from "./scan";
-import { Timestamp } from "./timestamp";
-import { Visitor } from "./visit";
+import { Struct } from "./struct";
 
 export class Config {
     base: Scan
-    range?: any
     constructor(scope: Scan_SCOPE) {
         this.base = Scan.create();
         this.base.scope = scope
     }
 
-    public scan(): ScanResult {
+    public scan(): ScanData {
         const encode = Scan.toBinary(this.base)
         //@ts-ignore
-        const result = RQ.Scan(encode)
-        return new ScanResult(result)
+        return new ScanData(RQ.Scan(encode))
     }
 
 
@@ -117,28 +114,25 @@ export class Config {
     }
 
     private baseFilter(prop: Scan_BaseProp, value: string) {
-        const b = Scan_BaseFilter.create();
-        b.prop = prop;
-        b.value = value;
-        const f = Scan_Filter.create()
-        f.value = {
-            oneofKind: "base",
-            base: b,
-        }
-        return this.filter(f)
+        return this.filter({
+            value: {
+                oneofKind: "base",
+                base: {
+                    prop, value
+                }
+            },
+        })
     }
 
     private attrFilter(prop: Scan_AttributeProp, key: string, value: string) {
-        const b = Scan_AttrFilter.create();
-        b.prop = prop;
-        b.key = key;
-        b.value = value;
-        const f = Scan_Filter.create()
-        f.value = {
-            oneofKind: "attr",
-            attr: b,
-        }
-        return this.filter(f)
+        return this.filter({
+            value: {
+                oneofKind: "attr",
+                attr: {
+                    prop, key, value,
+                }
+            }
+        })
     }
 
     public filter(f: Scan_Filter) {
@@ -146,13 +140,7 @@ export class Config {
         return this
     }
 
-    createVisitor(): Visitor {
-        const vs = new Visitor();
-        return vs.timeRange(
-            this.range.FromUnixNano(),
-            this.range.ToUnixNano(),
-        )
-    }
+
     /**
      * 
      * @returns samples for the last 15 minutes
@@ -197,63 +185,57 @@ export class Config {
             ts.FromUnix(),
             ts.ToUnix(),
         )
-        this.range = ts
         return this
     }
 
 
 
     private createTimeRange(fromSecs: number, toSecs: number): Scan_TimeRange {
-        const from = Timestamp.create();
-        from.seconds = fromSecs;
-        const to = Timestamp.create();
-        to.seconds = toSecs;
-        const range = Scan_TimeRange.create()
-        range.start = from;
-        range.end = to;
-        return range
+        return {
+            start: { seconds: fromSecs, nanos: 0 },
+            end: { seconds: toSecs, nanos: 0 },
+        }
     }
 }
 
-
-export class ScanResult {
-    constructor(private ptr: any) { }
-
-    [Symbol.iterator]() {
-        return {
-            next: () => {
-                if (this.ptr.Next()) {
-                    return { done: false, value: new ScanData(this.ptr.Current()) }
-                }
-                return { done: true }
-            }
-        }
-    };
-}
 
 export class ScanData {
     constructor(private ptr: any) { }
-    /**
-     * 
-     * @param visitor 
-     * @returns a new ScanData with samples matching visitor filter
-     */
-    visit(visitor: Visitor) {
+
+    toData(): Data {
         //@ts-ignore
-        return new ScanData(RQ.Visit(this.ptr, visitor.ptr))
+        return Data.fromBinary(new Uint8Array(RQ.Marshal(this.ptr)))
+    }
+
+    formData(data: Data): ScanData {
+        const binary = Data.toBinary(data)
+        //@ts-ignore
+        return new ScanData(RQ.Unmarshal(binary))
+    }
+
+    static is(value: any): boolean {
+        return (value as ScanData).ptr != undefined;
     }
 }
-
-type BaseValue = number | string | boolean | ScanData;
-type CoreValue = BaseValue | BaseValue[];
-type Value = CoreValue | Record<string, CoreValue>;
 
 /**
  * Serialize value and exit the script. This must only be called once, subsequent calls have
  * no effect.
  * @param value 
  */
-export const render = (value: Value) => {
-    //@ts-ignore
-    RQ.Render(value)
+export const render = (value: Struct | Data | ScanData) => {
+    if (Data.is(value)) {
+        //@ts-ignore
+        RQ.Render(Data.toJsonString(value))
+    }
+    if (Struct.is(value)) {
+        //@ts-ignore
+        RQ.Render(Struct.toJsonString(value))
+    }
+    if (ScanData.is(value)) {
+        //@ts-ignore
+        RQ.RenderNative(value.ptr)
+    }
 }
+
+
