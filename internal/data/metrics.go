@@ -10,9 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Collapse merges ds into a single MetricsData. This also merges resources and
-// scopes.
-func Collapse(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
+func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
 	buf := make([]byte, 0, 4<<10)
 	h := new(xxhash.Digest)
 	resourceMetrics := make(map[uint64]*metricsV1.ResourceMetrics)

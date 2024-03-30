@@ -8,10 +8,29 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	"github.com/requiemdb/requiemdb/internal/data"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/lsm"
 	"google.golang.org/protobuf/proto"
 )
+
+var ErrSamplesNotFound = errors.New("no samples matched scan")
+
+func Scan(db *badger.DB, scan *v1.Scan, samples *lsm.Samples) (*v1.Data, error) {
+	var o []*v1.Data
+	sc := NewScanner(db, scan, samples)
+	for sc.HasNext() {
+		d, err := sc.Next()
+		if err != nil {
+			return nil, err
+		}
+		o = append(o, d)
+	}
+	if len(o) == 0 {
+		return nil, ErrSamplesNotFound
+	}
+	return data.Collapse(o), nil
+}
 
 type Scanner struct {
 	it      *sampleIter
@@ -74,6 +93,7 @@ type sampleIter struct {
 	sample  uint64
 	id      [8]byte
 	labels  *labels.Labels
+	limit   uint64
 	err     error
 }
 
@@ -86,6 +106,12 @@ func newIter(txn *badger.Txn, scan *v1.Scan, samples *lsm.Samples) *sampleIter {
 	if limit == 0 {
 		limit = math.MaxUint64
 	}
+	if scan.TimeRange == nil {
+		// Instant vector.
+		limit = 1
+		i.reverse = true
+	}
+	i.limit = limit
 	it := samples.Iterator()
 	if scan.Reverse {
 		it = samples.ReverseIterator()
@@ -103,7 +129,7 @@ func (p *sampleIter) Close() {
 func (p *sampleIter) Err() error { return p.err }
 
 func (p *sampleIter) HasNext() bool {
-	if p.err != nil {
+	if p.err != nil || p.limit == 0 {
 		return false
 	}
 	if p.r == nil {
@@ -134,6 +160,7 @@ func (p *sampleIter) HasNext() bool {
 func (p *sampleIter) Next() (date *[8]byte, id []byte) {
 	p.sample = p.it.Next()
 	binary.LittleEndian.PutUint64(p.id[:], p.sample)
+	p.limit--
 	return &p.d, p.id[:]
 }
 
