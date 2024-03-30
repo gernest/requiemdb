@@ -1,7 +1,7 @@
-import { Metrics } from "@requiemdb/rq";
+import { Metrics, render } from "@requiemdb/rq";
 
+render(
+    (new Metrics("http_requests_total"))
+        .query(),
+)
 
-const totalRequests =
-    (new Metrics())
-        .name("http_requests_total")
-        .query();
