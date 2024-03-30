@@ -23,14 +23,14 @@ plugins:
       - paths=source_relative
       - generate_unbound_methods=true
 
-  - plugin: buf.build/community/timostamm-protobuf-ts:v2.9.1
-    out: packages/rq/src/proto
-    opt:
-      - generate_dependencies
-      - optimize_code_size
-      - long_type_number
-
   # - plugin: buf.build/community/timostamm-protobuf-ts:v2.9.1
-  #   out: ui/src/rq/proto
+  #   out: packages/rq/src/proto
   #   opt:
   #     - generate_dependencies
+  #     - optimize_code_size
+  #     - long_type_number
+
+  - plugin: buf.build/community/timostamm-protobuf-ts:v2.9.1
+    out: ui/src/rq/proto
+    opt:
+      - generate_dependencies

@@ -5,13 +5,13 @@
         "module": "commonjs",
         "esModuleInterop": true,
         "strict": true,
+        "lib": [
+            "es2017"
+        ],
         "outDir": "dist"
     },
     "exclude": [
         "node_modules",
         "dist"
     ],
-    "lib": [
-        "es2015"
-    ]
 }
