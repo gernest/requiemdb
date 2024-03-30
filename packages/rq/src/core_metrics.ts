@@ -11,8 +11,11 @@ export interface MetricsMiddleware {
 }
 
 export class Metrics extends Config {
-    constructor() {
+    constructor(name?: string) {
         super(Scan_SCOPE.METRICS)
+        if (name) {
+            this.name(name)
+        }
     }
 
     query(middleware?: MetricsMiddleware): ScanData[] {

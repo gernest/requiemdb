@@ -12,6 +12,7 @@ export class Config {
     constructor(scope: Scan_SCOPE) {
         this.base = Scan.create();
         this.base.scope = scope
+        this.latest()
     }
 
     public scan(): ScanResult {
@@ -153,6 +154,13 @@ export class Config {
             this.range.ToUnixNano(),
         )
     }
+    /**
+     * 
+     * @returns samples for the last 15 minutes
+     */
+    public latest() {
+        return this.ago("15m")
+    }
 
     public today() {
         //@ts-ignore
@@ -237,4 +245,11 @@ export class ScanData {
     }
 }
 
+export type BaseValue = number | string | boolean | ScanData | ScanData[];
 
+export type Value = BaseValue | Record<string, BaseValue>;
+
+export const render = (value: Value) => {
+    //@ts-ignore
+    RQ.Render(value)
+}
