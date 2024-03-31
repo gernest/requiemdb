@@ -137,6 +137,24 @@ func (s *Snippets) GetProgram(name string) (*goja.Program, error) {
 	return program, nil
 }
 
+func (s *Snippets) Get(name string) (*v1.Snippet, error) {
+	key := buildKey(name)
+	var code v1.Snippet
+	err := s.db.View(func(txn *badger.Txn) error {
+		it, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		return it.Value(func(val []byte) error {
+			return proto.Unmarshal(val, &code)
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &code, nil
+}
+
 func buildKey(name string) []byte {
 	key := make([]byte, 9)
 	key[len(key)-1] = byte(v1.RESOURCE_SNIPPETS)

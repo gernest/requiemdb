@@ -44,25 +44,9 @@ export interface GetSnippetRequest {
  */
 export interface GetSnippetResponse {
     /**
-     * @generated from protobuf field: string name = 1;
-     */
-    name: string;
-    /**
-     * @generated from protobuf field: string description = 2;
-     */
-    description: string;
-    /**
-     * @generated from protobuf field: bytes raw = 3;
+     * @generated from protobuf field: bytes raw = 1;
      */
     raw: Uint8Array;
-    /**
-     * @generated from protobuf field: google.protobuf.Timestamp created_at = 4;
-     */
-    createdAt?: Timestamp;
-    /**
-     * @generated from protobuf field: google.protobuf.Timestamp updated_at = 5;
-     */
-    updatedAt?: Timestamp;
 }
 /**
  * @generated from protobuf message v1.ListStippetsRequest
@@ -355,15 +339,11 @@ export const GetSnippetRequest = new GetSnippetRequest$Type();
 class GetSnippetResponse$Type extends MessageType<GetSnippetResponse> {
     constructor() {
         super("v1.GetSnippetResponse", [
-            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "description", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "raw", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
-            { no: 4, name: "created_at", kind: "message", T: () => Timestamp },
-            { no: 5, name: "updated_at", kind: "message", T: () => Timestamp }
+            { no: 1, name: "raw", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
         ]);
     }
     create(value?: PartialMessage<GetSnippetResponse>): GetSnippetResponse {
-        const message = { name: "", description: "", raw: new Uint8Array(0) };
+        const message = { raw: new Uint8Array(0) };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<GetSnippetResponse>(this, message, value);
@@ -374,20 +354,8 @@ class GetSnippetResponse$Type extends MessageType<GetSnippetResponse> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string name */ 1:
-                    message.name = reader.string();
-                    break;
-                case /* string description */ 2:
-                    message.description = reader.string();
-                    break;
-                case /* bytes raw */ 3:
+                case /* bytes raw */ 1:
                     message.raw = reader.bytes();
-                    break;
-                case /* google.protobuf.Timestamp created_at */ 4:
-                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
-                    break;
-                case /* google.protobuf.Timestamp updated_at */ 5:
-                    message.updatedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.updatedAt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -401,21 +369,9 @@ class GetSnippetResponse$Type extends MessageType<GetSnippetResponse> {
         return message;
     }
     internalBinaryWrite(message: GetSnippetResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string name = 1; */
-        if (message.name !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.name);
-        /* string description = 2; */
-        if (message.description !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.description);
-        /* bytes raw = 3; */
+        /* bytes raw = 1; */
         if (message.raw.length)
-            writer.tag(3, WireType.LengthDelimited).bytes(message.raw);
-        /* google.protobuf.Timestamp created_at = 4; */
-        if (message.createdAt)
-            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp updated_at = 5; */
-        if (message.updatedAt)
-            Timestamp.internalBinaryWrite(message.updatedAt, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+            writer.tag(1, WireType.LengthDelimited).bytes(message.raw);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

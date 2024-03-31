@@ -53,13 +53,7 @@ message Version { string version = 1; }
 
 message GetSnippetRequest { string name = 1; }
 
-message GetSnippetResponse {
-  string name = 1;
-  string description = 2;
-  bytes raw = 3;
-  google.protobuf.Timestamp created_at = 4;
-  google.protobuf.Timestamp updated_at = 5;
-}
+message GetSnippetResponse { bytes raw = 1; }
 
 message ListStippetsRequest {}
 
