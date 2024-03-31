@@ -1,6 +1,6 @@
 import { Box, Button, Heading, IconButton, PageLayout, Tooltip } from '@primer/react';
 import { Editor } from '../../components';
-import { FileIcon, SidebarCollapseIcon, SidebarExpandIcon } from '@primer/octicons-react';
+import { FileIcon, PlusIcon, SidebarCollapseIcon, SidebarExpandIcon } from '@primer/octicons-react';
 import { useState } from 'react';
 
 
@@ -8,26 +8,19 @@ export const Console = () => {
     const [expand, setExpand] = useState<boolean>(false)
     return (
         <PageLayout containerWidth='full'>
-            <PageLayout.Content>
+            <PageLayout.Header>
                 <Box display={"flex"}
                     justifyContent={"space-between"}
                     maxWidth={"100%"}
-                    mb={3}
                 >
 
                     <Box display={"flex"} alignItems={"center"}
                     >
                         <Box mr={1}>
                             {!expand && (
-                                <Tooltip text="Expand file tree">
+                                <Tooltip text="Expand file tree" direction='se'>
                                     <IconButton aria-label='Expand file tree' icon={SidebarExpandIcon}
                                         onClick={() => setExpand(true)} />
-                                </Tooltip>
-                            )}
-                            {expand && (
-                                <Tooltip text="Collapse file tree">
-                                    <IconButton aria-label='Collapse file tree' icon={SidebarCollapseIcon}
-                                        onClick={() => setExpand(false)} />
                                 </Tooltip>
                             )}
                         </Box>
@@ -46,10 +39,41 @@ export const Console = () => {
                         <Button sx={{ marginLeft: "12px" }} variant='primary'>save changes</Button>
                     </Box>
                 </Box>
+            </PageLayout.Header>
+            <PageLayout.Content>
                 <Editor width={"100%"} minHeight={400} />
             </PageLayout.Content>
-            {expand && (<PageLayout.Pane position={"start"} width={"small"}>
-                Tree
+            {expand && (<PageLayout.Pane position={"start"} width={"small"} sx={{ backgroundColor: "canvas.subtle" }}>
+                <Box display={"flex"} flexDirection={"column"} p={1}>
+                    <Box display={"flex"} alignItems={"center"} flexDirection={"column"}>
+                        <Box display={"flex"} alignItems={"center"} width={"100%"}>
+                            <Heading sx={{ fontSize: "14px", display: "flex", margin: 0, fontWeight: 600 }}>
+                                <Tooltip text="Collapse file tree" direction='se'>
+                                    <IconButton aria-label='Collapse file tree' icon={SidebarCollapseIcon}
+                                        onClick={() => setExpand(false)} />
+                                </Tooltip>
+
+                            </Heading>
+
+                            <Heading sx={{
+                                fontSize: "16px",
+                                margin: "0px 0px 0px 8px",
+                                display: "flex", fontWeight: 600,
+                                flexGrow: 1,
+                            }}>
+                                Files
+                            </Heading>
+
+                            <Box>
+                                <Tooltip direction="w" text="Add new file">
+                                    <IconButton icon={PlusIcon} aria-label='Add file' />
+                                </Tooltip>
+                            </Box>
+                        </Box>
+
+
+                    </Box>
+                </Box>
             </PageLayout.Pane>)}
         </PageLayout>
 
