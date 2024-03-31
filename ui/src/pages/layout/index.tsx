@@ -11,7 +11,8 @@ export const Layout = () => {
         >
             <MainHeader />
             <PageLayout containerWidth="full">
-                <PageLayout.Pane sticky offsetHeader={"64px"} position={"start"}>
+                <PageLayout.Pane sticky offsetHeader={"64px"} position={"start"}
+                    width={"small"}>
                     <Sidebar />
                 </PageLayout.Pane>
                 <PageLayout.Content>
