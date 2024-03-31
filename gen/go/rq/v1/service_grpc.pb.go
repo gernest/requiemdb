@@ -32,7 +32,7 @@ const (
 type RQClient interface {
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	UploadSnippet(ctx context.Context, in *UploadSnippetRequest, opts ...grpc.CallOption) (*UploadSnippetResponse, error)
-	ListSnippets(ctx context.Context, in *ListStippetsRequest, opts ...grpc.CallOption) (*ListSnippetsResponse, error)
+	ListSnippets(ctx context.Context, in *ListStippetsRequest, opts ...grpc.CallOption) (*SnippetInfo_List, error)
 	GetSnippet(ctx context.Context, in *GetSnippetRequest, opts ...grpc.CallOption) (*GetSnippetResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*Version, error)
 }
@@ -63,8 +63,8 @@ func (c *rQClient) UploadSnippet(ctx context.Context, in *UploadSnippetRequest, 
 	return out, nil
 }
 
-func (c *rQClient) ListSnippets(ctx context.Context, in *ListStippetsRequest, opts ...grpc.CallOption) (*ListSnippetsResponse, error) {
-	out := new(ListSnippetsResponse)
+func (c *rQClient) ListSnippets(ctx context.Context, in *ListStippetsRequest, opts ...grpc.CallOption) (*SnippetInfo_List, error) {
+	out := new(SnippetInfo_List)
 	err := c.cc.Invoke(ctx, RQ_ListSnippets_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (c *rQClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts .
 type RQServer interface {
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	UploadSnippet(context.Context, *UploadSnippetRequest) (*UploadSnippetResponse, error)
-	ListSnippets(context.Context, *ListStippetsRequest) (*ListSnippetsResponse, error)
+	ListSnippets(context.Context, *ListStippetsRequest) (*SnippetInfo_List, error)
 	GetSnippet(context.Context, *GetSnippetRequest) (*GetSnippetResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*Version, error)
 	mustEmbedUnimplementedRQServer()
@@ -112,7 +112,7 @@ func (UnimplementedRQServer) Query(context.Context, *QueryRequest) (*QueryRespon
 func (UnimplementedRQServer) UploadSnippet(context.Context, *UploadSnippetRequest) (*UploadSnippetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadSnippet not implemented")
 }
-func (UnimplementedRQServer) ListSnippets(context.Context, *ListStippetsRequest) (*ListSnippetsResponse, error) {
+func (UnimplementedRQServer) ListSnippets(context.Context, *ListStippetsRequest) (*SnippetInfo_List, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSnippets not implemented")
 }
 func (UnimplementedRQServer) GetSnippet(context.Context, *GetSnippetRequest) (*GetSnippetResponse, error) {

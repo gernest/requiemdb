@@ -24,7 +24,7 @@ service RQ {
       body : "*"
     };
   };
-  rpc ListSnippets(ListStippetsRequest) returns (ListSnippetsResponse) {
+  rpc ListSnippets(ListStippetsRequest) returns (SnippetInfo.List) {
     option (google.api.http) = {
       get : "/api/v1/list",
     };
@@ -56,13 +56,13 @@ message GetSnippetResponse {
 
 message ListStippetsRequest {}
 
-message ListSnippetsResponse { repeated SnippetInfo snippets = 1; }
-
 message SnippetInfo {
   string name = 1;
   string description = 2;
   google.protobuf.Timestamp created_at = 3;
   google.protobuf.Timestamp updated_at = 4;
+
+  message List { repeated SnippetInfo snippets = 1; }
 }
 
 message UploadSnippetRequest {

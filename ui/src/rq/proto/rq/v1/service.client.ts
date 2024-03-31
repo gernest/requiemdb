@@ -8,7 +8,7 @@ import type { Version } from "./service";
 import type { GetVersionRequest } from "./service";
 import type { GetSnippetResponse } from "./service";
 import type { GetSnippetRequest } from "./service";
-import type { ListSnippetsResponse } from "./service";
+import type { SnippetInfo_List } from "./service";
 import type { ListStippetsRequest } from "./service";
 import type { UploadSnippetResponse } from "./service";
 import type { UploadSnippetRequest } from "./service";
@@ -30,9 +30,9 @@ export interface IRQClient {
      */
     uploadSnippet(input: UploadSnippetRequest, options?: RpcOptions): UnaryCall<UploadSnippetRequest, UploadSnippetResponse>;
     /**
-     * @generated from protobuf rpc: ListSnippets(v1.ListStippetsRequest) returns (v1.ListSnippetsResponse);
+     * @generated from protobuf rpc: ListSnippets(v1.ListStippetsRequest) returns (v1.SnippetInfo.List);
      */
-    listSnippets(input: ListStippetsRequest, options?: RpcOptions): UnaryCall<ListStippetsRequest, ListSnippetsResponse>;
+    listSnippets(input: ListStippetsRequest, options?: RpcOptions): UnaryCall<ListStippetsRequest, SnippetInfo_List>;
     /**
      * @generated from protobuf rpc: GetSnippet(v1.GetSnippetRequest) returns (v1.GetSnippetResponse);
      */
@@ -66,11 +66,11 @@ export class RQClient implements IRQClient, ServiceInfo {
         return stackIntercept<UploadSnippetRequest, UploadSnippetResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * @generated from protobuf rpc: ListSnippets(v1.ListStippetsRequest) returns (v1.ListSnippetsResponse);
+     * @generated from protobuf rpc: ListSnippets(v1.ListStippetsRequest) returns (v1.SnippetInfo.List);
      */
-    listSnippets(input: ListStippetsRequest, options?: RpcOptions): UnaryCall<ListStippetsRequest, ListSnippetsResponse> {
+    listSnippets(input: ListStippetsRequest, options?: RpcOptions): UnaryCall<ListStippetsRequest, SnippetInfo_List> {
         const method = this.methods[2], opt = this._transport.mergeOptions(options);
-        return stackIntercept<ListStippetsRequest, ListSnippetsResponse>("unary", this._transport, method, opt, input);
+        return stackIntercept<ListStippetsRequest, SnippetInfo_List>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetSnippet(v1.GetSnippetRequest) returns (v1.GetSnippetResponse);

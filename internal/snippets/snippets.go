@@ -43,6 +43,39 @@ func (s *Snippets) Close() error {
 	return nil
 }
 
+func (s *Snippets) List() (*v1.SnippetInfo_List, error) {
+	prefix := buildKey("")
+	var ls []*v1.SnippetInfo
+	err := s.db.View(func(txn *badger.Txn) error {
+		o := badger.DefaultIteratorOptions
+		o.Prefix = prefix
+		it := txn.NewIterator(o)
+		defer it.Close()
+		var snippet v1.Snippet
+
+		for it.Rewind(); it.ValidForPrefix(prefix); it.Next() {
+			err := it.Item().Value(func(val []byte) error {
+				return proto.Unmarshal(val, &snippet)
+			})
+			if err != nil {
+				return err
+			}
+			ls = append(ls, &v1.SnippetInfo{
+				Name:        snippet.Name,
+				Description: snippet.Description,
+				CreatedAt:   proto.Clone(snippet.CreatedAt).(*timestamppb.Timestamp),
+				UpdatedAt:   proto.Clone(snippet.UpdatedAt).(*timestamppb.Timestamp),
+			})
+
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &v1.SnippetInfo_List{Snippets: ls}, nil
+}
+
 func (s *Snippets) GetProgram(name string) (*goja.Program, error) {
 	hash := xxhash.Sum64String(name)
 	if o, ok := s.cache.Get(hash); ok {

@@ -70,15 +70,6 @@ export interface GetSnippetResponse {
 export interface ListStippetsRequest {
 }
 /**
- * @generated from protobuf message v1.ListSnippetsResponse
- */
-export interface ListSnippetsResponse {
-    /**
-     * @generated from protobuf field: repeated v1.SnippetInfo snippets = 1;
-     */
-    snippets: SnippetInfo[];
-}
-/**
  * @generated from protobuf message v1.SnippetInfo
  */
 export interface SnippetInfo {
@@ -98,6 +89,15 @@ export interface SnippetInfo {
      * @generated from protobuf field: google.protobuf.Timestamp updated_at = 4;
      */
     updatedAt?: Timestamp;
+}
+/**
+ * @generated from protobuf message v1.SnippetInfo.List
+ */
+export interface SnippetInfo_List {
+    /**
+     * @generated from protobuf field: repeated v1.SnippetInfo snippets = 1;
+     */
+    snippets: SnippetInfo[];
 }
 /**
  * @generated from protobuf message v1.UploadSnippetRequest
@@ -435,53 +435,6 @@ class ListStippetsRequest$Type extends MessageType<ListStippetsRequest> {
  */
 export const ListStippetsRequest = new ListStippetsRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class ListSnippetsResponse$Type extends MessageType<ListSnippetsResponse> {
-    constructor() {
-        super("v1.ListSnippetsResponse", [
-            { no: 1, name: "snippets", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => SnippetInfo }
-        ]);
-    }
-    create(value?: PartialMessage<ListSnippetsResponse>): ListSnippetsResponse {
-        const message = { snippets: [] };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<ListSnippetsResponse>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListSnippetsResponse): ListSnippetsResponse {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated v1.SnippetInfo snippets */ 1:
-                    message.snippets.push(SnippetInfo.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: ListSnippetsResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated v1.SnippetInfo snippets = 1; */
-        for (let i = 0; i < message.snippets.length; i++)
-            SnippetInfo.internalBinaryWrite(message.snippets[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message v1.ListSnippetsResponse
- */
-export const ListSnippetsResponse = new ListSnippetsResponse$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class SnippetInfo$Type extends MessageType<SnippetInfo> {
     constructor() {
         super("v1.SnippetInfo", [
@@ -549,6 +502,53 @@ class SnippetInfo$Type extends MessageType<SnippetInfo> {
  * @generated MessageType for protobuf message v1.SnippetInfo
  */
 export const SnippetInfo = new SnippetInfo$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SnippetInfo_List$Type extends MessageType<SnippetInfo_List> {
+    constructor() {
+        super("v1.SnippetInfo.List", [
+            { no: 1, name: "snippets", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => SnippetInfo }
+        ]);
+    }
+    create(value?: PartialMessage<SnippetInfo_List>): SnippetInfo_List {
+        const message = { snippets: [] };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<SnippetInfo_List>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SnippetInfo_List): SnippetInfo_List {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated v1.SnippetInfo snippets */ 1:
+                    message.snippets.push(SnippetInfo.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SnippetInfo_List, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated v1.SnippetInfo snippets = 1; */
+        for (let i = 0; i < message.snippets.length; i++)
+            SnippetInfo.internalBinaryWrite(message.snippets[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.SnippetInfo.List
+ */
+export const SnippetInfo_List = new SnippetInfo_List$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class UploadSnippetRequest$Type extends MessageType<UploadSnippetRequest> {
     constructor() {
@@ -877,7 +877,7 @@ export const Timings = new Timings$Type();
 export const RQ = new ServiceType("v1.RQ", [
     { name: "Query", options: { "google.api.http": { post: "/api/v1/query", body: "*" } }, I: QueryRequest, O: QueryResponse },
     { name: "UploadSnippet", options: { "google.api.http": { post: "/api/v1/upload", body: "*" } }, I: UploadSnippetRequest, O: UploadSnippetResponse },
-    { name: "ListSnippets", options: { "google.api.http": { get: "/api/v1/list" } }, I: ListStippetsRequest, O: ListSnippetsResponse },
+    { name: "ListSnippets", options: { "google.api.http": { get: "/api/v1/list" } }, I: ListStippetsRequest, O: SnippetInfo_List },
     { name: "GetSnippet", options: { "google.api.http": { get: "/api/v1/snippet/{name}" } }, I: GetSnippetRequest, O: GetSnippetResponse },
     { name: "GetVersion", options: { "google.api.http": { get: "/api/v1/version" } }, I: GetVersionRequest, O: Version }
 ]);
