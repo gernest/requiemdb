@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	RQ_Query_FullMethodName         = "/v1.RQ/Query"
 	RQ_UploadSnippet_FullMethodName = "/v1.RQ/UploadSnippet"
+	RQ_RenameSnippet_FullMethodName = "/v1.RQ/RenameSnippet"
 	RQ_ListSnippets_FullMethodName  = "/v1.RQ/ListSnippets"
 	RQ_GetSnippet_FullMethodName    = "/v1.RQ/GetSnippet"
 	RQ_GetVersion_FullMethodName    = "/v1.RQ/GetVersion"
@@ -32,6 +33,7 @@ const (
 type RQClient interface {
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	UploadSnippet(ctx context.Context, in *UploadSnippetRequest, opts ...grpc.CallOption) (*UploadSnippetResponse, error)
+	RenameSnippet(ctx context.Context, in *RenameSnippetRequest, opts ...grpc.CallOption) (*RenameSnippetResponse, error)
 	ListSnippets(ctx context.Context, in *ListStippetsRequest, opts ...grpc.CallOption) (*SnippetInfo_List, error)
 	GetSnippet(ctx context.Context, in *GetSnippetRequest, opts ...grpc.CallOption) (*GetSnippetResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*Version, error)
@@ -57,6 +59,15 @@ func (c *rQClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.Cal
 func (c *rQClient) UploadSnippet(ctx context.Context, in *UploadSnippetRequest, opts ...grpc.CallOption) (*UploadSnippetResponse, error) {
 	out := new(UploadSnippetResponse)
 	err := c.cc.Invoke(ctx, RQ_UploadSnippet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *rQClient) RenameSnippet(ctx context.Context, in *RenameSnippetRequest, opts ...grpc.CallOption) (*RenameSnippetResponse, error) {
+	out := new(RenameSnippetResponse)
+	err := c.cc.Invoke(ctx, RQ_RenameSnippet_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +107,7 @@ func (c *rQClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts .
 type RQServer interface {
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	UploadSnippet(context.Context, *UploadSnippetRequest) (*UploadSnippetResponse, error)
+	RenameSnippet(context.Context, *RenameSnippetRequest) (*RenameSnippetResponse, error)
 	ListSnippets(context.Context, *ListStippetsRequest) (*SnippetInfo_List, error)
 	GetSnippet(context.Context, *GetSnippetRequest) (*GetSnippetResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*Version, error)
@@ -111,6 +123,9 @@ func (UnimplementedRQServer) Query(context.Context, *QueryRequest) (*QueryRespon
 }
 func (UnimplementedRQServer) UploadSnippet(context.Context, *UploadSnippetRequest) (*UploadSnippetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadSnippet not implemented")
+}
+func (UnimplementedRQServer) RenameSnippet(context.Context, *RenameSnippetRequest) (*RenameSnippetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenameSnippet not implemented")
 }
 func (UnimplementedRQServer) ListSnippets(context.Context, *ListStippetsRequest) (*SnippetInfo_List, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSnippets not implemented")
@@ -166,6 +181,24 @@ func _RQ_UploadSnippet_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RQServer).UploadSnippet(ctx, req.(*UploadSnippetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RQ_RenameSnippet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenameSnippetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RQServer).RenameSnippet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RQ_RenameSnippet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RQServer).RenameSnippet(ctx, req.(*RenameSnippetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -238,6 +271,10 @@ var RQ_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UploadSnippet",
 			Handler:    _RQ_UploadSnippet_Handler,
+		},
+		{
+			MethodName: "RenameSnippet",
+			Handler:    _RQ_RenameSnippet_Handler,
 		},
 		{
 			MethodName: "ListSnippets",

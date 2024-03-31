@@ -213,6 +213,24 @@ export interface Timings {
      */
     evaluating?: Duration;
 }
+/**
+ * @generated from protobuf message v1.RenameSnippetRequest
+ */
+export interface RenameSnippetRequest {
+    /**
+     * @generated from protobuf field: string old_name = 1;
+     */
+    oldName: string;
+    /**
+     * @generated from protobuf field: string new_name = 2;
+     */
+    newName: string;
+}
+/**
+ * @generated from protobuf message v1.RenameSnippetResponse
+ */
+export interface RenameSnippetResponse {
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class GetVersionRequest$Type extends MessageType<GetVersionRequest> {
     constructor() {
@@ -871,13 +889,94 @@ class Timings$Type extends MessageType<Timings> {
  * @generated MessageType for protobuf message v1.Timings
  */
 export const Timings = new Timings$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RenameSnippetRequest$Type extends MessageType<RenameSnippetRequest> {
+    constructor() {
+        super("v1.RenameSnippetRequest", [
+            { no: 1, name: "old_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "new_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RenameSnippetRequest>): RenameSnippetRequest {
+        const message = { oldName: "", newName: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<RenameSnippetRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RenameSnippetRequest): RenameSnippetRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string old_name */ 1:
+                    message.oldName = reader.string();
+                    break;
+                case /* string new_name */ 2:
+                    message.newName = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RenameSnippetRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string old_name = 1; */
+        if (message.oldName !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.oldName);
+        /* string new_name = 2; */
+        if (message.newName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.newName);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.RenameSnippetRequest
+ */
+export const RenameSnippetRequest = new RenameSnippetRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RenameSnippetResponse$Type extends MessageType<RenameSnippetResponse> {
+    constructor() {
+        super("v1.RenameSnippetResponse", []);
+    }
+    create(value?: PartialMessage<RenameSnippetResponse>): RenameSnippetResponse {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<RenameSnippetResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RenameSnippetResponse): RenameSnippetResponse {
+        return target ?? this.create();
+    }
+    internalBinaryWrite(message: RenameSnippetResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message v1.RenameSnippetResponse
+ */
+export const RenameSnippetResponse = new RenameSnippetResponse$Type();
 /**
  * @generated ServiceType for protobuf service v1.RQ
  */
 export const RQ = new ServiceType("v1.RQ", [
     { name: "Query", options: { "google.api.http": { post: "/api/v1/query", body: "*" } }, I: QueryRequest, O: QueryResponse },
-    { name: "UploadSnippet", options: { "google.api.http": { post: "/api/v1/upload", body: "*" } }, I: UploadSnippetRequest, O: UploadSnippetResponse },
-    { name: "ListSnippets", options: { "google.api.http": { get: "/api/v1/list" } }, I: ListStippetsRequest, O: SnippetInfo_List },
+    { name: "UploadSnippet", options: { "google.api.http": { post: "/api/v1/snippet/upload", body: "*" } }, I: UploadSnippetRequest, O: UploadSnippetResponse },
+    { name: "RenameSnippet", options: { "google.api.http": { post: "/api/v1/snippet/rename", body: "*" } }, I: RenameSnippetRequest, O: RenameSnippetResponse },
+    { name: "ListSnippets", options: { "google.api.http": { get: "/api/v1/snippet" } }, I: ListStippetsRequest, O: SnippetInfo_List },
     { name: "GetSnippet", options: { "google.api.http": { get: "/api/v1/snippet/{name}" } }, I: GetSnippetRequest, O: GetSnippetResponse },
     { name: "GetVersion", options: { "google.api.http": { get: "/api/v1/version" } }, I: GetVersionRequest, O: Version }
 ]);
