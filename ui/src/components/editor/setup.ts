@@ -13,6 +13,5 @@ import { requiem } from "./defs.json";
     }
 };
 monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
-console.log(requiem);
 monaco.languages.typescript.typescriptDefaults.addExtraLib(requiem)
 
