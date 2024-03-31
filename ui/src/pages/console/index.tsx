@@ -1,6 +1,6 @@
-import { Box, Button, Heading, IconButton, PageLayout, Tooltip } from '@primer/react';
+import { Box, Button, Heading, IconButton, PageLayout, Text, Tooltip } from '@primer/react';
 import { Editor } from '../../components';
-import { FileIcon, PlusIcon, SidebarCollapseIcon, SidebarExpandIcon } from '@primer/octicons-react';
+import { FileIcon, PlusIcon, SidebarCollapseIcon, SidebarExpandIcon, TriangleRightIcon } from '@primer/octicons-react';
 import { useState } from 'react';
 
 
@@ -35,7 +35,9 @@ export const Console = () => {
                         flexDirection={"row"}
                         px={1}
                     >
-                        <Button>cancel changes</Button>
+                        <Button leadingVisual={TriangleRightIcon}>
+                            <Text color={"accent.emphasis"}>Run</Text>
+                        </Button>
                         <Button sx={{ marginLeft: "12px" }} variant='primary'>save changes</Button>
                     </Box>
                 </Box>
