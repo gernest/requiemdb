@@ -43,6 +43,29 @@ func (s *Snippets) Close() error {
 	return nil
 }
 
+func (s *Snippets) Rename(old, new string) error {
+	txn := s.db.NewTransaction(true)
+	defer txn.Discard()
+	oldKey := buildKey(old)
+	it, err := txn.Get(oldKey)
+	if err != nil {
+		return err
+	}
+	value, err := it.ValueCopy(nil)
+	if err != nil {
+		return err
+	}
+	err = txn.Set(buildKey(new), value)
+	if err != nil {
+		return err
+	}
+
+	// clear cache
+	s.cache.Del(xxhash.Sum64String(old))
+	return txn.Commit()
+
+}
+
 func (s *Snippets) List() (*v1.SnippetInfo_List, error) {
 	prefix := buildKey("")
 	var ls []*v1.SnippetInfo
