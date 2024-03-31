@@ -117,7 +117,9 @@ func (t *Tree) unsafeSaveBuffer() {
 	for _, m := range t.buffer {
 		t.build.Append(m)
 	}
-	t.buffer = t.buffer[:0]
+	defer func() {
+		t.buffer = t.buffer[:0]
+	}()
 	r := t.build.NewRecord()
 	t.add(&Part{
 		Record:  r,

@@ -7,4 +7,9 @@ export default defineConfig({
   define: {
     "process.env": process.env,
   },
+  server: {
+    proxy: {
+      '/v1': 'http://localhost:8080'
+    }
+  },
 })
