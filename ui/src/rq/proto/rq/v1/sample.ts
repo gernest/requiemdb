@@ -39,12 +39,6 @@ export interface Sample {
      * @generated from protobuf field: uint64 max_ts = 4;
      */
     maxTs: bigint;
-    /**
-     * Date in nillisecond in which the sample was taken
-     *
-     * @generated from protobuf field: uint64 date = 5;
-     */
-    date: bigint;
 }
 /**
  * Meta stores sample metaddata.
@@ -69,13 +63,7 @@ export interface Meta {
      */
     maxTs: bigint;
     /**
-     * Date in nillisecond in which the sample was taken
-     *
-     * @generated from protobuf field: uint64 date = 4;
-     */
-    date: bigint;
-    /**
-     * @generated from protobuf field: uint64 resource = 5;
+     * @generated from protobuf field: uint64 resource = 4;
      */
     resource: bigint;
 }
@@ -139,12 +127,11 @@ class Sample$Type extends MessageType<Sample> {
             { no: 1, name: "id", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 2, name: "data", kind: "message", T: () => Data },
             { no: 3, name: "min_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 4, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 5, name: "date", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
+            { no: 4, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
     }
     create(value?: PartialMessage<Sample>): Sample {
-        const message = { id: 0n, minTs: 0n, maxTs: 0n, date: 0n };
+        const message = { id: 0n, minTs: 0n, maxTs: 0n };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Sample>(this, message, value);
@@ -166,9 +153,6 @@ class Sample$Type extends MessageType<Sample> {
                     break;
                 case /* uint64 max_ts */ 4:
                     message.maxTs = reader.uint64().toBigInt();
-                    break;
-                case /* uint64 date */ 5:
-                    message.date = reader.uint64().toBigInt();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -194,9 +178,6 @@ class Sample$Type extends MessageType<Sample> {
         /* uint64 max_ts = 4; */
         if (message.maxTs !== 0n)
             writer.tag(4, WireType.Varint).uint64(message.maxTs);
-        /* uint64 date = 5; */
-        if (message.date !== 0n)
-            writer.tag(5, WireType.Varint).uint64(message.date);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -214,12 +195,11 @@ class Meta$Type extends MessageType<Meta> {
             { no: 1, name: "id", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 2, name: "min_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 3, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 4, name: "date", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 5, name: "resource", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
+            { no: 4, name: "resource", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
     }
     create(value?: PartialMessage<Meta>): Meta {
-        const message = { id: 0n, minTs: 0n, maxTs: 0n, date: 0n, resource: 0n };
+        const message = { id: 0n, minTs: 0n, maxTs: 0n, resource: 0n };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Meta>(this, message, value);
@@ -239,10 +219,7 @@ class Meta$Type extends MessageType<Meta> {
                 case /* uint64 max_ts */ 3:
                     message.maxTs = reader.uint64().toBigInt();
                     break;
-                case /* uint64 date */ 4:
-                    message.date = reader.uint64().toBigInt();
-                    break;
-                case /* uint64 resource */ 5:
+                case /* uint64 resource */ 4:
                     message.resource = reader.uint64().toBigInt();
                     break;
                 default:
@@ -266,12 +243,9 @@ class Meta$Type extends MessageType<Meta> {
         /* uint64 max_ts = 3; */
         if (message.maxTs !== 0n)
             writer.tag(3, WireType.Varint).uint64(message.maxTs);
-        /* uint64 date = 4; */
-        if (message.date !== 0n)
-            writer.tag(4, WireType.Varint).uint64(message.date);
-        /* uint64 resource = 5; */
+        /* uint64 resource = 4; */
         if (message.resource !== 0n)
-            writer.tag(5, WireType.Varint).uint64(message.resource);
+            writer.tag(4, WireType.Varint).uint64(message.resource);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

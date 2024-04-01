@@ -23,7 +23,6 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 	"github.com/requiemdb/requiemdb/internal/protoarrow"
-	"github.com/requiemdb/requiemdb/internal/times"
 )
 
 const (
@@ -33,15 +32,14 @@ const (
 	IDColumn       = 0
 	MinTSColumn    = 1
 	MaxTSColumn    = 2
-	DateColumn     = 3
-	ResourceColumn = 4
+	ResourceColumn = 3
 )
 
 type Part struct {
-	Record  arrow.Record
-	Size    uint64
-	MinDate uint64
-	MaxDate uint64
+	Record arrow.Record
+	Size   uint64
+	MinTS  uint64
+	MaxTS  uint64
 }
 
 type Tree struct {
@@ -122,10 +120,10 @@ func (t *Tree) unsafeSaveBuffer() {
 	}()
 	r := t.build.NewRecord()
 	t.add(&Part{
-		Record:  r,
-		Size:    uint64(util.TotalRecordSize(r)),
-		MinDate: t.buffer[0].Date,
-		MaxDate: t.buffer[len(t.buffer)-1].Date,
+		Record: r,
+		Size:   uint64(util.TotalRecordSize(r)),
+		MinTS:  t.buffer[0].MinTs,
+		MaxTS:  t.buffer[len(t.buffer)-1].MaxTs,
 	})
 }
 
@@ -168,10 +166,10 @@ func (t *Tree) Compact() error {
 	}
 	node := t.findNode(t.nodes[0])
 	part := &Part{
-		Record:  r,
-		Size:    uint64(util.TotalRecordSize(r)),
-		MinDate: t.nodes[0].value.MinDate,
-		MaxDate: t.nodes[len(t.nodes)-1].value.MaxDate,
+		Record: r,
+		Size:   uint64(util.TotalRecordSize(r)),
+		MinTS:  t.nodes[0].value.MinTS,
+		MaxTS:  t.nodes[len(t.nodes)-1].value.MaxTS,
 	}
 	x := &Node[*Part]{
 		value: part,
@@ -200,12 +198,13 @@ func (t *Tree) load() error {
 				return err
 			}
 			r.Retain()
-			date := r.Column(DateColumn).(*array.Uint64).Uint64Values()
+			minTs := r.Column(MinTSColumn).(*array.Uint64).Uint64Values()
+			maxTs := r.Column(MaxTSColumn).(*array.Uint64).Uint64Values()
 			t.add(&Part{
-				Record:  r,
-				Size:    uint64(util.TotalRecordSize(r)),
-				MinDate: date[0],
-				MaxDate: date[len(date)-1],
+				Record: r,
+				Size:   uint64(util.TotalRecordSize(r)),
+				MinTS:  minTs[0],
+				MaxTS:  maxTs[len(maxTs)-1],
 			})
 			return nil
 		})
@@ -238,25 +237,23 @@ func (t *Tree) save(r arrow.Record) error {
 }
 
 func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
-	minDate := times.DateFromNano(start)
-	maxDate := times.NextDateFromNano(end)
 
 	samples := NewSamples()
 	err := t.root.Iterate(func(n *Node[*Part]) error {
 		if n.value == nil {
 			return nil
 		}
-		if n.value.MinDate < minDate && minDate < n.value.MaxDate {
+		if acceptRange(n.value.MinTS, n.value.MaxTS, start, end) {
 			n.value.Record.Retain()
 			defer n.value.Record.Release()
-			dates, ids, err := computeID(n.value.Record, resource, start, end)
+			ids, err := computeID(n.value.Record, resource, start, end)
 			if err != nil {
 				return err
 			}
-			for i := range dates {
-				samples.Add(dates[i], ids[i])
+			for i := range ids {
+				samples.Add(ids[i])
 			}
-			if n.value.MaxDate < maxDate {
+			if n.value.MaxTS < end {
 				return nil
 			}
 			return io.EOF
@@ -272,7 +269,14 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 	return samples, nil
 }
 
-func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (dates, ids []uint64, err error) {
+func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
+	if maxTs < start || minTs > end {
+		return false
+	}
+	return true
+}
+
+func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (ids []uint64, err error) {
 	ctx := context.Background()
 
 	rsc, err := compute.CallFunction(ctx, "equal", nil, compute.NewDatumWithoutOwning(
@@ -283,11 +287,11 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (dates, 
 		),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer rsc.Release()
 	if rsc.Len() == 0 {
-		return []uint64{}, []uint64{}, nil
+		return []uint64{}, nil
 	}
 	min, err := compute.CallFunction(ctx, "greater", nil, compute.NewDatumWithoutOwning(
 		r.Column(MinTSColumn),
@@ -297,7 +301,7 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (dates, 
 		),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer min.Release()
 	max, err := compute.CallFunction(ctx, "less_equal", nil, compute.NewDatumWithoutOwning(
@@ -308,21 +312,21 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (dates, 
 		),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer max.Release()
 
 	// filter by min_ts and max_ts
 	and, err := compute.CallFunction(ctx, "and", nil, min, max)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer and.Release()
 
 	// filter by resource
 	andRsc, err := compute.CallFunction(ctx, "and", nil, and, rsc)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer andRsc.Release()
 
@@ -342,15 +346,10 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (dates, 
 
 	rs, err := compute.TakeArray(ctx, r.Column(IDColumn), a)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer rs.Release()
-	ds, err := compute.TakeArray(ctx, r.Column(DateColumn), a)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer ds.Release()
-	return rs.(*array.Uint64).Uint64Values(), ds.(*array.Uint64).Uint64Values(), nil
+	return rs.(*array.Uint64).Uint64Values(), nil
 }
 
 func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uint64) {
@@ -360,21 +359,19 @@ func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uin
 	if len(ls) == 0 {
 		return
 	}
-	minDate := times.DateFromNano(start)
-	maxDate := times.NextDateFromNano(end)
 
 	from, _ := slices.BinarySearchFunc(ls, &v1.Meta{
-		Date: minDate,
+		MinTs: start,
 	}, func(a, b *v1.Meta) int {
-		return cmp.Compare(a.Date, b.Date)
+		return cmp.Compare(a.MinTs, b.MinTs)
 	})
 	if from == len(ls) {
 		return
 	}
 	to, _ := slices.BinarySearchFunc(ls, &v1.Meta{
-		Date: maxDate,
+		MinTs: end,
 	}, func(a, b *v1.Meta) int {
-		return cmp.Compare(a.Date, b.Date)
+		return cmp.Compare(a.MaxTs, b.MaxTs)
 	})
 	rsc := uint64(resource)
 	for i := from; i < to; i++ {
@@ -382,7 +379,7 @@ func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uin
 		if m.Resource != rsc || !accept(m, start) {
 			continue
 		}
-		samples.Add(m.Date, m.Id)
+		samples.Add(m.Id)
 	}
 }
 
@@ -401,59 +398,19 @@ func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
 	return
 }
 
-type Iterator struct {
-	s  *Samples
-	it roaring64.IntIterable64
-}
-
-func (i *Iterator) HasNext() bool {
-	return i.it.HasNext()
-}
-
-func (i *Iterator) Next() (date uint64, sample *roaring64.Bitmap) {
-	date = i.it.Next()
-	sample = i.s.dates[date]
-	return
-}
-
 type Samples struct {
-	dates map[uint64]*roaring64.Bitmap
-	ds    roaring64.Bitmap
+	roaring64.Bitmap
 }
 
 func NewSamples() *Samples {
 	return samplesPool.Get().(*Samples)
 }
 
-func (s *Samples) Iterator() *Iterator {
-	return &Iterator{
-		s:  s,
-		it: s.ds.Iterator(),
-	}
-}
-
-func (s *Samples) ReverseIterator() *Iterator {
-	return &Iterator{
-		s:  s,
-		it: s.ds.ReverseIterator(),
-	}
-}
-
-func (s *Samples) Add(date uint64, id uint64) {
-	d, ok := s.dates[date]
-	if !ok {
-		d = new(roaring64.Bitmap)
-		s.ds.Add(date)
-		s.dates[date] = d
-	}
-	d.Add(id)
-}
-
 func (s *Samples) Release() {
-	*s = Samples{dates: make(map[uint64]*roaring64.Bitmap)}
+	s.Clear()
 	samplesPool.Put(s)
 }
 
 var samplesPool = &sync.Pool{New: func() any {
-	return &Samples{dates: make(map[uint64]*roaring64.Bitmap)}
+	return new(Samples)
 }}

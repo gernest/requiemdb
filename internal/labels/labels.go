@@ -38,20 +38,18 @@ func (l *Labels) Reset() {
 
 type Label struct {
 	Namespace uint64
-	Partition uint64
 	Resource  v1.RESOURCE
 	Prefix    v1.PREFIX
 	Key       string
 	Value     string
-
-	buffer []byte
+	buffer    []byte
 }
 
 func NewLabel() *Label {
 	return labelPool.Get().(*Label)
 }
 
-const staticSize = 8 + 8 + 2 + 2
+const staticSize = 8 + 4 + 4
 
 var (
 	valueSep = []byte("=")
@@ -59,11 +57,6 @@ var (
 
 func (l *Label) WithNamespace(ns uint64) *Label {
 	l.Namespace = ns
-	return l
-}
-
-func (l *Label) WithPartition(part uint64) *Label {
-	l.Partition = part
 	return l
 }
 
@@ -90,9 +83,8 @@ func (l *Label) WithValue(v string) *Label {
 func (l *Label) Encode() []byte {
 	l.buffer = slices.Grow(l.buffer, staticSize)[:staticSize]
 	binary.LittleEndian.PutUint64(l.buffer, l.Namespace)
-	binary.LittleEndian.PutUint64(l.buffer[8:], l.Partition)
-	binary.LittleEndian.PutUint32(l.buffer[8+8:], uint32(l.Resource))
-	binary.LittleEndian.PutUint32(l.buffer[8+8+4:], uint32(l.Prefix))
+	binary.LittleEndian.PutUint32(l.buffer[8:], uint32(l.Resource))
+	binary.LittleEndian.PutUint32(l.buffer[8+4:], uint32(l.Prefix))
 	l.buffer = append(l.buffer, []byte(l.Key)...)
 	if l.Value != "" {
 		l.buffer = append(l.buffer, valueSep...)
@@ -103,7 +95,6 @@ func (l *Label) Encode() []byte {
 
 func (l *Label) Release() {
 	l.Namespace = 0
-	l.Partition = 0
 	l.Resource = 0
 	l.Prefix = 0
 	l.buffer = l.buffer[:0]

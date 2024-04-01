@@ -10,7 +10,6 @@ import (
 	"github.com/requiemdb/requiemdb/internal/keys"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/lsm"
-	"github.com/requiemdb/requiemdb/internal/times"
 	"github.com/requiemdb/requiemdb/internal/transform"
 	"github.com/requiemdb/requiemdb/internal/x"
 	"google.golang.org/protobuf/proto"
@@ -30,13 +29,11 @@ func Store(
 		return err
 	}
 	id := uint64(next)
-	date := times.Date()
 	sample := &v1.Sample{
 		Id:    id,
 		Data:  data,
 		MinTs: ctx.MinTs,
 		MaxTs: ctx.MaxTs,
-		Date:  date,
 	}
 	sample.Id = id
 	txn := db.NewTransaction(true)
@@ -47,9 +44,8 @@ func Store(
 		return err
 	}
 	sampleKey := (&keys.Sample{
-		Partition: sample.Date,
-		Resource:  meta,
-		ID:        id,
+		Resource: meta,
+		ID:       id,
 	}).Encode()
 
 	err = txn.SetEntry(badger.NewEntry(sampleKey, compressedData).
@@ -73,7 +69,6 @@ func Store(
 		Id:       id,
 		MinTs:    sample.MinTs,
 		MaxTs:    sample.MaxTs,
-		Date:     sample.Date,
 		Resource: uint64(meta),
 	})
 	return nil

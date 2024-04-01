@@ -30,9 +30,6 @@ message Sample {
 
   // Maximum timestamp observed in this sample in milliseconds
   uint64 max_ts = 4;
-
-  // Date in nillisecond in which the sample was taken
-  uint64 date = 5;
 }
 
 // Meta stores sample metaddata.
@@ -45,8 +42,5 @@ message Meta {
   // Maximum timestamp observed in this sample in milliseconds
   uint64 max_ts = 3;
 
-  // Date in nillisecond in which the sample was taken
-  uint64 date = 4;
-
-  uint64 resource = 5;
+  uint64 resource = 4;
 }
