@@ -38,12 +38,10 @@ var rootFS, _ = fs.Sub(ui.FS, "dist")
 var fileServer = http.FileServer(http.FS(rootFS))
 
 type Service struct {
-	db        *badger.DB
-	snippets  *snippets.Snippets
-	seq       *badger.Sequence
-	tree      *lsm.Tree
-	retention time.Duration
-	hand      http.Handler
+	db       *badger.DB
+	snippets *snippets.Snippets
+	store    *store.Storage
+	hand     http.Handler
 	v1.UnimplementedRQServer
 }
 
@@ -60,6 +58,10 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 	if err != nil {
 		return nil, err
 	}
+	storage, err := store.NewStore(db, tree, seq)
+	if err != nil {
+		return nil, err
+	}
 	svr := grpc.NewServer(
 		grpc.StreamInterceptor(
 			grpc_protovalidate.StreamServerInterceptor(valid),
@@ -70,7 +72,11 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
-	service := &Service{db: db, snippets: sn, seq: seq, tree: tree, retention: retention}
+	service := &Service{
+		db:       db,
+		snippets: sn,
+		store:    storage,
+	}
 	v1.RegisterRQServer(svr, service)
 	web := grpcweb.WrapServer(svr,
 		grpcweb.WithAllowNonRootResource(true),
@@ -116,7 +122,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 }
 
 func (s *Service) Start(ctx context.Context) {
-	go s.tree.Start(ctx)
+	go s.store.Start(ctx)
 }
 
 func (s *Service) Close() error {
@@ -146,22 +152,19 @@ func corsMiddleware() *cors.Cors {
 }
 
 func (s *Service) Metrics() *Metrics {
-	return &Metrics{db: s.db, seq: s.seq, tree: s.tree, retention: s.retention}
+	return &Metrics{store: s.store}
 }
 func (s *Service) Trace() *Trace {
-	return &Trace{db: s.db, seq: s.seq, tree: s.tree, retention: s.retention}
+	return &Trace{store: s.store}
 }
 
 func (s *Service) Logs() *Logs {
-	return &Logs{db: s.db, seq: s.seq, tree: s.tree, retention: s.retention}
+	return &Logs{store: s.store}
 }
 
 type Metrics struct {
 	collector_metrics.UnsafeMetricsServiceServer
-	db        *badger.DB
-	seq       *badger.Sequence
-	tree      *lsm.Tree
-	retention time.Duration
+	store *store.Storage
 }
 
 var _ collector_metrics.MetricsServiceServer = (*Metrics)(nil)
@@ -177,7 +180,7 @@ func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetri
 	}
 	o.Process(data)
 
-	err := store.Store(r.db, r.tree, r.seq, o, data, r.retention, v1.RESOURCE_METRICS)
+	err := r.store.Save(o, data, v1.RESOURCE_METRICS)
 	if err != nil {
 		return nil, err
 	}
@@ -186,10 +189,7 @@ func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetri
 
 type Logs struct {
 	collector_logs.UnsafeLogsServiceServer
-	db        *badger.DB
-	tree      *lsm.Tree
-	seq       *badger.Sequence
-	retention time.Duration
+	store *store.Storage
 }
 
 var _ collector_logs.LogsServiceServer = (*Logs)(nil)
@@ -205,7 +205,7 @@ func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsService
 		},
 	}
 	o.Process(data)
-	err := store.Store(r.db, r.tree, r.seq, o, data, r.retention, v1.RESOURCE_LOGS)
+	err := r.store.Save(o, data, v1.RESOURCE_LOGS)
 	if err != nil {
 		return nil, err
 	}
@@ -214,10 +214,7 @@ func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsService
 
 type Trace struct {
 	collector_trace.UnsafeTraceServiceServer
-	db        *badger.DB
-	seq       *badger.Sequence
-	tree      *lsm.Tree
-	retention time.Duration
+	store *store.Storage
 }
 
 var _ collector_trace.TraceServiceServer = (*Trace)(nil)
@@ -233,7 +230,7 @@ func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServ
 		},
 	}
 	o.Process(data)
-	err := store.Store(r.db, r.tree, r.seq, o, data, r.retention, v1.RESOURCE_TRACES)
+	err := r.store.Save(o, data, v1.RESOURCE_TRACES)
 	if err != nil {
 		return nil, err
 	}
