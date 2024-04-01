@@ -19,8 +19,9 @@ var (
 )
 
 type Snippets struct {
-	db    *badger.DB
-	cache *ristretto.Cache
+	db     *badger.DB
+	cache  *ristretto.Cache
+	hashed *ristretto.Cache
 }
 
 func New(db *badger.DB, cacheBudget int64) (*Snippets, error) {
@@ -35,17 +36,25 @@ func New(db *badger.DB, cacheBudget int64) (*Snippets, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Snippets{db: db, cache: cache}, nil
+	hashed, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1e7,
+		MaxCost:     8 << 20,
+		BufferItems: 64,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &Snippets{db: db, cache: cache, hashed: hashed}, nil
 }
 
 func (s *Snippets) Close() {
 	s.cache.Close()
 }
 
-func (s *Snippets) Rename(old, new string) error {
+func (s *Snippets) Rename(req *v1.RenameSnippetRequest) error {
 	txn := s.db.NewTransaction(true)
 	defer txn.Discard()
-	oldKey := buildKey(old)
+	oldKey := buildKey(req.OldName)
 	it, err := txn.Get(oldKey)
 	if err != nil {
 		return err
@@ -54,13 +63,10 @@ func (s *Snippets) Rename(old, new string) error {
 	if err != nil {
 		return err
 	}
-	err = txn.Set(buildKey(new), value)
+	err = txn.Set(buildKey(req.NewName), value)
 	if err != nil {
 		return err
 	}
-
-	// clear cache
-	s.cache.Del(xxhash.Sum64String(old))
 	return txn.Commit()
 
 }
@@ -96,6 +102,20 @@ func (s *Snippets) List() (*v1.SnippetInfo_List, error) {
 		return nil, err
 	}
 	return &v1.SnippetInfo_List{Snippets: ls}, nil
+}
+
+func (s *Snippets) GetProgramData(data []byte) (*goja.Program, error) {
+	hash := xxhash.Sum64(data)
+	if o, ok := s.hashed.Get(hash); ok {
+		return o.(*goja.Program), nil
+	}
+	program, err := goja.Compile("index.js", string(data), true)
+	if err != nil {
+		return nil, err
+	}
+	cost := len(data)
+	s.hashed.Set(hash, program, int64(cost))
+	return program, nil
 }
 
 func (s *Snippets) GetProgram(name string) (*goja.Program, error) {

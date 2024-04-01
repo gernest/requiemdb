@@ -14,6 +14,26 @@ import (
 
 var _ v1.RQServer = (*Service)(nil)
 
+func (s *Service) UploadSnippet(_ context.Context, req *v1.UploadSnippetRequest) (*v1.UploadSnippetResponse, error) {
+	err := s.snippets.Upsert(req.Name, req.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.UploadSnippetResponse{}, nil
+}
+
+func (s *Service) RenameSnippet(_ context.Context, req *v1.RenameSnippetRequest) (*v1.RenameSnippetResponse, error) {
+	err := s.snippets.Rename(req)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.RenameSnippetResponse{}, nil
+}
+
+func (s *Service) ListSnippets(context.Context, *v1.ListStippetsRequest) (*v1.SnippetInfo_List, error) {
+	return s.snippets.List()
+}
+
 func (a *Service) GetSnippet(ctx context.Context, req *v1.GetSnippetRequest) (*v1.GetSnippetResponse, error) {
 	res, err := a.snippets.Get(req.Name)
 	if err != nil {
