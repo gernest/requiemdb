@@ -8,36 +8,50 @@ import (
 
 func (c *Context) transformMetrics(rm *metricsv1.ResourceMetrics) {
 	if rm.SchemaUrl != "" {
-		c.label(
-			labels.NewBytes(v1.RESOURCE_METRICS, v1.PREFIX_RESOURCE_SCHEMA).Value(rm.SchemaUrl),
-		)
+		c.Label(func(lbl *labels.Label) {
+			lbl.WithResource(v1.RESOURCE_METRICS).
+				WithPrefix(v1.PREFIX_RESOURCE_SCHEMA).
+				WithKey(rm.SchemaUrl)
+
+		})
 	}
 	if rm.Resource != nil {
 		c.attributes(v1.RESOURCE_METRICS, v1.PREFIX_RESOURCE_ATTRIBUTES, rm.Resource.Attributes)
 	}
 	for _, sm := range rm.ScopeMetrics {
 		if sm.SchemaUrl != "" {
-			c.label(
-				labels.NewBytes(v1.RESOURCE_METRICS, v1.PREFIX_SCOPE_SCHEMA).Value(sm.SchemaUrl),
-			)
+			c.Label(func(lbl *labels.Label) {
+				lbl.WithResource(v1.RESOURCE_METRICS).
+					WithPrefix(v1.PREFIX_SCOPE_SCHEMA).
+					WithKey(sm.SchemaUrl)
+
+			})
 		}
 		if sc := sm.Scope; sc != nil {
 			if sc.Name != "" {
-				c.label(
-					labels.NewBytes(v1.RESOURCE_METRICS, v1.PREFIX_SCOPE_NAME).Value(sc.Name),
-				)
+				c.Label(func(lbl *labels.Label) {
+					lbl.WithResource(v1.RESOURCE_METRICS).
+						WithPrefix(v1.PREFIX_SCOPE_NAME).
+						WithKey(sc.Name)
+
+				})
 			}
 			if sc.Version != "" {
-				c.label(
-					labels.NewBytes(v1.RESOURCE_METRICS, v1.PREFIX_SCOPE_VERSION).Value(sc.Version),
-				)
+				c.Label(func(lbl *labels.Label) {
+					lbl.WithResource(v1.RESOURCE_METRICS).
+						WithPrefix(v1.PREFIX_SCOPE_VERSION).
+						WithKey(sc.Version)
+
+				})
 			}
 			c.attributes(v1.RESOURCE_METRICS, v1.PREFIX_SCOPE_ATTRIBUTES, sc.Attributes)
 		}
 		for _, m := range sm.Metrics {
-			c.label(
-				labels.NewBytes(v1.RESOURCE_METRICS, v1.PREFIX_NAME).Value(m.Name),
-			)
+			c.Label(func(lbl *labels.Label) {
+				lbl.WithResource(v1.RESOURCE_METRICS).
+					WithPrefix(v1.PREFIX_NAME).
+					WithKey(m.Name)
+			})
 			switch e := m.Data.(type) {
 			case *metricsv1.Metric_Gauge:
 				transFormDataPoints(c, e.Gauge.DataPoints)

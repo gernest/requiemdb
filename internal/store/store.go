@@ -10,6 +10,8 @@ import (
 	"github.com/requiemdb/requiemdb/internal/keys"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/lsm"
+	"github.com/requiemdb/requiemdb/internal/times"
+	"github.com/requiemdb/requiemdb/internal/transform"
 	"github.com/requiemdb/requiemdb/internal/x"
 	"google.golang.org/protobuf/proto"
 )
@@ -18,7 +20,8 @@ func Store(
 	db *badger.DB,
 	tree *lsm.Tree,
 	seq *badger.Sequence,
-	lbs *labels.Labels, sample *v1.Sample,
+	ctx *transform.Context,
+	data *v1.Data,
 	ttl time.Duration,
 	meta v1.RESOURCE,
 ) error {
@@ -27,12 +30,19 @@ func Store(
 		return err
 	}
 	id := uint64(next)
+	date := times.Date()
+	sample := &v1.Sample{
+		Id:    id,
+		Data:  data,
+		MinTs: ctx.MinTs,
+		MaxTs: ctx.MaxTs,
+		Date:  date,
+	}
 	sample.Id = id
 	txn := db.NewTransaction(true)
 	defer txn.Discard()
 
-	// Start by writing sample data
-	data, err := x.Compress(proto.Marshal(sample))
+	compressedData, err := x.Compress(proto.Marshal(sample))
 	if err != nil {
 		return err
 	}
@@ -42,18 +52,17 @@ func Store(
 		ID:        id,
 	}).Encode()
 
-	err = txn.SetEntry(badger.NewEntry(sampleKey, data).
+	err = txn.SetEntry(badger.NewEntry(sampleKey, compressedData).
 		WithTTL(ttl))
 	if err != nil {
 		return err
 	}
 
-	ns := sampleKey[:16]
-	for _, lb := range lbs.Values {
-		err := saveLabel(txn, lb.Namespaced(ns), id, ttl)
-		if err != nil {
-			return err
-		}
+	err = ctx.Labels.Iter(func(lbl *labels.Label) error {
+		return saveLabel(txn, lbl.Encode(), id, ttl)
+	})
+	if err != nil {
+		return err
 	}
 	err = txn.Commit()
 	if err != nil {

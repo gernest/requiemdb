@@ -1,90 +1,113 @@
 package labels
 
 import (
-	"bytes"
+	"encoding/binary"
+	"slices"
 	"sync"
 
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 )
 
 type Labels struct {
-	Values []*Bytes
+	ls []*Label
 }
 
-func NewLabels() *Labels {
-	return labelsPool.Get().(*Labels)
+func (l *Labels) New() *Label {
+	lbl := NewLabel()
+	l.ls = append(l.ls, lbl)
+	return lbl
 }
 
-func (l *Labels) Add(value *Bytes) {
-	l.Values = append(l.Values, value)
+func (l *Labels) Iter(f func(lbl *Label) error) error {
+	for _, v := range l.ls {
+		err := f(v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (l *Labels) Reset() {
-	for _, b := range l.Values {
-		b.Release()
+	for _, o := range l.ls {
+		o.Release()
 	}
-	clear(l.Values)
-	l.Values = l.Values[:0]
+	clear(l.ls)
+	l.ls = l.ls[:0]
 }
 
-func (l *Labels) Release() {
-	l.Reset()
-	labelsPool.Put(l)
+type Label struct {
+	Namespace uint64
+	Partition uint64
+	Resource  v1.RESOURCE
+	Prefix    v1.PREFIX
+	Key       string
+	Value     string
+
+	buffer []byte
 }
 
-var labelsPool = &sync.Pool{New: func() any { return new(Labels) }}
-
-type Bytes struct {
-	bytes.Buffer
+func NewLabel() *Label {
+	return labelPool.Get().(*Label)
 }
 
-func (b *Bytes) Namespaced(ns []byte) []byte {
-	o := b.Bytes()
-	copy(o, ns)
-	return o
+const staticSize = 8 + 8 + 2 + 2
+
+var (
+	valueSep = []byte("=")
+)
+
+func (l *Label) WithNamespace(ns uint64) *Label {
+	l.Namespace = ns
+	return l
 }
 
-func (b *Bytes) Add(part string) *Bytes {
-	if b.Len() > 0 {
-		b.WriteByte('.')
+func (l *Label) WithPartition(part uint64) *Label {
+	l.Partition = part
+	return l
+}
+
+func (l *Label) WithResource(r v1.RESOURCE) *Label {
+	l.Resource = r
+	return l
+}
+
+func (l *Label) WithPrefix(p v1.PREFIX) *Label {
+	l.Prefix = p
+	return l
+}
+
+func (l *Label) WithKey(k string) *Label {
+	l.Key = k
+	return l
+}
+
+func (l *Label) WithValue(v string) *Label {
+	l.Value = v
+	return l
+}
+
+func (l *Label) Encode() []byte {
+	l.buffer = slices.Grow(l.buffer, staticSize)[:staticSize]
+	binary.LittleEndian.PutUint64(l.buffer, l.Namespace)
+	binary.LittleEndian.PutUint64(l.buffer[8:], l.Partition)
+	binary.LittleEndian.PutUint32(l.buffer[8+8:], uint32(l.Resource))
+	binary.LittleEndian.PutUint32(l.buffer[8+8+4:], uint32(l.Prefix))
+	l.buffer = append(l.buffer, []byte(l.Key)...)
+	if l.Value != "" {
+		l.buffer = append(l.buffer, valueSep...)
+		l.buffer = append(l.buffer, []byte(l.Value)...)
 	}
-	b.WriteString(part)
-	return b
-}
-func (b *Bytes) AddBytes(part []byte) *Bytes {
-	if b.Len() > 0 {
-		b.WriteByte('.')
-	}
-	b.Write(part)
-	return b
+	return l.buffer
 }
 
-func (b *Bytes) Value(value string) *Bytes {
-	b.WriteByte('=')
-	b.WriteString(value)
-	return b
+func (l *Label) Release() {
+	l.Namespace = 0
+	l.Partition = 0
+	l.Resource = 0
+	l.Prefix = 0
+	l.buffer = l.buffer[:0]
+	labelPool.Put(l)
 }
 
-func (b *Bytes) ValueBytes(value []byte) *Bytes {
-	b.WriteByte('=')
-	b.Write(value)
-	return b
-}
-
-func (b *Bytes) Release() {
-	b.Reset()
-	bytesPool.Put(b)
-}
-
-var namespace [16]byte
-
-func NewBytes(kind v1.RESOURCE, prefix v1.PREFIX) *Bytes {
-	b := bytesPool.Get().(*Bytes)
-	// Reserve the first 8 bytes for namespace
-	b.Write(namespace[:])
-	b.WriteByte(byte(kind))
-	b.WriteByte(byte(prefix))
-	return b
-}
-
-var bytesPool = &sync.Pool{New: func() any { return new(Bytes) }}
+var labelPool = &sync.Pool{New: func() any { return new(Label) }}

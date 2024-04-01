@@ -170,14 +170,14 @@ func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetri
 	o := transform.NewContext()
 	defer o.Release()
 
-	sample, labels, err := o.Process(&metricsv1.MetricsData{
-		ResourceMetrics: req.ResourceMetrics,
-	})
-	if err != nil {
-		return nil, err
+	data := &v1.Data{
+		Data: &v1.Data_Metrics{Metrics: &metricsv1.MetricsData{
+			ResourceMetrics: req.ResourceMetrics,
+		}},
 	}
-	defer labels.Release()
-	err = store.Store(r.db, r.tree, r.seq, labels, sample, r.retention, v1.RESOURCE_METRICS)
+	o.Process(data)
+
+	err := store.Store(r.db, r.tree, r.seq, o, data, r.retention, v1.RESOURCE_METRICS)
 	if err != nil {
 		return nil, err
 	}
@@ -197,15 +197,15 @@ var _ collector_logs.LogsServiceServer = (*Logs)(nil)
 func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsServiceRequest) (*collector_logs.ExportLogsServiceResponse, error) {
 	o := transform.NewContext()
 	defer o.Release()
-
-	sample, labels, err := o.Process(&logsv1.LogsData{
-		ResourceLogs: req.ResourceLogs,
-	})
-	if err != nil {
-		return nil, err
+	data := &v1.Data{
+		Data: &v1.Data_Logs{
+			Logs: &logsv1.LogsData{
+				ResourceLogs: req.ResourceLogs,
+			},
+		},
 	}
-	defer labels.Release()
-	err = store.Store(r.db, r.tree, r.seq, labels, sample, r.retention, v1.RESOURCE_LOGS)
+	o.Process(data)
+	err := store.Store(r.db, r.tree, r.seq, o, data, r.retention, v1.RESOURCE_LOGS)
 	if err != nil {
 		return nil, err
 	}
@@ -225,15 +225,15 @@ var _ collector_trace.TraceServiceServer = (*Trace)(nil)
 func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServiceRequest) (*collector_trace.ExportTraceServiceResponse, error) {
 	o := transform.NewContext()
 	defer o.Release()
-
-	sample, labels, err := o.Process(&tracev1.TracesData{
-		ResourceSpans: req.ResourceSpans,
-	})
-	if err != nil {
-		return nil, err
+	data := &v1.Data{
+		Data: &v1.Data_Trace{
+			Trace: &tracev1.TracesData{
+				ResourceSpans: req.ResourceSpans,
+			},
+		},
 	}
-	defer labels.Release()
-	err = store.Store(r.db, r.tree, r.seq, labels, sample, r.retention, v1.RESOURCE_TRACES)
+	o.Process(data)
+	err := store.Store(r.db, r.tree, r.seq, o, data, r.retention, v1.RESOURCE_TRACES)
 	if err != nil {
 		return nil, err
 	}
