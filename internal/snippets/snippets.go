@@ -38,9 +38,8 @@ func New(db *badger.DB, cacheBudget int64) (*Snippets, error) {
 	return &Snippets{db: db, cache: cache}, nil
 }
 
-func (s *Snippets) Close() error {
+func (s *Snippets) Close() {
 	s.cache.Close()
-	return nil
 }
 
 func (s *Snippets) Rename(old, new string) error {

@@ -125,8 +125,9 @@ func (s *Service) Start(ctx context.Context) {
 	go s.store.Start(ctx)
 }
 
-func (s *Service) Close() error {
-	return nil
+func (s *Service) Close() {
+	s.store.Close()
+	s.snippets.Close()
 }
 
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
