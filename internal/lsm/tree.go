@@ -2,12 +2,10 @@ package lsm
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -142,9 +140,7 @@ func (t *Tree) Compact() error {
 		t.records = append(t.records, n.value.Record)
 		return nil
 	})
-	if len(t.nodes) <= 1 {
-		return nil
-	}
+
 	defer func() {
 		clear(t.nodes)
 		clear(t.records)
@@ -152,6 +148,9 @@ func (t *Tree) Compact() error {
 		t.records = t.records[:0]
 	}()
 
+	if len(t.nodes) <= 1 {
+		return nil
+	}
 	r, err := protoarrow.Merge(t.records)
 	if err != nil {
 		return err
@@ -359,32 +358,13 @@ func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uin
 	if len(ls) == 0 {
 		return
 	}
-
-	from, _ := slices.BinarySearchFunc(ls, &v1.Meta{
-		MinTs: start,
-	}, func(a, b *v1.Meta) int {
-		return cmp.Compare(a.MinTs, b.MinTs)
-	})
-	if from == len(ls) {
-		return
-	}
-	to, _ := slices.BinarySearchFunc(ls, &v1.Meta{
-		MinTs: end,
-	}, func(a, b *v1.Meta) int {
-		return cmp.Compare(a.MaxTs, b.MaxTs)
-	})
-	rsc := uint64(resource)
-	for i := from; i < to; i++ {
-		m := ls[i]
-		if m.Resource != rsc || !accept(m, start) {
-			continue
+	rs := uint64(resource)
+	// We don't keep a lot meta in the buffer. For correctness, perform a linear search
+	for _, m := range t.buffer {
+		if m.Resource == rs && acceptRange(m.MinTs, m.MaxTs, start, end) {
+			samples.Add(m.Id)
 		}
-		samples.Add(m.Id)
 	}
-}
-
-func accept(m *v1.Meta, start uint64) bool {
-	return m.MinTs < start && start < m.MaxTs
 }
 
 func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
