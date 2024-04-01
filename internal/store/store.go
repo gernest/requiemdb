@@ -1,15 +1,16 @@
 package store
 
 import (
-	"encoding/binary"
 	"errors"
 	"time"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	"github.com/requiemdb/requiemdb/internal/keys"
 	"github.com/requiemdb/requiemdb/internal/labels"
 	"github.com/requiemdb/requiemdb/internal/lsm"
+	"github.com/requiemdb/requiemdb/internal/x"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -26,32 +27,30 @@ func Store(
 		return err
 	}
 	id := uint64(next)
+	sample.Id = id
 	txn := db.NewTransaction(true)
 	defer txn.Discard()
 
 	// Start by writing sample data
-	data, err := proto.Marshal(sample)
+	data, err := x.Compress(proto.Marshal(sample))
 	if err != nil {
 		return err
 	}
-	// 8 bytes for date
-	// 1 byte for kind
-	// 8 bytes for id
-	var key [8 + 1 + 8]byte
-	binary.LittleEndian.PutUint64(key[:], sample.Date)
-	key[8] = byte(meta)
-	binary.LittleEndian.PutUint64(key[9:], id)
+	sampleKey := (&keys.Sample{
+		Partition: sample.Date,
+		Resource:  meta,
+		ID:        id,
+	}).Encode()
 
-	err = txn.SetEntry(badger.NewEntry(key[:], data).
+	err = txn.SetEntry(badger.NewEntry(sampleKey, data).
 		WithTTL(ttl))
 	if err != nil {
 		return err
 	}
 
-	var date [8]byte
-	copy(date[:], key[:8])
+	ns := sampleKey[:16]
 	for _, lb := range lbs.Values {
-		err := saveLabel(txn, lb.Namespaced(&date), id, ttl)
+		err := saveLabel(txn, lb.Namespaced(ns), id, ttl)
 		if err != nil {
 			return err
 		}

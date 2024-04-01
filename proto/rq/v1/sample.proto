@@ -19,18 +19,20 @@ enum PREFIX {
 }
 
 message Sample {
+  uint64 id = 1;
+
   // Serialized Data object, compressed with zstd. We use bytes here because we
   // automatically sore Sample as a arrow.Record.
-  Data data = 1;
+  Data data = 2;
 
   // Minimum timetamp observed in this sample in milliseconds
-  uint64 min_ts = 2;
+  uint64 min_ts = 3;
 
   // Maximum timestamp observed in this sample in milliseconds
-  uint64 max_ts = 3;
+  uint64 max_ts = 4;
 
   // Date in nillisecond in which the sample was taken
-  uint64 date = 4;
+  uint64 date = 5;
 }
 
 // Meta stores sample metaddata.

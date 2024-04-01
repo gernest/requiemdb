@@ -38,9 +38,9 @@ type Bytes struct {
 	bytes.Buffer
 }
 
-func (b *Bytes) Namespaced(ns *[8]byte) []byte {
+func (b *Bytes) Namespaced(ns []byte) []byte {
 	o := b.Bytes()
-	copy(o, ns[:])
+	copy(o, ns)
 	return o
 }
 
@@ -76,7 +76,7 @@ func (b *Bytes) Release() {
 	bytesPool.Put(b)
 }
 
-var namespace [8]byte
+var namespace [16]byte
 
 func NewBytes(kind v1.RESOURCE, prefix v1.PREFIX) *Bytes {
 	b := bytesPool.Get().(*Bytes)

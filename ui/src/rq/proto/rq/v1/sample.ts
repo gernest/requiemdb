@@ -17,28 +17,32 @@ import { Data } from "./scan";
  */
 export interface Sample {
     /**
+     * @generated from protobuf field: uint64 id = 1;
+     */
+    id: bigint;
+    /**
      * Serialized Data object, compressed with zstd. We use bytes here because we
      * automatically sore Sample as a arrow.Record.
      *
-     * @generated from protobuf field: v1.Data data = 1;
+     * @generated from protobuf field: v1.Data data = 2;
      */
     data?: Data;
     /**
      * Minimum timetamp observed in this sample in milliseconds
      *
-     * @generated from protobuf field: uint64 min_ts = 2;
+     * @generated from protobuf field: uint64 min_ts = 3;
      */
     minTs: bigint;
     /**
      * Maximum timestamp observed in this sample in milliseconds
      *
-     * @generated from protobuf field: uint64 max_ts = 3;
+     * @generated from protobuf field: uint64 max_ts = 4;
      */
     maxTs: bigint;
     /**
      * Date in nillisecond in which the sample was taken
      *
-     * @generated from protobuf field: uint64 date = 4;
+     * @generated from protobuf field: uint64 date = 5;
      */
     date: bigint;
 }
@@ -132,14 +136,15 @@ export enum PREFIX {
 class Sample$Type extends MessageType<Sample> {
     constructor() {
         super("v1.Sample", [
-            { no: 1, name: "data", kind: "message", T: () => Data },
-            { no: 2, name: "min_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 3, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 4, name: "date", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
+            { no: 1, name: "id", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 2, name: "data", kind: "message", T: () => Data },
+            { no: 3, name: "min_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 4, name: "max_ts", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 5, name: "date", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
     }
     create(value?: PartialMessage<Sample>): Sample {
-        const message = { minTs: 0n, maxTs: 0n, date: 0n };
+        const message = { id: 0n, minTs: 0n, maxTs: 0n, date: 0n };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Sample>(this, message, value);
@@ -150,16 +155,19 @@ class Sample$Type extends MessageType<Sample> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* v1.Data data */ 1:
+                case /* uint64 id */ 1:
+                    message.id = reader.uint64().toBigInt();
+                    break;
+                case /* v1.Data data */ 2:
                     message.data = Data.internalBinaryRead(reader, reader.uint32(), options, message.data);
                     break;
-                case /* uint64 min_ts */ 2:
+                case /* uint64 min_ts */ 3:
                     message.minTs = reader.uint64().toBigInt();
                     break;
-                case /* uint64 max_ts */ 3:
+                case /* uint64 max_ts */ 4:
                     message.maxTs = reader.uint64().toBigInt();
                     break;
-                case /* uint64 date */ 4:
+                case /* uint64 date */ 5:
                     message.date = reader.uint64().toBigInt();
                     break;
                 default:
@@ -174,18 +182,21 @@ class Sample$Type extends MessageType<Sample> {
         return message;
     }
     internalBinaryWrite(message: Sample, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* v1.Data data = 1; */
+        /* uint64 id = 1; */
+        if (message.id !== 0n)
+            writer.tag(1, WireType.Varint).uint64(message.id);
+        /* v1.Data data = 2; */
         if (message.data)
-            Data.internalBinaryWrite(message.data, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* uint64 min_ts = 2; */
+            Data.internalBinaryWrite(message.data, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 min_ts = 3; */
         if (message.minTs !== 0n)
-            writer.tag(2, WireType.Varint).uint64(message.minTs);
-        /* uint64 max_ts = 3; */
+            writer.tag(3, WireType.Varint).uint64(message.minTs);
+        /* uint64 max_ts = 4; */
         if (message.maxTs !== 0n)
-            writer.tag(3, WireType.Varint).uint64(message.maxTs);
-        /* uint64 date = 4; */
+            writer.tag(4, WireType.Varint).uint64(message.maxTs);
+        /* uint64 date = 5; */
         if (message.date !== 0n)
-            writer.tag(4, WireType.Varint).uint64(message.date);
+            writer.tag(5, WireType.Varint).uint64(message.date);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
