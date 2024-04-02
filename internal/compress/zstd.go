@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/klauspost/compress/zstd"
-	"github.com/requiemdb/requiemdb/internal/logger"
 )
 
 func Compress(data []byte) ([]byte, error) {

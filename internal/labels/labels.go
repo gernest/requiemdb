@@ -5,7 +5,7 @@ import (
 	"slices"
 	"sync"
 
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 )
 
 type Labels struct {

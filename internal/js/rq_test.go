@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/requiemdb/requiemdb/internal/compile"
+	"github.com/gernest/requiemdb/internal/compile"
 	"github.com/stretchr/testify/require"
 )
 

@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"github.com/dgraph-io/badger/v4"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/compress"
-	"github.com/requiemdb/requiemdb/internal/version"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/compress"
+	"github.com/gernest/requiemdb/internal/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

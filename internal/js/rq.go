@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/dop251/goja"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/visit"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/visit"
 )
 
 type Options struct {

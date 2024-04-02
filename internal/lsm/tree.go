@@ -19,8 +19,8 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/scalar"
 	"github.com/apache/arrow/go/v16/arrow/util"
 	"github.com/dgraph-io/badger/v4"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/protoarrow"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/protoarrow"
 )
 
 const (

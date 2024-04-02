@@ -7,9 +7,9 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	"github.com/dop251/goja"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/compile"
-	"github.com/requiemdb/requiemdb/internal/compress"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/compile"
+	"github.com/gernest/requiemdb/internal/compress"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

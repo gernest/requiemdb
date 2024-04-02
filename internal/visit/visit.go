@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	commonV1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resourceV1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )

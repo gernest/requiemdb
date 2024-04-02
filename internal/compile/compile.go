@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/evanw/esbuild/pkg/api"
-	"github.com/requiemdb/requiemdb/internal/js/bundle"
+	"github.com/gernest/requiemdb/internal/js/bundle"
 )
 
 const (

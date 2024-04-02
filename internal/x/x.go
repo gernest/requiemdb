@@ -1,7 +1,7 @@
 package x
 
 import (
-	"github.com/requiemdb/requiemdb/internal/compress"
+	"github.com/gernest/requiemdb/internal/compress"
 	"google.golang.org/protobuf/proto"
 )
 

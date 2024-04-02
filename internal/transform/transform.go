@@ -3,8 +3,8 @@ package transform
 import (
 	"sync"
 
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/labels"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/labels"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 )
 

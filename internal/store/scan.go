@@ -8,14 +8,14 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/data"
+	dataOps "github.com/gernest/requiemdb/internal/data"
+	"github.com/gernest/requiemdb/internal/keys"
+	"github.com/gernest/requiemdb/internal/labels"
+	"github.com/gernest/requiemdb/internal/visit"
+	"github.com/gernest/requiemdb/internal/x"
 	"github.com/jinzhu/now"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/data"
-	dataOps "github.com/requiemdb/requiemdb/internal/data"
-	"github.com/requiemdb/requiemdb/internal/keys"
-	"github.com/requiemdb/requiemdb/internal/labels"
-	"github.com/requiemdb/requiemdb/internal/visit"
-	"github.com/requiemdb/requiemdb/internal/x"
 )
 
 func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {

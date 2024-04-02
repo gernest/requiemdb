@@ -1,8 +1,8 @@
 package transform
 
 import (
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/labels"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/labels"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
 

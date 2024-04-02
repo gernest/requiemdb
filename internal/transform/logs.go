@@ -3,8 +3,8 @@ package transform
 import (
 	"encoding/hex"
 
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/labels"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/labels"
 	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 )
 

@@ -7,12 +7,12 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
-	"github.com/requiemdb/requiemdb/internal/keys"
-	"github.com/requiemdb/requiemdb/internal/labels"
-	"github.com/requiemdb/requiemdb/internal/lsm"
-	"github.com/requiemdb/requiemdb/internal/transform"
-	"github.com/requiemdb/requiemdb/internal/x"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/keys"
+	"github.com/gernest/requiemdb/internal/labels"
+	"github.com/gernest/requiemdb/internal/lsm"
+	"github.com/gernest/requiemdb/internal/transform"
+	"github.com/gernest/requiemdb/internal/x"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -77,10 +77,10 @@ func (s *Storage) Save(ctx *transform.Context, data *v1.Data, meta v1.RESOURCE) 
 	if err != nil {
 		return err
 	}
-	sampleKey := (&keys.Sample{
-		Resource: meta,
-		ID:       id,
-	}).Encode()
+	var key keys.Sample
+	sampleKey := key.WithResource(meta).
+		WithID(id).
+		Encode()
 
 	err = txn.SetEntry(badger.NewEntry(sampleKey, compressedData))
 	if err != nil {

@@ -2,7 +2,7 @@ package data
 
 import (
 	"github.com/cespare/xxhash/v2"
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricsV1 "go.opentelemetry.io/proto/otlp/metrics/v1"

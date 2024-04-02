@@ -3,7 +3,7 @@ package self
 import (
 	"context"
 
-	"github.com/requiemdb/requiemdb/internal/self/trace/tracetransform"
+	"github.com/gernest/requiemdb/internal/self/trace/tracetransform"
 	"go.opentelemetry.io/otel/sdk/trace"
 	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
 )

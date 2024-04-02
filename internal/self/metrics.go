@@ -3,7 +3,7 @@ package self
 import (
 	"context"
 
-	"github.com/requiemdb/requiemdb/internal/self/metrics/transform"
+	"github.com/gernest/requiemdb/internal/self/metrics/transform"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"

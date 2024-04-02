@@ -3,10 +3,10 @@ package keys
 import (
 	"encoding/binary"
 
-	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 )
 
-type Sample [4 + 4 + 8]byte
+type Sample [8 + 4 + 8]byte
 
 func (s *Sample) WithNamespace(ns uint64) *Sample {
 	binary.LittleEndian.PutUint64(s[0:], ns)

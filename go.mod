@@ -1,4 +1,4 @@
-module github.com/requiemdb/requiemdb
+module github.com/gernest/requiemdb
 
 go 1.22.0
 
