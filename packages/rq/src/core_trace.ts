@@ -6,3 +6,14 @@ export class Trace extends Config {
         super(Scan_SCOPE.TRACES)
     }
 }
+
+
+/**
+ * Wraps initializing a Trace object.This is a helper to avoid doing new Trace 
+ * when creating scripts.
+ * 
+ * @returns Trace object
+ */
+export function metrics(): Trace {
+    return new Trace()
+}
