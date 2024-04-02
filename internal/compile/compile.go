@@ -25,7 +25,6 @@ func Compile(data []byte) ([]byte, error) {
 	result := api.Build(api.BuildOptions{
 		Bundle:        true,
 		Alias:         alias,
-		GlobalName:    "exec",
 		AbsWorkingDir: dir,
 		EntryPoints: []string{
 			"index.ts",
