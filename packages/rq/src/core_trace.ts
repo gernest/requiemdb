@@ -14,6 +14,6 @@ export class Trace extends Config {
  * 
  * @returns Trace object
  */
-export function metrics(): Trace {
+export function trace(): Trace {
     return new Trace()
 }
