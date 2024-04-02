@@ -15,13 +15,3 @@ export class Metrics extends Config {
     }
 }
 
-/**
- * Wraps initializing a Metrics object.This is a helper to avoid doing new Metrics 
- * when creating scripts.
- * 
- * @param name is the metric name to query
- * @returns Metric object
- */
-export function metrics(name?: string): Metrics {
-    return new Metrics(name)
-}

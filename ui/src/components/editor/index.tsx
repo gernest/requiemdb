@@ -2,13 +2,13 @@ import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 import { Box, BoxProps } from '@primer/react';
 
-const welcome = `import { metrics, render } from "@requiemdb/rq";
+const welcome = `import { Metrics, render } from "@requiemdb/rq";
 
 /**
  *  Instant Vectors
  */
 render(
-    metrics()
+    (new Metrics())
         .name("http_requests_total")
         .query(),
 )
