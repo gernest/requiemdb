@@ -55,11 +55,15 @@ func (c *Context) attributes(kind v1.RESOURCE, prefix v1.PREFIX, kv []*commonv1.
 	}
 }
 
-func (c *Context) Release() {
+func (c *Context) Reset() *Context {
 	c.MinTs = 0
 	c.MaxTs = 0
 	c.Labels.Reset()
-	contextPool.Put(c)
+	return c
+}
+
+func (c *Context) Release() {
+	contextPool.Put(c.Reset())
 }
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}

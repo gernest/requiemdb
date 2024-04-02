@@ -1,6 +1,7 @@
 package labels
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"slices"
@@ -17,6 +18,20 @@ func (l *Labels) New() *Label {
 	lbl := NewLabel()
 	l.ls = append(l.ls, lbl)
 	return lbl
+}
+
+func (l *Labels) Debug() string {
+	var b bytes.Buffer
+	b.WriteByte('[')
+	for i, lbl := range l.ls {
+		if i != 0 {
+			b.WriteByte(',')
+			b.WriteByte(' ')
+		}
+		b.WriteString(lbl.Debug())
+	}
+	b.WriteByte(']')
+	return b.String()
 }
 
 func (l *Labels) Iter(f func(lbl *Label) error) error {
