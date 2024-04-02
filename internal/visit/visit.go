@@ -175,31 +175,19 @@ func (a *All) AcceptResourceAttributes(attr []*commonV1.KeyValue) bool {
 	return matchAttr(a.resource_attr, attr)
 }
 func (a *All) AcceptScopeSchema(schema string) bool {
-	if a.scope_schema == "" {
-		return true
-	}
-	return a.scope_schema == schema
+	return a.scope_schema == "" || a.scope_schema == schema
 }
 func (a *All) AcceptScopeName(name string) bool {
-	if a.scope_name == "" {
-		return true
-	}
-	return a.scope_name == name
+	return a.scope_name == "" || a.scope_name == name
 }
 func (a *All) AcceptScopeVersion(version string) bool {
-	if a.scope_version == "" {
-		return true
-	}
-	return a.scope_version == version
+	return a.scope_version == "" || a.scope_version == version
 }
 func (a *All) AcceptScopeAttributes(attr []*commonV1.KeyValue) bool {
 	return matchAttr(a.scope_attr, attr)
 }
 func (a *All) AcceptName(name string) bool {
-	if a.name == "" {
-		return true
-	}
-	return a.name == name
+	return a.name == "" || a.name == name
 }
 
 func (a *All) AcceptAttributes(attr []*commonV1.KeyValue) bool {
@@ -211,10 +199,7 @@ func (a *All) TimeRange() (start, end uint64) {
 }
 
 func (a *All) AcceptLogLevel(lvl string) bool {
-	if a.log_level == "" {
-		return true
-	}
-	return a.log_level == lvl
+	return a.log_level == "" || a.log_level == lvl
 }
 func (a *All) AcceptTraceID(id []byte) bool {
 	return matchBytes(a.trace_id, id)
@@ -227,10 +212,7 @@ func (a *All) AcceptParentSpanID(id []byte) bool {
 }
 
 func matchBytes(a, b []byte) bool {
-	if len(a) == 0 {
-		return true
-	}
-	return bytes.Equal(a, b)
+	return len(a) == 0 || bytes.Equal(a, b)
 }
 
 func matchAttr(a []*kv, ls []*commonV1.KeyValue) bool {
