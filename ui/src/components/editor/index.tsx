@@ -2,15 +2,17 @@ import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 import { Box, BoxProps } from '@primer/react';
 
-const welcome = `import { Metrics, render } from "@requiemdb/rq";
+const welcome = `import { metrics, render } from "@requiemdb/rq";
 
 /**
  *  Instant Vectors
  */
 render(
-    (new Metrics("http_requests_total"))
+    metrics()
+        .name("http_requests_total")
         .query(),
-)`
+)
+`
 
 export const Editor = (props: BoxProps) => {
     const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
