@@ -2,10 +2,12 @@ import { Box, Button, Heading, IconButton, PageLayout, Text, Tooltip } from '@pr
 import { Editor } from '../../components';
 import { FileIcon, PlusIcon, SidebarCollapseIcon, SidebarExpandIcon, TriangleRightIcon } from '@primer/octicons-react';
 import { useState } from 'react';
+import { SnippetInfo } from "../../rq";
 
 
 export const Console = () => {
     const [expand, setExpand] = useState<boolean>(false)
+    const [info, setInfo] = useState<SnippetInfo | undefined>()
     return (
         <PageLayout containerWidth='full'>
             <PageLayout.Header>
@@ -24,10 +26,7 @@ export const Console = () => {
                                 </Tooltip>
                             )}
                         </Box>
-                        <Button
-                            leadingVisual={FileIcon}
-                        >http_request_total.ts</Button>
-
+                        <InfoBox info={info} />
                     </Box>
                     <Box
                         display={"flex"}
@@ -79,5 +78,15 @@ export const Console = () => {
             </PageLayout.Pane>)}
         </PageLayout>
 
+    )
+}
+
+const InfoBox = ({ info }: { info?: SnippetInfo }) => {
+    return (
+        <Box>
+            <Button
+                leadingVisual={FileIcon}
+            >{info ? info.name : "(blank)"}</Button>
+        </Box>
     )
 }
