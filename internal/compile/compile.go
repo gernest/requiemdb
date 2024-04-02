@@ -2,7 +2,6 @@ package compile
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -56,10 +55,8 @@ func setup(dir string) (alias map[string]string, err error) {
 	alias = make(map[string]string)
 	for name, data := range bundle.PKG {
 		path := filepath.Base(name) + ".js"
-		fmt.Println(path)
 		err = os.WriteFile(filepath.Join(dir, path), data, 0600)
 		if err != nil {
-			fmt.Println("====", err)
 			return
 		}
 		// relative path to working directory
