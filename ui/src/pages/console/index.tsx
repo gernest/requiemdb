@@ -1,7 +1,7 @@
-import { Box, Button, Heading, IconButton, PageLayout, Text, Tooltip } from '@primer/react';
+import { Box, Button, Dialog, FormControl, Heading, IconButton, PageLayout, Text, TextInput, Tooltip } from '@primer/react';
 import { Editor } from '../../components';
 import { FileIcon, PlusIcon, SidebarCollapseIcon, SidebarExpandIcon, TriangleRightIcon } from '@primer/octicons-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { SnippetInfo } from "../../rq";
 
 
@@ -65,11 +65,7 @@ export const Console = () => {
                                 Files
                             </Heading>
 
-                            <Box>
-                                <Tooltip direction="w" text="Add new file">
-                                    <IconButton icon={PlusIcon} aria-label='Add file' />
-                                </Tooltip>
-                            </Box>
+                            <AddNewFile />
                         </Box>
 
 
@@ -87,6 +83,38 @@ const InfoBox = ({ info }: { info?: SnippetInfo }) => {
             <Button
                 leadingVisual={FileIcon}
             >{info ? info.name : "(blank)"}</Button>
+        </Box>
+    )
+}
+
+const AddNewFile = () => {
+    const [isOpen, setIsOpen] = useState(false)
+    const focus = useRef(null)
+    return (
+        <Box>
+            <Tooltip direction="w" text="Add new file">
+                <IconButton ref={focus} onClick={() => setIsOpen(true)} icon={PlusIcon} aria-label='Add file' />
+            </Tooltip>
+            <Dialog
+                returnFocusRef={focus}
+                isOpen={isOpen}
+                onDismiss={() => setIsOpen(false)}
+            >
+                <Dialog.Header>
+                    Create new query snippet
+                </Dialog.Header>
+                <Box p={3} width={"100%"}>
+                    <FormControl required>
+                        <FormControl.Label>Name</FormControl.Label>
+                        <TextInput block />
+                    </FormControl>
+                    <FormControl>
+                        <FormControl.Label>Description</FormControl.Label>
+                        <TextInput block />
+                    </FormControl>
+                    <Button block variant='primary' sx={{ my: 2 }}>Create</Button>
+                </Box>
+            </Dialog>
         </Box>
     )
 }
