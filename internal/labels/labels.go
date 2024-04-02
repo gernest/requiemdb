@@ -126,16 +126,14 @@ func (l *Label) Reset() *Label {
 	l.Namespace = 0
 	l.Resource = 0
 	l.Prefix = 0
+	l.Key = ""
+	l.Value = ""
 	l.buffer = l.buffer[:0]
 	return l
 }
 
 func (l *Label) Release() {
-	l.Namespace = 0
-	l.Resource = 0
-	l.Prefix = 0
-	l.buffer = l.buffer[:0]
-	labelPool.Put(l)
+	labelPool.Put(l.Reset())
 }
 
 var labelPool = &sync.Pool{New: func() any { return new(Label) }}

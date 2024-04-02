@@ -15,6 +15,8 @@ func TestTrace(t *testing.T) {
 		labels   string
 		min, max uint64
 	}
+	traceId := []byte{0xf, 0x9d, 0x7a, 0xeb, 0x29, 0xe2, 0x8a, 0xf, 0x2c, 0x2c, 0xbe, 0xaa, 0xcf, 0x75, 0xb6, 0x7c}
+	spanId := []byte{0xac, 0x91, 0xa8, 0x27, 0x40, 0x46, 0x8a, 0x9e, 0xe6, 0x58, 0xc4, 0x96, 0xac, 0x6a, 0xc6, 0x23}
 	kases := []T{
 		{labels: "[]"},
 		{
@@ -51,7 +53,19 @@ func TestTrace(t *testing.T) {
 					},
 				},
 			},
-			labels: "[0:2:3:name, 0:2:4:version=value, 0:2:5:key=value]",
+			labels: "[0:2:3:name, 0:2:4:version, 0:2:5:key=value]",
+		},
+		{
+			r: []*tracev1.ResourceSpans{
+				{
+					ScopeSpans: []*tracev1.ScopeSpans{
+						{Spans: []*tracev1.Span{
+							{Name: "trace", TraceId: traceId, SpanId: spanId, ParentSpanId: spanId},
+						}},
+					},
+				},
+			},
+			labels: "[0:2:6:trace, 0:2:8:0f9d7aeb29e28a0f2c2cbeaacf75b67c, 0:2:9:ac91a82740468a9ee658c496ac6ac623, 0:2:10:ac91a82740468a9ee658c496ac6ac623]",
 		},
 	}
 	ctx := NewContext()
