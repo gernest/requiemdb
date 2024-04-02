@@ -93,6 +93,14 @@ func (l *Label) Encode() []byte {
 	return l.buffer
 }
 
+func (l *Label) Reset() *Label {
+	l.Namespace = 0
+	l.Resource = 0
+	l.Prefix = 0
+	l.buffer = l.buffer[:0]
+	return l
+}
+
 func (l *Label) Release() {
 	l.Namespace = 0
 	l.Resource = 0

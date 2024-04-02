@@ -6,16 +6,28 @@ import (
 	v1 "github.com/requiemdb/requiemdb/gen/go/rq/v1"
 )
 
-type Sample struct {
-	Namespace uint64
-	Resource  v1.RESOURCE
-	ID        uint64
+type Sample [4 + 4 + 8]byte
+
+func (s *Sample) WithNamespace(ns uint64) *Sample {
+	binary.LittleEndian.PutUint64(s[0:], ns)
+	return s
+}
+
+func (s *Sample) WithResource(r v1.RESOURCE) *Sample {
+	binary.LittleEndian.PutUint32(s[8:], uint32(r))
+	return s
+}
+
+func (s *Sample) WithID(id uint64) *Sample {
+	binary.LittleEndian.PutUint64(s[8+4:], id)
+	return s
 }
 
 func (s *Sample) Encode() []byte {
-	o := make([]byte, 8+4+8)
-	binary.LittleEndian.PutUint64(o, s.Namespace)
-	binary.LittleEndian.PutUint32(o[8:], uint32(s.Resource))
-	binary.LittleEndian.PutUint64(o[8+4:], s.ID)
-	return o
+	return s[:]
+}
+
+func (s *Sample) Reset() *Sample {
+	clear(s[:])
+	return s
 }
