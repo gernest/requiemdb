@@ -2,6 +2,7 @@ package labels
 
 import (
 	"encoding/binary"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -78,6 +79,19 @@ func (l *Label) WithKey(k string) *Label {
 func (l *Label) WithValue(v string) *Label {
 	l.Value = v
 	return l
+}
+
+func (l *Label) Debug() string {
+	return Debug(l.Encode())
+}
+
+func Debug(b []byte) string {
+	return fmt.Sprintf("%d:%d:%d:%s",
+		binary.LittleEndian.Uint64(b),
+		binary.LittleEndian.Uint32(b[8:]),
+		binary.LittleEndian.Uint32(b[8+4:]),
+		string(b[staticSize:]),
+	)
 }
 
 func (l *Label) Encode() []byte {
