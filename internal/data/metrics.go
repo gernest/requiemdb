@@ -1,7 +1,9 @@
 package data
 
 import (
+	"slices"
 	"sort"
+	"sync"
 
 	"github.com/cespare/xxhash/v2"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
@@ -11,19 +13,17 @@ import (
 )
 
 func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
-	buf := make([]byte, 0, 4<<10)
-	h := new(xxhash.Digest)
-	resourceMetrics := make(map[uint64]*metricsV1.ResourceMetrics)
-	scopedMetrics := make(map[uint64]*metricsV1.ScopeMetrics)
-	metrics := make(map[uint64]*metricsV1.Metric)
-	order := make(map[uint64]int)
+	xm := NewRM()
+	defer xm.Release()
 	var idx int
 	for _, md := range ds {
 		for _, rm := range md.ResourceMetrics {
-			h.WriteString(rm.SchemaUrl)
-			buf = hashAttributes(h, buf, rm.Resource.GetAttributes())
-			rh := h.Sum64()
-			resource, ok := resourceMetrics[rh]
+			xm.hash.Reset()
+			xm.hash.WriteString(rm.SchemaUrl)
+			xm.attr(rm.Resource.Attributes)
+			rhb := xm.hash.Sum(nil)
+			rh := xm.hash.Sum64()
+			resource, ok := xm.resource[rh]
 			if !ok {
 				resource = &metricsV1.ResourceMetrics{
 					SchemaUrl: rm.SchemaUrl,
@@ -32,19 +32,22 @@ func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
 					resource.Resource = proto.Clone(rm.Resource).(*resourcev1.Resource)
 				}
 				idx++
-				resourceMetrics[rh] = resource
-				order[rh] = idx
+				xm.resource[rh] = resource
+				xm.order[rh] = idx
 			}
 			for _, sm := range rm.ScopeMetrics {
-				h.WriteString(rm.SchemaUrl)
+				xm.hash.Reset()
+				xm.hash.Write(rhb)
+				xm.hash.WriteString(rm.SchemaUrl)
 				if sc := sm.Scope; sc != nil {
-					h.WriteString(sc.Name)
-					h.WriteString(sc.Version)
-					buf = hashAttributes(h, buf, sc.Attributes)
+					xm.hash.WriteString(sc.Name)
+					xm.hash.WriteString(sc.Version)
+					xm.attr(sc.Attributes)
 				}
-				sh := h.Sum64()
+				shb := xm.hash.Sum(nil)
+				sh := xm.hash.Sum64()
 
-				scope, ok := scopedMetrics[sh]
+				scope, ok := xm.scope[sh]
 				if !ok {
 					scope := &metricsV1.ScopeMetrics{
 						SchemaUrl: sm.SchemaUrl,
@@ -52,15 +55,17 @@ func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
 					if sm.Scope != nil {
 						scope.Scope = proto.Clone(sm.Scope).(*commonv1.InstrumentationScope)
 					}
-					scopedMetrics[sh] = scope
+					xm.scope[sh] = scope
 					resource.ScopeMetrics = append(resource.ScopeMetrics, scope)
 				}
 
 				for _, m := range sm.Metrics {
-					h.WriteString(m.Name)
-					mh := h.Sum64()
+					xm.hash.Reset()
+					xm.hash.Write(shb)
+					xm.hash.WriteString(m.Name)
+					mh := xm.hash.Sum64()
 
-					om, ok := metrics[mh]
+					om, ok := xm.metrics[mh]
 					if !ok {
 						om = &metricsV1.Metric{
 							Name:        m.Name,
@@ -113,26 +118,90 @@ func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
 			}
 		}
 	}
+	xm.Sort()
+	return xm.Result()
+}
 
-	// We sort resources before returning them
-	rs := make([]uint64, 0, len(order))
-	id := make([]int, 0, len(order))
-	for r := range order {
-		rs = append(rs, r)
+type RM struct {
+	hash     xxhash.Digest
+	resource map[uint64]*metricsV1.ResourceMetrics
+	scope    map[uint64]*metricsV1.ScopeMetrics
+	metrics  map[uint64]*metricsV1.Metric
+	order    map[uint64]int
+	rs       []uint64
+	id       []int
+	buf      []byte
+}
+
+func NewRM() *RM {
+	return rmPool.Get().(*RM)
+}
+
+func (r *RM) Release() {
+	r.Reset()
+	rmPool.Put(r)
+}
+
+func (r *RM) Reset() {
+	clear(r.resource)
+	clear(r.scope)
+	clear(r.metrics)
+	clear(r.order)
+	r.rs = r.rs[:0]
+	r.id = r.id[:0]
+	r.buf = r.buf[:0]
+}
+
+var rmPool = &sync.Pool{New: func() any { return newRM() }}
+
+func newRM() *RM {
+	return &RM{
+		resource: make(map[uint64]*metricsV1.ResourceMetrics),
+		scope:    make(map[uint64]*metricsV1.ScopeMetrics),
+		metrics:  make(map[uint64]*metricsV1.Metric),
+		order:    make(map[uint64]int),
+		buf:      make([]byte, 0, 4<<10),
 	}
-	for i := range id {
-		id[i] = i
-	}
-	sort.Slice(id, func(i, j int) bool {
-		return order[rs[id[i]]] < order[rs[id[j]]]
-	})
+}
+
+func (r *RM) Len() int {
+	return len(r.rs)
+}
+
+func (r *RM) Result() *metricsV1.MetricsData {
 	o := &metricsV1.MetricsData{
-		ResourceMetrics: make([]*metricsV1.ResourceMetrics, 0, len(rs)),
+		ResourceMetrics: make([]*metricsV1.ResourceMetrics, 0, len(r.rs)),
 	}
-	for _, i := range id {
+	for _, i := range r.id {
 		o.ResourceMetrics = append(o.ResourceMetrics,
-			resourceMetrics[rs[i]],
+			r.resource[r.rs[i]],
 		)
 	}
 	return o
+}
+
+func (r *RM) Sort() {
+	r.rs = slices.Grow(r.rs, len(r.order))
+	for v := range r.order {
+		r.rs = append(r.rs, v)
+	}
+	r.id = slices.Grow(r.id, len(r.order))
+	for i := 0; i < len(r.order); i++ {
+		r.id = append(r.id, i)
+	}
+	sort.Sort(r)
+}
+func (r *RM) Less(i, j int) bool {
+	return r.order[r.rs[r.id[i]]] < r.order[r.rs[r.id[j]]]
+}
+
+func (r *RM) Swap(i, j int) {
+	r.id[i], r.id[j] = r.id[j], r.id[i]
+}
+
+func (r *RM) attr(kv []*commonv1.KeyValue) {
+	for _, v := range kv {
+		r.buf, _ = proto.MarshalOptions{}.MarshalAppend(r.buf[:0], v)
+		r.hash.Write(r.buf)
+	}
 }
