@@ -16,6 +16,9 @@ export const Footer = () => {
     }, [client])
     return (
         <Box
+            position={"fixed"}
+            zIndex={9999}
+            bottom={0}
             sx={{
                 display: "flex",
                 height: "45px",
@@ -37,9 +40,9 @@ export const Footer = () => {
             </Box>
             <Box sx={{
                 display: "flex",
-                paddingRight: "1rem",
                 alignItems: "center",
-            }}>
+            }}
+            >
                 <Label variant="primary" sx={{
                     marginRight: 1,
                 }}>
