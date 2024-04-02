@@ -52,7 +52,7 @@ func TestMetrics(t *testing.T) {
 					},
 				},
 			},
-			labels: "[0:0:3:name, 0:0:4:version=value, 0:0:5:key=value]",
+			labels: "[0:0:3:name, 0:0:4:version, 0:0:5:key=value]",
 		},
 		{
 			r: []*metricsv1.ResourceMetrics{
@@ -98,7 +98,7 @@ func TestMetrics(t *testing.T) {
 					},
 				},
 			},
-			labels: "[0:0:6:gauge, 0:0:7:key=value, 0:0:6:sum=value, 0:0:7:key=value, 0:0:6:histogram, 0:0:7:key=value, 0:0:6:histogram, 0:0:7:key=value, 0:0:6:summary, 0:0:7:key=value]",
+			labels: "[0:0:6:gauge, 0:0:7:key=value, 0:0:6:sum, 0:0:7:key=value, 0:0:6:histogram, 0:0:7:key=value, 0:0:6:histogram, 0:0:7:key=value, 0:0:6:summary, 0:0:7:key=value]",
 		},
 	}
 	ctx := NewContext()

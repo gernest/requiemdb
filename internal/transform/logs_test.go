@@ -51,7 +51,7 @@ func TestLogs(t *testing.T) {
 					},
 				},
 			},
-			labels: "[0:3:3:name, 0:3:4:version=value, 0:3:5:key=value]",
+			labels: "[0:3:3:name, 0:3:4:version, 0:3:5:key=value]",
 		},
 	}
 	ctx := NewContext()
