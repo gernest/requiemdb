@@ -54,6 +54,52 @@ func TestMetrics(t *testing.T) {
 			},
 			labels: "[0:0:3:name, 0:0:4:version=value, 0:0:5:key=value]",
 		},
+		{
+			r: []*metricsv1.ResourceMetrics{
+				{
+					ScopeMetrics: []*metricsv1.ScopeMetrics{
+						{Metrics: []*metricsv1.Metric{
+							{Name: "gauge", Data: &metricsv1.Metric_Gauge{
+								Gauge: &metricsv1.Gauge{
+									DataPoints: []*metricsv1.NumberDataPoint{
+										{Attributes: attr()},
+									},
+								},
+							}},
+							{Name: "sum", Data: &metricsv1.Metric_Sum{
+								Sum: &metricsv1.Sum{
+									DataPoints: []*metricsv1.NumberDataPoint{
+										{Attributes: attr()},
+									},
+								},
+							}},
+							{Name: "histogram", Data: &metricsv1.Metric_Histogram{
+								Histogram: &metricsv1.Histogram{
+									DataPoints: []*metricsv1.HistogramDataPoint{
+										{Attributes: attr()},
+									},
+								},
+							}},
+							{Name: "histogram", Data: &metricsv1.Metric_ExponentialHistogram{
+								ExponentialHistogram: &metricsv1.ExponentialHistogram{
+									DataPoints: []*metricsv1.ExponentialHistogramDataPoint{
+										{Attributes: attr()},
+									},
+								},
+							}},
+							{Name: "summary", Data: &metricsv1.Metric_Summary{
+								Summary: &metricsv1.Summary{
+									DataPoints: []*metricsv1.SummaryDataPoint{
+										{Attributes: attr()},
+									},
+								},
+							}},
+						}},
+					},
+				},
+			},
+			labels: "[0:0:6:gauge, 0:0:7:key=value, 0:0:6:sum=value, 0:0:7:key=value, 0:0:6:histogram, 0:0:7:key=value, 0:0:6:histogram, 0:0:7:key=value, 0:0:6:summary, 0:0:7:key=value]",
+		},
 	}
 	ctx := NewContext()
 	for _, k := range kases {
