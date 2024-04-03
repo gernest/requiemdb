@@ -1,20 +1,13 @@
 package data
 
 import (
-	"encoding/binary"
-	"slices"
-	"sort"
 	"sync"
 
-	"github.com/cespare/xxhash/v2"
-	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	metricsV1 "go.opentelemetry.io/proto/otlp/metrics/v1"
-	resourcev1 "go.opentelemetry.io/proto/otlp/resource/v1"
-	"google.golang.org/protobuf/proto"
 )
 
 func CollapseMetrics(ds []*metricsV1.MetricsData) *metricsV1.MetricsData {
-	xm := NewRM()
+	xm := newMetricsSorter()
 	defer xm.Release()
 	var idx int
 	for _, md := range ds {
@@ -79,125 +72,24 @@ func CollapseMetrics(ds []*metricsV1.MetricsData) *metricsV1.MetricsData {
 		}
 	}
 	xm.Sort()
-	return xm.Result()
+	return &metricsV1.MetricsData{ResourceMetrics: xm.Result()}
 }
 
-type RM struct {
-	h        xxhash.Digest
-	resource map[uint64]*metricsV1.ResourceMetrics
-	scope    map[uint64]*metricsV1.ScopeMetrics
-	metrics  map[uint64]*metricsV1.Metric
-	order    map[uint64]int
-	rs       []uint64
-	id       []int
-	buf      []byte
+type metricsSorter struct {
+	*Sorter[*metricsV1.Metric, *metricsV1.ResourceMetrics, *metricsV1.ScopeMetrics]
 }
 
-func NewRM() *RM {
-	return rmPool.Get().(*RM)
+func newMetricsSorter() *metricsSorter {
+	return metricsPool.Get().(*metricsSorter)
 }
 
-func (r *RM) Release() {
-	r.Reset()
-	rmPool.Put(r)
+func (ms *metricsSorter) Release() {
+	ms.Reset()
+	metricsPool.Put(ms)
 }
 
-func (r *RM) Reset() {
-	clear(r.resource)
-	clear(r.scope)
-	clear(r.metrics)
-	clear(r.order)
-	r.rs = r.rs[:0]
-	r.id = r.id[:0]
-	r.buf = r.buf[:0]
-}
-
-var rmPool = &sync.Pool{New: func() any { return newRM() }}
-
-func newRM() *RM {
-	return &RM{
-		resource: make(map[uint64]*metricsV1.ResourceMetrics),
-		scope:    make(map[uint64]*metricsV1.ScopeMetrics),
-		metrics:  make(map[uint64]*metricsV1.Metric),
-		order:    make(map[uint64]int),
-		buf:      make([]byte, 0, 4<<10),
+var metricsPool = &sync.Pool{New: func() any {
+	return &metricsSorter{
+		Sorter: newSorter[*metricsV1.Metric, *metricsV1.ResourceMetrics, *metricsV1.ScopeMetrics](),
 	}
-}
-
-func (r *RM) hashMetrics(scope uint64, name string) uint64 {
-	r.h.Reset()
-	r.hashNum(scope)
-	r.h.WriteString(name)
-	return r.h.Sum64()
-}
-
-func (r *RM) hashNum(v uint64) {
-	binary.BigEndian.PutUint64(r.buf[:8], v)
-	r.h.Write(r.buf[:8])
-	r.buf = r.buf[:0]
-}
-
-func (r *RM) hashResource(schema string, resource *resourcev1.Resource) uint64 {
-	r.h.Reset()
-	r.h.WriteString(schema)
-	if resource != nil {
-		r.attr(resource.Attributes)
-	}
-	return r.h.Sum64()
-}
-
-func (r *RM) hashScope(resource uint64, schema string, scope *commonv1.InstrumentationScope) uint64 {
-	r.h.Reset()
-	r.hashNum(resource)
-	r.h.WriteString(schema)
-	if scope != nil {
-		r.h.WriteString(scope.Name)
-		r.h.WriteString(scope.Version)
-		if scope.Attributes != nil {
-			r.attr(scope.Attributes)
-		}
-	}
-	return r.h.Sum64()
-}
-
-func (r *RM) Len() int {
-	return len(r.rs)
-}
-
-func (r *RM) Result() *metricsV1.MetricsData {
-	o := &metricsV1.MetricsData{
-		ResourceMetrics: make([]*metricsV1.ResourceMetrics, 0, len(r.rs)),
-	}
-	for _, i := range r.id {
-		o.ResourceMetrics = append(o.ResourceMetrics,
-			r.resource[r.rs[i]],
-		)
-	}
-	return o
-}
-
-func (r *RM) Sort() {
-	r.rs = slices.Grow(r.rs, len(r.order))
-	for v := range r.order {
-		r.rs = append(r.rs, v)
-	}
-	r.id = slices.Grow(r.id, len(r.order))
-	for i := 0; i < len(r.order); i++ {
-		r.id = append(r.id, i)
-	}
-	sort.Sort(r)
-}
-func (r *RM) Less(i, j int) bool {
-	return r.order[r.rs[r.id[i]]] < r.order[r.rs[r.id[j]]]
-}
-
-func (r *RM) Swap(i, j int) {
-	r.id[i], r.id[j] = r.id[j], r.id[i]
-}
-
-func (r *RM) attr(kv []*commonv1.KeyValue) {
-	for _, v := range kv {
-		r.buf, _ = proto.MarshalOptions{}.MarshalAppend(r.buf[:0], v)
-		r.h.Write(r.buf)
-	}
-}
+}}
