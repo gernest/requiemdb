@@ -1,6 +1,6 @@
 {
   "name": "@requiemdb/rq",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "OpenTelemetry database",
   "main": "dist/index.js",
   "typings": "dist/rq.d.ts",

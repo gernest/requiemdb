@@ -226,11 +226,11 @@ export class ScanData {
 export const render = (value: Struct | Data | ScanData) => {
     if (Data.is(value)) {
         //@ts-ignore
-        RQ.Render(Data.toJsonString(value))
+        RQ.RenderData(Data.toBinary(value))
     }
     if (Struct.is(value)) {
         //@ts-ignore
-        RQ.Render(Struct.toJsonString(value))
+        RQ.RenderStruct(Struct.toBinary(value))
     }
     if (ScanData.is(value)) {
         //@ts-ignore
