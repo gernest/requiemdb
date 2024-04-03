@@ -1,12 +1,12 @@
 package data
 
 import (
+	"encoding/binary"
 	"slices"
 	"sort"
 	"sync"
 
 	"github.com/cespare/xxhash/v2"
-	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	metricsV1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 	resourcev1 "go.opentelemetry.io/proto/otlp/resource/v1"
@@ -19,101 +19,60 @@ func CollapseMetrics(ds []*metricsV1.MetricsData) *metricsV1.MetricsData {
 	var idx int
 	for _, md := range ds {
 		for _, rm := range md.ResourceMetrics {
-			xm.hash.Reset()
-			xm.hash.WriteString(rm.SchemaUrl)
-			xm.attr(rm.Resource.Attributes)
-			rhb := xm.hash.Sum(nil)
-			rh := xm.hash.Sum64()
+			rh := xm.hashResource(rm.SchemaUrl, rm.Resource)
 			resource, ok := xm.resource[rh]
 			if !ok {
-				resource = &metricsV1.ResourceMetrics{
-					SchemaUrl: rm.SchemaUrl,
-				}
-				if rm.Resource != nil {
-					resource.Resource = proto.Clone(rm.Resource).(*resourcev1.Resource)
-				}
+				resource = rm
 				idx++
 				xm.resource[rh] = resource
 				xm.order[rh] = idx
+
+				// add all scopes for this resource
+				for _, sm := range rm.ScopeMetrics {
+					sh := xm.hashScope(rh, sm.SchemaUrl, sm.Scope)
+					xm.scope[sh] = sm
+					for _, m := range sm.Metrics {
+						mh := xm.hashMetrics(sh, m.Name)
+						xm.metrics[mh] = m
+					}
+				}
+				continue
 			}
 			for _, sm := range rm.ScopeMetrics {
-				xm.hash.Reset()
-				xm.hash.Write(rhb)
-				xm.hash.WriteString(rm.SchemaUrl)
-				if sc := sm.Scope; sc != nil {
-					xm.hash.WriteString(sc.Name)
-					xm.hash.WriteString(sc.Version)
-					xm.attr(sc.Attributes)
-				}
-				shb := xm.hash.Sum(nil)
-				sh := xm.hash.Sum64()
-
+				sh := xm.hashScope(rh, sm.SchemaUrl, sm.Scope)
 				scope, ok := xm.scope[sh]
 				if !ok {
-					scope = &metricsV1.ScopeMetrics{
-						SchemaUrl: sm.SchemaUrl,
+					xm.scope[sh] = sm
+					resource.ScopeMetrics = append(resource.ScopeMetrics, sm)
+					for _, m := range sm.Metrics {
+						mh := xm.hashMetrics(sh, m.Name)
+						xm.metrics[mh] = m
 					}
-					if sm.Scope != nil {
-						scope.Scope = proto.Clone(sm.Scope).(*commonv1.InstrumentationScope)
-					}
-					xm.scope[sh] = scope
-					resource.ScopeMetrics = append(resource.ScopeMetrics, scope)
+					continue
 				}
-
 				for _, m := range sm.Metrics {
-					xm.hash.Reset()
-					xm.hash.Write(shb)
-					xm.hash.WriteString(m.Name)
-					mh := xm.hash.Sum64()
-
+					mh := xm.hashMetrics(sh, m.Name)
 					om, ok := xm.metrics[mh]
 					if !ok {
-						om = &metricsV1.Metric{
-							Name:        m.Name,
-							Description: m.Description,
-							Unit:        m.Unit,
-						}
-						scope.Metrics = append(scope.Metrics, om)
+						scope.Metrics = append(scope.Metrics, m)
+						xm.metrics[mh] = m
+						continue
 					}
-					switch e := om.Data.(type) {
-					case *metricsV1.Metric_Gauge:
-						om.Data = &metricsV1.Metric_Gauge{
-							Gauge: &metricsV1.Gauge{
-								DataPoints: append(om.GetGauge().GetDataPoints(),
-									e.Gauge.GetDataPoints()...),
-							},
-						}
-					case *metricsV1.Metric_Sum:
-						om.Data = &metricsV1.Metric_Sum{
-							Sum: &metricsV1.Sum{
-								AggregationTemporality: e.Sum.GetAggregationTemporality(),
-								DataPoints: append(om.GetSum().GetDataPoints(),
-									e.Sum.GetDataPoints()...),
-							},
-						}
-					case *metricsV1.Metric_Histogram:
-						om.Data = &metricsV1.Metric_Histogram{
-							Histogram: &metricsV1.Histogram{
-								AggregationTemporality: e.Histogram.GetAggregationTemporality(),
-								DataPoints: append(om.GetHistogram().GetDataPoints(),
-									e.Histogram.GetDataPoints()...),
-							},
-						}
-					case *metricsV1.Metric_ExponentialHistogram:
-						om.Data = &metricsV1.Metric_ExponentialHistogram{
-							ExponentialHistogram: &metricsV1.ExponentialHistogram{
-								AggregationTemporality: e.ExponentialHistogram.GetAggregationTemporality(),
-								DataPoints: append(om.GetExponentialHistogram().GetDataPoints(),
-									e.ExponentialHistogram.GetDataPoints()...),
-							},
-						}
-					case *metricsV1.Metric_Summary:
-						om.Data = &metricsV1.Metric_Summary{
-							Summary: &metricsV1.Summary{
-								DataPoints: append(om.GetSummary().GetDataPoints(),
-									e.Summary.GetDataPoints()...),
-							},
-						}
+					if gauge := m.GetGauge(); gauge != nil {
+						om.GetGauge().DataPoints = append(om.GetGauge().DataPoints, gauge.DataPoints...)
+					}
+					if sum := m.GetSum(); sum != nil {
+						om.GetSum().DataPoints = append(om.GetSum().DataPoints, sum.DataPoints...)
+					}
+					if hist := m.GetHistogram(); hist != nil {
+						om.GetHistogram().DataPoints = append(om.GetHistogram().DataPoints, hist.DataPoints...)
+					}
+					if ehist := m.GetExponentialHistogram(); ehist != nil {
+						om.GetExponentialHistogram().DataPoints = append(om.GetExponentialHistogram().DataPoints,
+							ehist.DataPoints...)
+					}
+					if sum := m.GetSummary(); sum != nil {
+						om.GetSummary().DataPoints = append(om.GetSummary().DataPoints, sum.DataPoints...)
 					}
 				}
 			}
@@ -123,16 +82,8 @@ func CollapseMetrics(ds []*metricsV1.MetricsData) *metricsV1.MetricsData {
 	return xm.Result()
 }
 
-func metricsFrom(ls []*v1.Data) []*metricsV1.MetricsData {
-	o := make([]*metricsV1.MetricsData, len(ls))
-	for i := range ls {
-		o[i] = ls[i].GetMetrics()
-	}
-	return o
-}
-
 type RM struct {
-	hash     xxhash.Digest
+	h        xxhash.Digest
 	resource map[uint64]*metricsV1.ResourceMetrics
 	scope    map[uint64]*metricsV1.ScopeMetrics
 	metrics  map[uint64]*metricsV1.Metric
@@ -173,6 +124,42 @@ func newRM() *RM {
 	}
 }
 
+func (r *RM) hashMetrics(scope uint64, name string) uint64 {
+	r.h.Reset()
+	r.hashNum(scope)
+	r.h.WriteString(name)
+	return r.h.Sum64()
+}
+
+func (r *RM) hashNum(v uint64) {
+	binary.BigEndian.PutUint64(r.buf[:8], v)
+	r.h.Write(r.buf[:8])
+	r.buf = r.buf[:0]
+}
+
+func (r *RM) hashResource(schema string, resource *resourcev1.Resource) uint64 {
+	r.h.Reset()
+	r.h.WriteString(schema)
+	if resource != nil {
+		r.attr(resource.Attributes)
+	}
+	return r.h.Sum64()
+}
+
+func (r *RM) hashScope(resource uint64, schema string, scope *commonv1.InstrumentationScope) uint64 {
+	r.h.Reset()
+	r.hashNum(resource)
+	r.h.WriteString(schema)
+	if scope != nil {
+		r.h.WriteString(scope.Name)
+		r.h.WriteString(scope.Version)
+		if scope.Attributes != nil {
+			r.attr(scope.Attributes)
+		}
+	}
+	return r.h.Sum64()
+}
+
 func (r *RM) Len() int {
 	return len(r.rs)
 }
@@ -211,6 +198,6 @@ func (r *RM) Swap(i, j int) {
 func (r *RM) attr(kv []*commonv1.KeyValue) {
 	for _, v := range kv {
 		r.buf, _ = proto.MarshalOptions{}.MarshalAppend(r.buf[:0], v)
-		r.hash.Write(r.buf)
+		r.h.Write(r.buf)
 	}
 }

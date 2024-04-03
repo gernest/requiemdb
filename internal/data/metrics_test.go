@@ -15,5 +15,8 @@ func TestCollapse(t *testing.T) {
 	r := Collapse(data)
 	b, err := protojson.MarshalOptions{Multiline: true}.Marshal(r)
 	require.NoError(t, err)
-	os.WriteFile("testdata/collapsed_metrics.json", b, 0600)
+	// os.WriteFile("testdata/collapsed_metrics.json", b, 0600)
+	want, err := os.ReadFile("testdata/collapsed_metrics.json")
+	require.NoError(t, err)
+	require.JSONEq(t, string(want), string(b))
 }
