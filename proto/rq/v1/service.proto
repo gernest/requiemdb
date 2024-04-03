@@ -19,28 +19,6 @@ service RQ {
     };
   };
 
-  rpc UploadSnippet(UploadSnippetRequest) returns (UploadSnippetResponse) {
-    option (google.api.http) = {
-      post : "/api/v1/snippet/upload",
-      body : "*"
-    };
-  };
-  rpc RenameSnippet(RenameSnippetRequest) returns (RenameSnippetResponse) {
-    option (google.api.http) = {
-      post : "/api/v1/snippet/rename",
-      body : "*"
-    };
-  };
-  rpc ListSnippets(ListStippetsRequest) returns (SnippetInfo.List) {
-    option (google.api.http) = {
-      get : "/api/v1/snippet",
-    };
-  };
-  rpc GetSnippet(GetSnippetRequest) returns (GetSnippetResponse) {
-    option (google.api.http) = {
-      get : "/api/v1/snippet/{name}",
-    };
-  };
   rpc GetVersion(GetVersionRequest) returns (Version) {
     option (google.api.http) = {
       get : "/api/v1/version",
@@ -51,42 +29,11 @@ service RQ {
 message GetVersionRequest {}
 message Version { string version = 1; }
 
-message GetSnippetRequest { string name = 1; }
-
-message GetSnippetResponse {
-  bytes raw = 1;
-  string name = 2;
-}
-
-message ListStippetsRequest {}
-
-message SnippetInfo {
-  string name = 1;
-  string description = 2;
-  google.protobuf.Timestamp created_at = 3;
-  google.protobuf.Timestamp updated_at = 4;
-
-  message List { repeated SnippetInfo snippets = 1; }
-}
-
-message UploadSnippetRequest {
-  string name = 1;
-  bytes data = 2;
-}
-
-message UploadSnippetResponse {}
-
 message QueryRequest {
-  oneof request {
-    // Name of existing snippet.
-    string script_name = 1;
 
-    // This will be compiled and executed, It is not recommended. We cache for
-    // faster execution .
-    //
-    // Useful when experimenting.
-    bytes script_data = 2;
-  }
+  // A typescript/javascript content to execute.
+  bytes query = 1;
+
   // when true any logs associated with script execution will be included in the
   // response.
   bool include_logs = 3;
@@ -112,10 +59,3 @@ message Timings {
   // Time taken to evaluate compiled query.
   google.protobuf.Duration evaluating = 2;
 }
-
-message RenameSnippetRequest {
-  string old_name = 1;
-  string new_name = 2;
-}
-
-message RenameSnippetResponse {}

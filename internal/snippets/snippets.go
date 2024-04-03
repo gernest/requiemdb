@@ -20,7 +20,6 @@ var (
 
 type Snippets struct {
 	db     *badger.DB
-	cache  *ristretto.Cache
 	hashed *ristretto.Cache
 }
 
@@ -28,14 +27,7 @@ func New(db *badger.DB, cacheBudget int64) (*Snippets, error) {
 	if cacheBudget == 0 {
 		cacheBudget = 26 << 20
 	}
-	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e7,
-		MaxCost:     cacheBudget,
-		BufferItems: 64,
-	})
-	if err != nil {
-		return nil, err
-	}
+
 	hashed, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     8 << 20,
@@ -44,64 +36,11 @@ func New(db *badger.DB, cacheBudget int64) (*Snippets, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Snippets{db: db, cache: cache, hashed: hashed}, nil
+	return &Snippets{db: db, hashed: hashed}, nil
 }
 
 func (s *Snippets) Close() {
-	s.cache.Close()
-}
-
-func (s *Snippets) Rename(req *v1.RenameSnippetRequest) error {
-	txn := s.db.NewTransaction(true)
-	defer txn.Discard()
-	oldKey := buildKey(req.OldName)
-	it, err := txn.Get(oldKey)
-	if err != nil {
-		return err
-	}
-	value, err := it.ValueCopy(nil)
-	if err != nil {
-		return err
-	}
-	err = txn.Set(buildKey(req.NewName), value)
-	if err != nil {
-		return err
-	}
-	return txn.Commit()
-
-}
-
-func (s *Snippets) List() (*v1.SnippetInfo_List, error) {
-	prefix := buildKey("")
-	var ls []*v1.SnippetInfo
-	err := s.db.View(func(txn *badger.Txn) error {
-		o := badger.DefaultIteratorOptions
-		o.Prefix = prefix
-		it := txn.NewIterator(o)
-		defer it.Close()
-		var snippet v1.Snippet
-
-		for it.Rewind(); it.ValidForPrefix(prefix); it.Next() {
-			err := it.Item().Value(func(val []byte) error {
-				return proto.Unmarshal(val, &snippet)
-			})
-			if err != nil {
-				return err
-			}
-			ls = append(ls, &v1.SnippetInfo{
-				Name:        snippet.Name,
-				Description: snippet.Description,
-				CreatedAt:   proto.Clone(snippet.CreatedAt).(*timestamppb.Timestamp),
-				UpdatedAt:   proto.Clone(snippet.UpdatedAt).(*timestamppb.Timestamp),
-			})
-
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &v1.SnippetInfo_List{Snippets: ls}, nil
+	s.hashed.Close()
 }
 
 func (s *Snippets) GetProgramData(data []byte) (*goja.Program, error) {
@@ -116,62 +55,6 @@ func (s *Snippets) GetProgramData(data []byte) (*goja.Program, error) {
 	cost := len(data)
 	s.hashed.Set(hash, program, int64(cost))
 	return program, nil
-}
-
-func (s *Snippets) GetProgram(name string) (*goja.Program, error) {
-	hash := xxhash.Sum64String(name)
-	if o, ok := s.cache.Get(hash); ok {
-		return o.(*goja.Program), nil
-	}
-	key := buildKey(name)
-	var program *goja.Program
-	var cost int
-	err := s.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get(key)
-		if err != nil {
-			return err
-		}
-		var code v1.Snippet
-		err = it.Value(func(val []byte) error {
-			return proto.Unmarshal(val, &code)
-		})
-		if err != nil {
-			return err
-		}
-		data, err := compress.Decompress(code.Compiled)
-		if err != nil {
-			return err
-		}
-		program, err = goja.Compile(code.Name, string(data), true)
-		cost = len(data)
-		return err
-	})
-	if err != nil {
-		if errors.Is(err, badger.ErrKeyNotFound) {
-			return nil, ErrSnippetNotFound
-		}
-		return nil, err
-	}
-	s.cache.Set(hash, program, int64(cost))
-	return program, nil
-}
-
-func (s *Snippets) Get(name string) (*v1.Snippet, error) {
-	key := buildKey(name)
-	var code v1.Snippet
-	err := s.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get(key)
-		if err != nil {
-			return err
-		}
-		return it.Value(func(val []byte) error {
-			return proto.Unmarshal(val, &code)
-		})
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &code, nil
 }
 
 func buildKey(name string) []byte {
@@ -247,8 +130,6 @@ func (s *Snippets) build(name string, data []byte) (raw, compiled []byte, err er
 	if err != nil {
 		return
 	}
-	// We normally create/update then execute snippets. Put the compiled program in cache
-	// for faster loading
-	s.cache.Set(xxhash.Sum64String(name), progam, int64(len(compiled)))
+	s.hashed.Set(xxhash.Sum64String(name), progam, int64(len(compiled)))
 	return
 }
