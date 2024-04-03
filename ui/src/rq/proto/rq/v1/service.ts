@@ -47,6 +47,10 @@ export interface GetSnippetResponse {
      * @generated from protobuf field: bytes raw = 1;
      */
     raw: Uint8Array;
+    /**
+     * @generated from protobuf field: string name = 2;
+     */
+    name: string;
 }
 /**
  * @generated from protobuf message v1.ListStippetsRequest
@@ -339,11 +343,12 @@ export const GetSnippetRequest = new GetSnippetRequest$Type();
 class GetSnippetResponse$Type extends MessageType<GetSnippetResponse> {
     constructor() {
         super("v1.GetSnippetResponse", [
-            { no: 1, name: "raw", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 1, name: "raw", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<GetSnippetResponse>): GetSnippetResponse {
-        const message = { raw: new Uint8Array(0) };
+        const message = { raw: new Uint8Array(0), name: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<GetSnippetResponse>(this, message, value);
@@ -356,6 +361,9 @@ class GetSnippetResponse$Type extends MessageType<GetSnippetResponse> {
             switch (fieldNo) {
                 case /* bytes raw */ 1:
                     message.raw = reader.bytes();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -372,6 +380,9 @@ class GetSnippetResponse$Type extends MessageType<GetSnippetResponse> {
         /* bytes raw = 1; */
         if (message.raw.length)
             writer.tag(1, WireType.LengthDelimited).bytes(message.raw);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

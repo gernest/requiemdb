@@ -53,7 +53,10 @@ message Version { string version = 1; }
 
 message GetSnippetRequest { string name = 1; }
 
-message GetSnippetResponse { bytes raw = 1; }
+message GetSnippetResponse {
+  bytes raw = 1;
+  string name = 2;
+}
 
 message ListStippetsRequest {}
 
