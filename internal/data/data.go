@@ -1,13 +1,10 @@
 package data
 
 import (
-	"github.com/cespare/xxhash/v2"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
-	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricsV1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracev1 "go.opentelemetry.io/proto/otlp/trace/v1"
-	"google.golang.org/protobuf/proto"
 )
 
 func Zero(r v1.RESOURCE) *v1.Data {
@@ -22,14 +19,20 @@ func Zero(r v1.RESOURCE) *v1.Data {
 		return nil
 	}
 }
-func Collapse(ts []*v1.Data) *v1.Data {
-	return nil
-}
 
-func hashAttributes(h *xxhash.Digest, buf []byte, kv []*commonv1.KeyValue) []byte {
-	for _, v := range kv {
-		buf, _ = proto.MarshalOptions{}.MarshalAppend(buf[:0], v)
-		h.Write(buf)
+func Collapse(ts []*v1.Data) *v1.Data {
+	if len(ts) == 0 {
+		return nil
 	}
-	return buf
+	if len(ts) == 1 {
+		return ts[0]
+	}
+	if ts[0].GetMetrics() != nil {
+		o := make([]*metricsV1.MetricsData, len(ts))
+		for i := range ts {
+			o[i] = ts[i].GetMetrics()
+		}
+		return &v1.Data{Data: &v1.Data_Metrics{Metrics: CollapseMetrics(o)}}
+	}
+	return nil
 }

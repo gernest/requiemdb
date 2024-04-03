@@ -1,0 +1,484 @@
+{
+    "metrics": {
+        "resourceMetrics": [
+            {
+                "resource": {
+                    "attributes": [
+                        {
+                            "key": "service.name",
+                            "value": {
+                                "stringValue": "requiemdb"
+                            }
+                        }
+                    ]
+                },
+                "scopeMetrics": [
+                    {
+                        "scope": {
+                            "name": "go.opentelemetry.io/contrib/instrumentation/runtime",
+                            "version": "0.49.0"
+                        },
+                        "metrics": [
+                            {
+                                "name": "runtime.uptime",
+                                "description": "Milliseconds since application was initialized",
+                                "unit": "ms",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585164000",
+                                            "timeUnixNano": "1712154851599269000",
+                                            "asInt": "60014"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.goroutines",
+                                "description": "Number of goroutines that currently exist",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585171000",
+                                            "timeUnixNano": "1712154851599276000",
+                                            "asInt": "38"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.cgo.calls",
+                                "description": "Number of cgo calls made by the current process",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585173000",
+                                            "timeUnixNano": "1712154851599277000",
+                                            "asInt": "16"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.heap_alloc",
+                                "description": "Bytes of allocated heap objects",
+                                "unit": "By",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585185000",
+                                            "timeUnixNano": "1712154851599277000",
+                                            "asInt": "256036440"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.heap_idle",
+                                "description": "Bytes in idle (unused) spans",
+                                "unit": "By",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585188000",
+                                            "timeUnixNano": "1712154851599278000",
+                                            "asInt": "1400832"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.heap_inuse",
+                                "description": "Bytes in in-use spans",
+                                "unit": "By",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585196000",
+                                            "timeUnixNano": "1712154851599278000",
+                                            "asInt": "257826816"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.heap_objects",
+                                "description": "Number of allocated heap objects",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585198000",
+                                            "timeUnixNano": "1712154851599278000",
+                                            "asInt": "57701"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.heap_released",
+                                "description": "Bytes of idle spans whose physical memory has been returned to the OS",
+                                "unit": "By",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585200000",
+                                            "timeUnixNano": "1712154851599279000",
+                                            "asInt": "1368064"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.heap_sys",
+                                "description": "Bytes of heap memory obtained from the OS",
+                                "unit": "By",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585207000",
+                                            "timeUnixNano": "1712154851599279000",
+                                            "asInt": "259227648"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.lookups",
+                                "description": "Number of pointer lookups performed by the runtime",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585215000",
+                                            "timeUnixNano": "1712154851599279000",
+                                            "asInt": "0"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.mem.live_objects",
+                                "description": "Number of live objects is the number of cumulative Mallocs - Frees",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585219000",
+                                            "timeUnixNano": "1712154851599280000",
+                                            "asInt": "57701"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.gc.count",
+                                "description": "Number of completed garbage collection cycles",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585223000",
+                                            "timeUnixNano": "1712154851599280000",
+                                            "asInt": "4"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.gc.pause_total_ns",
+                                "description": "Cumulative nanoseconds in GC stop-the-world pauses since the program started",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585225000",
+                                            "timeUnixNano": "1712154851599281000",
+                                            "asInt": "271505"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            },
+                            {
+                                "name": "process.runtime.go.gc.pause_ns",
+                                "description": "Amount of nanoseconds in GC stop-the-world pauses",
+                                "histogram": {
+                                    "dataPoints": [
+                                        {
+                                            "startTimeUnixNano": "1712154791585231000",
+                                            "timeUnixNano": "1712154851599285000",
+                                            "count": "4",
+                                            "sum": 271505,
+                                            "bucketCounts": [
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "0",
+                                                "4"
+                                            ],
+                                            "explicitBounds": [
+                                                0,
+                                                5,
+                                                10,
+                                                25,
+                                                50,
+                                                75,
+                                                100,
+                                                250,
+                                                500,
+                                                750,
+                                                1000,
+                                                2500,
+                                                5000,
+                                                7500,
+                                                10000
+                                            ],
+                                            "min": 41135,
+                                            "max": 121477
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "scope": {
+                            "name": "go.opentelemetry.io/contrib/instrumentation/host",
+                            "version": "0.49.0"
+                        },
+                        "metrics": [
+                            {
+                                "name": "process.cpu.time",
+                                "description": "Accumulated CPU time spent by this process attributed by state (User, System, ...)",
+                                "unit": "s",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "user"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585118000",
+                                            "timeUnixNano": "1712154851599302000",
+                                            "asDouble": 0.274021382
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "system"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585118000",
+                                            "timeUnixNano": "1712154851599302000",
+                                            "asDouble": 0.219035321
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            },
+                            {
+                                "name": "system.cpu.time",
+                                "description": "Accumulated CPU time spent by this host attributed by state (User, System, Other, Idle)",
+                                "unit": "s",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "user"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585123000",
+                                            "timeUnixNano": "1712154851599309000",
+                                            "asDouble": 48872.57
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "system"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585123000",
+                                            "timeUnixNano": "1712154851599309000",
+                                            "asDouble": 29948.16
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "other"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585123000",
+                                            "timeUnixNano": "1712154851599309000",
+                                            "asDouble": 0
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "idle"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585123000",
+                                            "timeUnixNano": "1712154851599309000",
+                                            "asDouble": 693437
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            },
+                            {
+                                "name": "system.memory.usage",
+                                "description": "Memory usage of this process attributed by memory state (Used, Available)",
+                                "unit": "By",
+                                "gauge": {
+                                    "dataPoints": [
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "used"
+                                                    }
+                                                }
+                                            ],
+                                            "timeUnixNano": "1712154851598951000",
+                                            "asInt": "11018846208"
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "available"
+                                                    }
+                                                }
+                                            ],
+                                            "timeUnixNano": "1712154851598962000",
+                                            "asInt": "6161022976"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "name": "system.memory.utilization",
+                                "description": "Memory utilization of this process attributed by memory state (Used, Available)",
+                                "unit": "1",
+                                "gauge": {
+                                    "dataPoints": [
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "used"
+                                                    }
+                                                }
+                                            ],
+                                            "timeUnixNano": "1712154851598964000",
+                                            "asDouble": 0.6413812637329102
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "state",
+                                                    "value": {
+                                                        "stringValue": "available"
+                                                    }
+                                                }
+                                            ],
+                                            "timeUnixNano": "1712154851598965000",
+                                            "asDouble": 0.35861873626708984
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "name": "system.network.io",
+                                "description": "Bytes transferred attributed by direction (Transmit, Receive)",
+                                "unit": "By",
+                                "sum": {
+                                    "dataPoints": [
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "direction",
+                                                    "value": {
+                                                        "stringValue": "transmit"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585147000",
+                                            "timeUnixNano": "1712154851599318000",
+                                            "asInt": "2025809458"
+                                        },
+                                        {
+                                            "attributes": [
+                                                {
+                                                    "key": "direction",
+                                                    "value": {
+                                                        "stringValue": "receive"
+                                                    }
+                                                }
+                                            ],
+                                            "startTimeUnixNano": "1712154791585147000",
+                                            "timeUnixNano": "1712154851599318000",
+                                            "asInt": "14855999501"
+                                        }
+                                    ],
+                                    "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                                    "isMonotonic": true
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "schemaUrl": "https://opentelemetry.io/schemas/1.24.0"
+            }
+        ]
+    }
+}

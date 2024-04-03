@@ -1,0 +1,472 @@
+{
+  "metrics": {
+    "resourceMetrics": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "requiemdb"
+              }
+            }
+          ]
+        },
+        "scopeMetrics": [
+          {
+            "scope": {
+              "name": "go.opentelemetry.io/contrib/instrumentation/runtime",
+              "version": "0.49.0"
+            },
+            "metrics": [
+              {
+                "name": "runtime.uptime",
+                "description": "Milliseconds since application was initialized",
+                "unit": "ms"
+              },
+              {
+                "name": "process.runtime.go.goroutines",
+                "description": "Number of goroutines that currently exist"
+              },
+              {
+                "name": "process.runtime.go.cgo.calls",
+                "description": "Number of cgo calls made by the current process"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_alloc",
+                "description": "Bytes of allocated heap objects",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_idle",
+                "description": "Bytes in idle (unused) spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_inuse",
+                "description": "Bytes in in-use spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_objects",
+                "description": "Number of allocated heap objects"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_released",
+                "description": "Bytes of idle spans whose physical memory has been returned to the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_sys",
+                "description": "Bytes of heap memory obtained from the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.lookups",
+                "description": "Number of pointer lookups performed by the runtime"
+              },
+              {
+                "name": "process.runtime.go.mem.live_objects",
+                "description": "Number of live objects is the number of cumulative Mallocs - Frees"
+              },
+              {
+                "name": "process.runtime.go.gc.count",
+                "description": "Number of completed garbage collection cycles"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_total_ns",
+                "description": "Cumulative nanoseconds in GC stop-the-world pauses since the program started"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_ns",
+                "description": "Amount of nanoseconds in GC stop-the-world pauses"
+              },
+              {
+                "name": "runtime.uptime",
+                "description": "Milliseconds since application was initialized",
+                "unit": "ms"
+              },
+              {
+                "name": "process.runtime.go.goroutines",
+                "description": "Number of goroutines that currently exist"
+              },
+              {
+                "name": "process.runtime.go.cgo.calls",
+                "description": "Number of cgo calls made by the current process"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_alloc",
+                "description": "Bytes of allocated heap objects",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_idle",
+                "description": "Bytes in idle (unused) spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_inuse",
+                "description": "Bytes in in-use spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_objects",
+                "description": "Number of allocated heap objects"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_released",
+                "description": "Bytes of idle spans whose physical memory has been returned to the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_sys",
+                "description": "Bytes of heap memory obtained from the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.lookups",
+                "description": "Number of pointer lookups performed by the runtime"
+              },
+              {
+                "name": "process.runtime.go.mem.live_objects",
+                "description": "Number of live objects is the number of cumulative Mallocs - Frees"
+              },
+              {
+                "name": "process.runtime.go.gc.count",
+                "description": "Number of completed garbage collection cycles"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_total_ns",
+                "description": "Cumulative nanoseconds in GC stop-the-world pauses since the program started"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_ns",
+                "description": "Amount of nanoseconds in GC stop-the-world pauses"
+              },
+              {
+                "name": "runtime.uptime",
+                "description": "Milliseconds since application was initialized",
+                "unit": "ms"
+              },
+              {
+                "name": "process.runtime.go.goroutines",
+                "description": "Number of goroutines that currently exist"
+              },
+              {
+                "name": "process.runtime.go.cgo.calls",
+                "description": "Number of cgo calls made by the current process"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_alloc",
+                "description": "Bytes of allocated heap objects",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_idle",
+                "description": "Bytes in idle (unused) spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_inuse",
+                "description": "Bytes in in-use spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_objects",
+                "description": "Number of allocated heap objects"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_released",
+                "description": "Bytes of idle spans whose physical memory has been returned to the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_sys",
+                "description": "Bytes of heap memory obtained from the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.lookups",
+                "description": "Number of pointer lookups performed by the runtime"
+              },
+              {
+                "name": "process.runtime.go.mem.live_objects",
+                "description": "Number of live objects is the number of cumulative Mallocs - Frees"
+              },
+              {
+                "name": "process.runtime.go.gc.count",
+                "description": "Number of completed garbage collection cycles"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_total_ns",
+                "description": "Cumulative nanoseconds in GC stop-the-world pauses since the program started"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_ns",
+                "description": "Amount of nanoseconds in GC stop-the-world pauses"
+              },
+              {
+                "name": "runtime.uptime",
+                "description": "Milliseconds since application was initialized",
+                "unit": "ms"
+              },
+              {
+                "name": "process.runtime.go.goroutines",
+                "description": "Number of goroutines that currently exist"
+              },
+              {
+                "name": "process.runtime.go.cgo.calls",
+                "description": "Number of cgo calls made by the current process"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_alloc",
+                "description": "Bytes of allocated heap objects",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_idle",
+                "description": "Bytes in idle (unused) spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_inuse",
+                "description": "Bytes in in-use spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_objects",
+                "description": "Number of allocated heap objects"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_released",
+                "description": "Bytes of idle spans whose physical memory has been returned to the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_sys",
+                "description": "Bytes of heap memory obtained from the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.lookups",
+                "description": "Number of pointer lookups performed by the runtime"
+              },
+              {
+                "name": "process.runtime.go.mem.live_objects",
+                "description": "Number of live objects is the number of cumulative Mallocs - Frees"
+              },
+              {
+                "name": "process.runtime.go.gc.count",
+                "description": "Number of completed garbage collection cycles"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_total_ns",
+                "description": "Cumulative nanoseconds in GC stop-the-world pauses since the program started"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_ns",
+                "description": "Amount of nanoseconds in GC stop-the-world pauses"
+              },
+              {
+                "name": "runtime.uptime",
+                "description": "Milliseconds since application was initialized",
+                "unit": "ms"
+              },
+              {
+                "name": "process.runtime.go.goroutines",
+                "description": "Number of goroutines that currently exist"
+              },
+              {
+                "name": "process.runtime.go.cgo.calls",
+                "description": "Number of cgo calls made by the current process"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_alloc",
+                "description": "Bytes of allocated heap objects",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_idle",
+                "description": "Bytes in idle (unused) spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_inuse",
+                "description": "Bytes in in-use spans",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_objects",
+                "description": "Number of allocated heap objects"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_released",
+                "description": "Bytes of idle spans whose physical memory has been returned to the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.heap_sys",
+                "description": "Bytes of heap memory obtained from the OS",
+                "unit": "By"
+              },
+              {
+                "name": "process.runtime.go.mem.lookups",
+                "description": "Number of pointer lookups performed by the runtime"
+              },
+              {
+                "name": "process.runtime.go.mem.live_objects",
+                "description": "Number of live objects is the number of cumulative Mallocs - Frees"
+              },
+              {
+                "name": "process.runtime.go.gc.count",
+                "description": "Number of completed garbage collection cycles"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_total_ns",
+                "description": "Cumulative nanoseconds in GC stop-the-world pauses since the program started"
+              },
+              {
+                "name": "process.runtime.go.gc.pause_ns",
+                "description": "Amount of nanoseconds in GC stop-the-world pauses"
+              }
+            ]
+          },
+          {
+            "scope": {
+              "name": "go.opentelemetry.io/contrib/instrumentation/host",
+              "version": "0.49.0"
+            },
+            "metrics": [
+              {
+                "name": "process.cpu.time",
+                "description": "Accumulated CPU time spent by this process attributed by state (User, System, ...)",
+                "unit": "s"
+              },
+              {
+                "name": "system.cpu.time",
+                "description": "Accumulated CPU time spent by this host attributed by state (User, System, Other, Idle)",
+                "unit": "s"
+              },
+              {
+                "name": "system.memory.usage",
+                "description": "Memory usage of this process attributed by memory state (Used, Available)",
+                "unit": "By"
+              },
+              {
+                "name": "system.memory.utilization",
+                "description": "Memory utilization of this process attributed by memory state (Used, Available)",
+                "unit": "1"
+              },
+              {
+                "name": "system.network.io",
+                "description": "Bytes transferred attributed by direction (Transmit, Receive)",
+                "unit": "By"
+              },
+              {
+                "name": "process.cpu.time",
+                "description": "Accumulated CPU time spent by this process attributed by state (User, System, ...)",
+                "unit": "s"
+              },
+              {
+                "name": "system.cpu.time",
+                "description": "Accumulated CPU time spent by this host attributed by state (User, System, Other, Idle)",
+                "unit": "s"
+              },
+              {
+                "name": "system.memory.usage",
+                "description": "Memory usage of this process attributed by memory state (Used, Available)",
+                "unit": "By"
+              },
+              {
+                "name": "system.memory.utilization",
+                "description": "Memory utilization of this process attributed by memory state (Used, Available)",
+                "unit": "1"
+              },
+              {
+                "name": "system.network.io",
+                "description": "Bytes transferred attributed by direction (Transmit, Receive)",
+                "unit": "By"
+              },
+              {
+                "name": "process.cpu.time",
+                "description": "Accumulated CPU time spent by this process attributed by state (User, System, ...)",
+                "unit": "s"
+              },
+              {
+                "name": "system.cpu.time",
+                "description": "Accumulated CPU time spent by this host attributed by state (User, System, Other, Idle)",
+                "unit": "s"
+              },
+              {
+                "name": "system.memory.usage",
+                "description": "Memory usage of this process attributed by memory state (Used, Available)",
+                "unit": "By"
+              },
+              {
+                "name": "system.memory.utilization",
+                "description": "Memory utilization of this process attributed by memory state (Used, Available)",
+                "unit": "1"
+              },
+              {
+                "name": "system.network.io",
+                "description": "Bytes transferred attributed by direction (Transmit, Receive)",
+                "unit": "By"
+              },
+              {
+                "name": "process.cpu.time",
+                "description": "Accumulated CPU time spent by this process attributed by state (User, System, ...)",
+                "unit": "s"
+              },
+              {
+                "name": "system.cpu.time",
+                "description": "Accumulated CPU time spent by this host attributed by state (User, System, Other, Idle)",
+                "unit": "s"
+              },
+              {
+                "name": "system.memory.usage",
+                "description": "Memory usage of this process attributed by memory state (Used, Available)",
+                "unit": "By"
+              },
+              {
+                "name": "system.memory.utilization",
+                "description": "Memory utilization of this process attributed by memory state (Used, Available)",
+                "unit": "1"
+              },
+              {
+                "name": "system.network.io",
+                "description": "Bytes transferred attributed by direction (Transmit, Receive)",
+                "unit": "By"
+              },
+              {
+                "name": "process.cpu.time",
+                "description": "Accumulated CPU time spent by this process attributed by state (User, System, ...)",
+                "unit": "s"
+              },
+              {
+                "name": "system.cpu.time",
+                "description": "Accumulated CPU time spent by this host attributed by state (User, System, Other, Idle)",
+                "unit": "s"
+              },
+              {
+                "name": "system.memory.usage",
+                "description": "Memory usage of this process attributed by memory state (Used, Available)",
+                "unit": "By"
+              },
+              {
+                "name": "system.memory.utilization",
+                "description": "Memory utilization of this process attributed by memory state (Used, Available)",
+                "unit": "1"
+              },
+              {
+                "name": "system.network.io",
+                "description": "Bytes transferred attributed by direction (Transmit, Receive)",
+                "unit": "By"
+              }
+            ]
+          }
+        ],
+        "schemaUrl": "https://opentelemetry.io/schemas/1.24.0"
+      }
+    ]
+  }
+}

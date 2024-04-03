@@ -6,13 +6,14 @@ import (
 	"sync"
 
 	"github.com/cespare/xxhash/v2"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	metricsV1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 	resourcev1 "go.opentelemetry.io/proto/otlp/resource/v1"
 	"google.golang.org/protobuf/proto"
 )
 
-func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
+func CollapseMetrics(ds []*metricsV1.MetricsData) *metricsV1.MetricsData {
 	xm := NewRM()
 	defer xm.Release()
 	var idx int
@@ -49,7 +50,7 @@ func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
 
 				scope, ok := xm.scope[sh]
 				if !ok {
-					scope := &metricsV1.ScopeMetrics{
+					scope = &metricsV1.ScopeMetrics{
 						SchemaUrl: sm.SchemaUrl,
 					}
 					if sm.Scope != nil {
@@ -120,6 +121,14 @@ func CollapseMetrics(ds ...*metricsV1.MetricsData) *metricsV1.MetricsData {
 	}
 	xm.Sort()
 	return xm.Result()
+}
+
+func metricsFrom(ls []*v1.Data) []*metricsV1.MetricsData {
+	o := make([]*metricsV1.MetricsData, len(ls))
+	for i := range ls {
+		o[i] = ls[i].GetMetrics()
+	}
+	return o
 }
 
 type RM struct {
