@@ -34,5 +34,19 @@ func Collapse(ts []*v1.Data) *v1.Data {
 		}
 		return &v1.Data{Data: &v1.Data_Metrics{Metrics: CollapseMetrics(o)}}
 	}
+	if ts[0].GetLogs() != nil {
+		o := make([]*logsv1.LogsData, len(ts))
+		for i := range ts {
+			o[i] = ts[i].GetLogs()
+		}
+		return &v1.Data{Data: &v1.Data_Logs{Logs: CollapseLogs(o)}}
+	}
+	if ts[0].GetTrace() != nil {
+		o := make([]*tracev1.TracesData, len(ts))
+		for i := range ts {
+			o[i] = ts[i].GetTrace()
+		}
+		return &v1.Data{Data: &v1.Data_Trace{Trace: CollapseTrace(o)}}
+	}
 	return nil
 }
