@@ -44,9 +44,13 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 	if samples.IsEmpty() {
 		return data.Zero(resource), nil
 	}
-	it := samples.ReverseIterator()
-	if !scan.Reverse {
-		it = samples.Iterator()
+
+	var it roaring64.IntIterable64 = samples.Iterator()
+	if isInstant || scan.Reverse {
+		// For instant vectors we are only interested in the latest matching sample,
+		// since samples are sorted we use reverse iterator to ensure the last sample
+		// observed is the first we choose to process.
+		it = samples.ReverseIterator()
 	}
 	noFilters := len(scan.Filters) == 0
 	var key keys.Sample
