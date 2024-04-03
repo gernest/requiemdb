@@ -15,7 +15,6 @@ import (
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
-	"github.com/jinzhu/now"
 )
 
 func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
@@ -28,9 +27,9 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 		start = uint64(scan.TimeRange.Start.AsTime().UnixNano())
 		end = uint64(scan.TimeRange.End.AsTime().UnixNano())
 	} else {
-		// Default to today samples
+		// Default to last 15 minutes
 		ts := time.Now().UTC()
-		begin := now.With(ts).BeginningOfDay()
+		begin := ts.Add(-5 * time.Minute)
 		start = uint64(begin.UnixNano())
 		end = uint64(ts.UnixNano())
 		isInstant = true
