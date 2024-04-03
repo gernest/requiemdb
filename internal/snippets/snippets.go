@@ -1,16 +1,10 @@
 package snippets
 
 import (
-	"errors"
-
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	"github.com/dop251/goja"
-)
-
-var (
-	ErrSnippetNotFound = errors.New("snippet not found")
 )
 
 type Snippets struct {
