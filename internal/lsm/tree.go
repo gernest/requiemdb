@@ -269,10 +269,12 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 }
 
 func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
-	if maxTs < start || minTs > end {
-		return false
-	}
-	return true
+	return contains(minTs, maxTs, start) ||
+		contains(minTs, maxTs, end)
+}
+
+func contains(min, max uint64, slot uint64) bool {
+	return slot >= min && slot <= max
 }
 
 func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (ids []uint64, err error) {
