@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -71,6 +72,21 @@ func New(db *badger.DB) (*Tree, error) {
 	return t, t.load()
 }
 
+func (t *Tree) GetBuffer() []*v1.Meta {
+	t.bufferMu.RLock()
+	defer t.bufferMu.RUnlock()
+	return slices.Clone(t.buffer)
+}
+
+func (t *Tree) Iter(f func(*Part) error) {
+	t.root.Iterate(func(n *Node[*Part]) error {
+		if n.value == nil {
+			return nil
+		}
+		return f(n.value)
+	})
+}
+
 func (t *Tree) Append(meta *v1.Meta) {
 	t.bufferMu.Lock()
 	defer t.bufferMu.Unlock()
@@ -123,6 +139,10 @@ func (t *Tree) unsafeSaveBuffer() {
 		MinTS:  t.buffer[0].MinTs,
 		MaxTS:  t.buffer[len(t.buffer)-1].MaxTs,
 	})
+}
+
+func (t *Tree) Size() uint64 {
+	return t.size.Load()
 }
 
 func (t *Tree) add(part *Part) {

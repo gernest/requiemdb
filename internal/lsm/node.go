@@ -12,7 +12,7 @@ type Node[T any] struct {
 }
 
 func (n *Node[T]) Iterate(f func(*Node[T]) error) error {
-	if err := (f(n)); err != nil {
+	if err := f(n); err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil
 		}
@@ -23,7 +23,7 @@ func (n *Node[T]) Iterate(f func(*Node[T]) error) error {
 		if node == nil {
 			return nil
 		}
-		if err := (f(n)); err != nil {
+		if err := f(node); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
