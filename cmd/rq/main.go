@@ -12,7 +12,6 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
-	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/service"
@@ -78,18 +77,8 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	}
 	defer db.Close()
 
-	// first 8 is for namespace
-	seqKey := make([]byte, 9)
-	seqKey[len(seqKey)-1] = byte(v1.RESOURCE_ID)
-
-	seq, err := db.GetSequence(seqKey, 1<<20)
-	if err != nil {
-		return err
-	}
-	defer seq.Release()
-
 	lsn := cmd.String("listen")
-	api, err := service.NewService(ctx, db, seq, lsn, cmd.Duration("retentionPeriod"))
+	api, err := service.NewService(ctx, db, lsn, cmd.Duration("retentionPeriod"))
 	if err != nil {
 		return err
 	}

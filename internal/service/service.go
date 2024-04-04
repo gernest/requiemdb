@@ -44,7 +44,7 @@ type Service struct {
 	v1.UnimplementedRQServer
 }
 
-func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen string, retention time.Duration) (*Service, error) {
+func NewService(ctx context.Context, db *badger.DB, listen string, retention time.Duration) (*Service, error) {
 	valid, err := protovalidate.New()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 	if err != nil {
 		return nil, err
 	}
-	storage, err := store.NewStore(db, tree, seq)
+	storage, err := store.NewStore(db, tree)
 	if err != nil {
 		return nil, err
 	}

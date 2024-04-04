@@ -28,7 +28,16 @@ const (
 	BitmapCacheSize = DataCacheSize / 2
 )
 
-func NewStore(db *badger.DB, tree *lsm.Tree, seq *badger.Sequence) (*Storage, error) {
+func NewStore(db *badger.DB, tree *lsm.Tree) (*Storage, error) {
+
+	// first 8 is for namespace
+	seqKey := make([]byte, 9)
+	seqKey[len(seqKey)-1] = byte(v1.RESOURCE_ID)
+
+	seq, err := db.GetSequence(seqKey, 1<<20)
+	if err != nil {
+		return nil, err
+	}
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -60,6 +69,7 @@ func NewStore(db *badger.DB, tree *lsm.Tree, seq *badger.Sequence) (*Storage, er
 func (s *Storage) Close() {
 	s.dataCache.Close()
 	s.bitmapCache.Close()
+	s.seq.Release()
 }
 
 func (s *Storage) Start(ctx context.Context) {

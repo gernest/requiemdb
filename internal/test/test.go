@@ -5,6 +5,7 @@ import (
 	"io"
 	"path"
 
+	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -36,4 +37,12 @@ func MetricsSamples() ([]*v1.Data, error) {
 		ls = append(ls, &o)
 	}
 	return ls, nil
+}
+
+func DB() (*badger.DB, error) {
+	return badger.Open(
+		badger.DefaultOptions("").
+			WithInMemory(true).
+			WithLogger(nil),
+	)
 }
