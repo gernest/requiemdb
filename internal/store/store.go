@@ -41,6 +41,9 @@ func NewStore(db *badger.DB, tree *lsm.Tree, seq *badger.Sequence) (*Storage, er
 		NumCounters: 1e7,
 		MaxCost:     BitmapCacheSize,
 		BufferItems: 64,
+		OnExit: func(value any) {
+			value.(*lsm.Samples).Release()
+		},
 	})
 	if err != nil {
 		return nil, err

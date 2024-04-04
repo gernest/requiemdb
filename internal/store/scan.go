@@ -13,6 +13,7 @@ import (
 	dataOps "github.com/gernest/requiemdb/internal/data"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
+	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
 )
@@ -40,7 +41,7 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 	}
 	defer samples.Release()
 
-	all := s.CompileFilters(txn, scan, &samples.Bitmap)
+	all := s.CompileFilters(txn, scan, samples)
 	if samples.IsEmpty() {
 		return data.Zero(resource), nil
 	}
@@ -103,7 +104,7 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 	return visit.VisitData(data, a), nil
 }
 
-func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *roaring64.Bitmap) (o visit.All) {
+func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples) (o visit.All) {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 
@@ -158,10 +159,10 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *roaring64.Bi
 	return
 }
 
-func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *roaring64.Bitmap) bool {
+func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *lsm.Samples) bool {
 	b := s.load(txn, lbl)
 	if b != nil {
-		o.And(b)
+		o.And(&b.Bitmap)
 	} else {
 		// All labels must contain a sample , if a label is missing then no sample for
 		// the query should match.
@@ -172,11 +173,11 @@ func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *roaring64.Bitmap)
 	return !o.IsEmpty()
 }
 
-func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *roaring64.Bitmap {
+func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *lsm.Samples {
 	key := lbl.Encode()
 	hash := xxhash.Sum64(key)
 	if r, ok := s.bitmapCache.Get(hash); ok {
-		return r.(*roaring64.Bitmap)
+		return r.(*lsm.Samples)
 	}
 	it, err := txn.Get(key)
 	if err != nil {
@@ -189,7 +190,7 @@ func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *roaring64.Bitmap {
 		}
 		return nil
 	}
-	var r roaring64.Bitmap
+	r := lsm.NewSamples()
 	err = it.Value(r.UnmarshalBinary)
 	if err != nil {
 		slog.Error("failed decoding label bitmap", "err", err,
@@ -197,8 +198,9 @@ func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *roaring64.Bitmap {
 			"value", lbl.Value,
 			"resource", lbl.Resource,
 		)
+		r.Release()
 		return nil
 	}
 	s.bitmapCache.Set(hash, r, int64(r.GetSizeInBytes()))
-	return &r
+	return r
 }
