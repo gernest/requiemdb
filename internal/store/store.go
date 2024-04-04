@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
@@ -123,25 +122,22 @@ func resourceFrom(data *v1.Data) v1.RESOURCE {
 }
 
 func saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error {
+	r := lsm.NewSamples()
+	defer r.Release()
 	it, err := txn.Get(key)
 	if err != nil {
 		if !errors.Is(err, badger.ErrKeyNotFound) {
 			return err
 		}
-		r := new(roaring64.Bitmap)
 		r.Add(sampleID)
-		data, err := r.MarshalBinary()
+	} else {
+		err = it.Value(r.UnmarshalBinary)
 		if err != nil {
 			return err
 		}
-		return txn.SetEntry(badger.NewEntry(key, data))
+		r.Add(sampleID)
+		r.RunOptimize()
 	}
-	var r roaring64.Bitmap
-	it.Value(func(val []byte) error {
-		return r.UnmarshalBinary(val)
-	})
-	r.Add(sampleID)
-	r.RunOptimize()
 	data, err := r.MarshalBinary()
 	if err != nil {
 		return err
