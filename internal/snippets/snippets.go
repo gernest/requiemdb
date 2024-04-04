@@ -2,30 +2,24 @@ package snippets
 
 import (
 	"github.com/cespare/xxhash/v2"
-	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	"github.com/dop251/goja"
 )
 
 type Snippets struct {
-	db     *badger.DB
 	hashed *ristretto.Cache
 }
 
-func New(db *badger.DB, cacheBudget int64) (*Snippets, error) {
-	if cacheBudget == 0 {
-		cacheBudget = 26 << 20
-	}
-
+func New() (*Snippets, error) {
 	hashed, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
-		MaxCost:     8 << 20,
+		MaxCost:     26 << 20,
 		BufferItems: 64,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &Snippets{db: db, hashed: hashed}, nil
+	return &Snippets{hashed: hashed}, nil
 }
 
 func (s *Snippets) Close() {

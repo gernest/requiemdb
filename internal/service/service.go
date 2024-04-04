@@ -49,7 +49,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *badger.Sequence, listen
 	if err != nil {
 		return nil, err
 	}
-	sn, err := snippets.New(db, 0)
+	sn, err := snippets.New()
 	if err != nil {
 		return nil, err
 	}
