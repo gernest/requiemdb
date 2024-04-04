@@ -1,7 +1,6 @@
 package js
 
 import (
-	"bytes"
 	"os"
 	"testing"
 
@@ -10,25 +9,21 @@ import (
 )
 
 func TestConsole(t *testing.T) {
-	var b bytes.Buffer
-	r, err := New(Options{
-		Writer: &b,
-	})
+	r := New()
+	defer r.Release()
+	_, err := r.Runtime.RunString(`console.log("hello,world")`)
 	require.NoError(t, err)
-	_, err = r.RunString(`console.log("hello,world")`)
-	require.NoError(t, err)
-	require.Equal(t, "hello,world", b.String())
+	require.Equal(t, "hello,world\n", r.Log.String())
 }
 
 func TestRequire(t *testing.T) {
-	var b bytes.Buffer
-	r, err := New(Options{Writer: &b})
-	require.NoError(t, err)
+	r := New()
+	defer r.Release()
 	src, err := os.ReadFile("testdata/require.ts")
 	require.NoError(t, err)
 	data, err := compile.Compile(src)
 	require.NoError(t, err)
-	_, err = r.RunString(string(data))
+	_, err = r.Runtime.RunString(string(data))
 	require.NoError(t, err)
-	require.Equal(t, "map[resourceMetrics:[]]", b.String())
+	require.Equal(t, "map[resourceMetrics:[]]\n", r.Log.String())
 }

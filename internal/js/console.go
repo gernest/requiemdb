@@ -2,22 +2,18 @@ package js
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/dop251/goja"
 )
 
-func console(r *goja.Runtime, w io.Writer) goja.Value {
+func console(r *goja.Runtime, w *JS) goja.Value {
 	o := r.NewObject()
 	o.Set("log", log(w))
 	return o
 }
 
-func log(w io.Writer) func(args ...any) {
-	if w == nil {
-		return func(args ...any) {}
-	}
+func log(o *JS) func(args ...any) {
 	return func(args ...any) {
-		fmt.Fprint(w, args...)
+		fmt.Fprintln(&o.Log, args...)
 	}
 }

@@ -43,7 +43,7 @@ func (r *Range) String() string {
 }
 
 type TimeRange struct {
-	now func() time.Time
+	o *JS
 }
 
 func (t *TimeRange) Today() *Range {
@@ -52,6 +52,10 @@ func (t *TimeRange) Today() *Range {
 		From: now.With(ts).BeginningOfDay(),
 		To:   ts,
 	}
+}
+
+func (t *TimeRange) now() time.Time {
+	return t.o.GetNow()
 }
 
 func (t *TimeRange) ThisWeek() *Range {
