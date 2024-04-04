@@ -28,5 +28,9 @@ export enum RESOURCE {
     /**
      * @generated from protobuf enum value: META = 6;
      */
-    META = 6
+    META = 6,
+    /**
+     * @generated from protobuf enum value: TRANSLATE = 7;
+     */
+    TRANSLATE = 7
 }
