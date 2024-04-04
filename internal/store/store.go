@@ -64,7 +64,11 @@ func (s *Storage) Start(ctx context.Context) {
 	s.tree.Start(ctx)
 }
 
-func (s *Storage) Save(ctx *transform.Context, data *v1.Data, meta v1.RESOURCE) error {
+func (s *Storage) Save(data *v1.Data) error {
+	ctx := transform.NewContext()
+	defer ctx.Release()
+	ctx.Process(data)
+	meta := resourceFrom(data)
 	next, err := s.seq.Next()
 	if err != nil {
 		return err
@@ -105,6 +109,17 @@ func (s *Storage) Save(ctx *transform.Context, data *v1.Data, meta v1.RESOURCE) 
 		Resource: uint64(meta),
 	})
 	return nil
+}
+
+func resourceFrom(data *v1.Data) v1.RESOURCE {
+	switch data.Data.(type) {
+	case *v1.Data_Logs:
+		return v1.RESOURCE_LOGS
+	case *v1.Data_Trace:
+		return v1.RESOURCE_TRACES
+	default:
+		return v1.RESOURCE_METRICS
+	}
 }
 
 func saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error {

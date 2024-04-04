@@ -13,7 +13,6 @@ import (
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
-	"github.com/gernest/requiemdb/internal/transform"
 	"github.com/gernest/requiemdb/ui"
 	"github.com/go-chi/cors"
 	grpc_protovalidate "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
@@ -171,17 +170,11 @@ type Metrics struct {
 var _ collector_metrics.MetricsServiceServer = (*Metrics)(nil)
 
 func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetricsServiceRequest) (*collector_metrics.ExportMetricsServiceResponse, error) {
-	o := transform.NewContext()
-	defer o.Release()
-
-	data := &v1.Data{
+	err := r.store.Save(&v1.Data{
 		Data: &v1.Data_Metrics{Metrics: &metricsv1.MetricsData{
 			ResourceMetrics: req.ResourceMetrics,
 		}},
-	}
-	o.Process(data)
-
-	err := r.store.Save(o, data, v1.RESOURCE_METRICS)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -196,17 +189,13 @@ type Logs struct {
 var _ collector_logs.LogsServiceServer = (*Logs)(nil)
 
 func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsServiceRequest) (*collector_logs.ExportLogsServiceResponse, error) {
-	o := transform.NewContext()
-	defer o.Release()
-	data := &v1.Data{
+	err := r.store.Save(&v1.Data{
 		Data: &v1.Data_Logs{
 			Logs: &logsv1.LogsData{
 				ResourceLogs: req.ResourceLogs,
 			},
 		},
-	}
-	o.Process(data)
-	err := r.store.Save(o, data, v1.RESOURCE_LOGS)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -221,17 +210,13 @@ type Trace struct {
 var _ collector_trace.TraceServiceServer = (*Trace)(nil)
 
 func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServiceRequest) (*collector_trace.ExportTraceServiceResponse, error) {
-	o := transform.NewContext()
-	defer o.Release()
-	data := &v1.Data{
+	err := r.store.Save(&v1.Data{
 		Data: &v1.Data_Trace{
 			Trace: &tracev1.TracesData{
 				ResourceSpans: req.ResourceSpans,
 			},
 		},
-	}
-	o.Process(data)
-	err := r.store.Save(o, data, v1.RESOURCE_TRACES)
+	})
 	if err != nil {
 		return nil, err
 	}
