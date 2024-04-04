@@ -5,7 +5,7 @@ import { TriangleRightIcon } from '@primer/octicons-react';
 
 export const Console = () => {
     return (
-        <PageLayout >
+        <PageLayout containerWidth='full'>
             <PageLayout.Header>
                 <Box display={"flex"}
                     justifyContent={"space-between"}
