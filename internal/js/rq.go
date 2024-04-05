@@ -13,11 +13,15 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type ScanFunc func(*v1.Scan) (*v1.Data, error)
+
+type NowFunc func() time.Time
+
 type JS struct {
 	Log     bytes.Buffer
 	Runtime *goja.Runtime
-	Now     func() time.Time
-	ScanFn  func(*v1.Scan) (*v1.Data, error)
+	Now     NowFunc
+	ScanFn  ScanFunc
 	Output  *v1.Result
 }
 
@@ -25,7 +29,7 @@ func New() *JS {
 	return jsPool.Get().(*JS)
 }
 
-func (o *JS) WithNow(now func() time.Time) *JS {
+func (o *JS) WithNow(now NowFunc) *JS {
 	o.Now = now
 	return o
 }
@@ -128,4 +132,15 @@ func (o *JS) RenderNative(data *v1.Data) {
 func (o *JS) Run(program *goja.Program) error {
 	_, err := o.Runtime.RunProgram(program)
 	return err
+}
+
+func (o *JS) WithData(data *v1.Data) *JS {
+	return o.WithScan(func(s *v1.Scan) (*v1.Data, error) {
+		return data, nil
+	})
+}
+
+func (o *JS) WithScan(f ScanFunc) *JS {
+	o.ScanFn = f
+	return o
 }
