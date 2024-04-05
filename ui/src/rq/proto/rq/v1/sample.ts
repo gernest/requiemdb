@@ -118,7 +118,11 @@ export enum PREFIX {
     /**
      * @generated from protobuf enum value: LOGS_LEVEL = 11;
      */
-    LOGS_LEVEL = 11
+    LOGS_LEVEL = 11,
+    /**
+     * @generated from protobuf enum value: DATA = 12;
+     */
+    DATA = 12
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class Sample$Type extends MessageType<Sample> {

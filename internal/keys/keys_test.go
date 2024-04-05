@@ -21,6 +21,6 @@ func TestSample(t *testing.T) {
 	id := New()
 	for _, k := range kases {
 		require.Equal(t, k.expect, id.Reset().WithResource(k.rs).
-			WithNamespace(k.ns).WithID(k.id).Debug())
+			WithNamespace(k.ns).WithID(k.id).String())
 	}
 }

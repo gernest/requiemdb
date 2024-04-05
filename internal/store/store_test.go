@@ -1,11 +1,14 @@
 package store
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/keys"
+	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/gernest/requiemdb/internal/x"
@@ -66,7 +69,9 @@ func TestMetrics(t *testing.T) {
 		txn := store.db.NewTransaction(false)
 		defer txn.Discard()
 
-		var k keys.Sample
+		k := keys.New()
+		defer k.Release()
+
 		it, err := txn.Get(k.WithID(1).
 			WithResource(v1.RESOURCE_METRICS).
 			Encode())
@@ -76,5 +81,22 @@ func TestMetrics(t *testing.T) {
 		err = it.Value(x.Decompress(&o, &size))
 		require.NoError(t, err)
 		require.True(t, proto.Equal(&o, data[1]))
+	})
+
+	t.Run("Generate bitmaps", func(t *testing.T) {
+		var b bytes.Buffer
+		lbl := labels.NewLabel()
+		defer lbl.Release()
+		err := listLabels(store.db,
+			lbl.WithResource(v1.RESOURCE_METRICS),
+			func(lbl *labels.Label, sample *lsm.Samples) {
+				fmt.Fprintln(&b, lbl.String(), sample.String())
+			},
+		)
+		require.NoError(t, err)
+		// os.WriteFile("testdata/labels.txt", b.Bytes(), 0600)
+		want, err := os.ReadFile("testdata/labels.txt")
+		require.NoError(t, err)
+		require.Equal(t, string(want), b.String())
 	})
 }

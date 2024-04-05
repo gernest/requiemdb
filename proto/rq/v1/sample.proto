@@ -16,6 +16,7 @@ enum PREFIX {
   SPAN_ID = 9;
   PARENT_SPAN_ID = 10;
   LOGS_LEVEL = 11;
+  DATA = 12;
 }
 
 message Sample {

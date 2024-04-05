@@ -3,6 +3,7 @@ package labels
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"slices"
 	"sync"
@@ -28,7 +29,7 @@ func (l *Labels) Debug() string {
 			b.WriteByte(',')
 			b.WriteByte(' ')
 		}
-		b.WriteString(lbl.Debug())
+		b.WriteString(lbl.String())
 	}
 	b.WriteByte(']')
 	return b.String()
@@ -65,7 +66,11 @@ func NewLabel() *Label {
 	return labelPool.Get().(*Label)
 }
 
-const staticSize = 8 + 4 + 4
+const ResourcePrefixSize = 8 + //namespace
+	4 //resource
+
+const StaticSize = ResourcePrefixSize +
+	4 // prefix
 
 var (
 	valueSep = []byte("=")
@@ -96,7 +101,7 @@ func (l *Label) WithValue(v string) *Label {
 	return l
 }
 
-func (l *Label) Debug() string {
+func (l *Label) String() string {
 	return Debug(l.Encode())
 }
 
@@ -105,12 +110,12 @@ func Debug(b []byte) string {
 		binary.LittleEndian.Uint64(b),
 		binary.LittleEndian.Uint32(b[8:]),
 		binary.LittleEndian.Uint32(b[8+4:]),
-		string(b[staticSize:]),
+		string(b[StaticSize:]),
 	)
 }
 
 func (l *Label) Encode() []byte {
-	l.buffer = slices.Grow(l.buffer, staticSize)[:staticSize]
+	l.buffer = slices.Grow(l.buffer, StaticSize)[:StaticSize]
 	binary.LittleEndian.PutUint64(l.buffer, l.Namespace)
 	binary.LittleEndian.PutUint32(l.buffer[8:], uint32(l.Resource))
 	binary.LittleEndian.PutUint32(l.buffer[8+4:], uint32(l.Prefix))
@@ -120,6 +125,25 @@ func (l *Label) Encode() []byte {
 		l.buffer = append(l.buffer, []byte(l.Value)...)
 	}
 	return l.buffer
+}
+
+var ErrKeyTooShort = errors.New("labels: Key too short")
+
+func (l *Label) Decode(data []byte) error {
+	if len(data) <= StaticSize {
+		return ErrKeyTooShort
+	}
+	l.Namespace = binary.LittleEndian.Uint64(data)
+	l.Resource = v1.RESOURCE(
+		binary.LittleEndian.Uint32(data[8:]),
+	)
+	l.Prefix = v1.PREFIX(
+		binary.LittleEndian.Uint32(data[8+4:]),
+	)
+	key, value, _ := bytes.Cut(data[StaticSize:], valueSep)
+	l.Key = string(key)
+	l.Value = string(value)
+	return nil
 }
 
 func (l *Label) Reset() *Label {

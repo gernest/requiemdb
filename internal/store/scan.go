@@ -1,6 +1,8 @@
 package store
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"log/slog"
 	"time"
@@ -171,6 +173,39 @@ func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *lsm.Samples) bool
 		o.Clear()
 	}
 	return !o.IsEmpty()
+}
+
+func listLabels(db *badger.DB, base *labels.Label, f func(lbl *labels.Label, sample *lsm.Samples)) error {
+	prefix := bytes.Clone(base.Encode()[:labels.ResourcePrefixSize])
+	txn := db.NewTransaction(false)
+	defer txn.Discard()
+
+	o := badger.DefaultIteratorOptions
+	o.Prefix = prefix
+	it := txn.NewIterator(o)
+	defer it.Close()
+	s := lsm.NewSamples()
+	defer s.Release()
+	var data [4]byte
+	binary.LittleEndian.PutUint32(data[:], uint32(v1.PREFIX_DATA))
+
+	for it.Rewind(); it.ValidForPrefix(prefix); it.Next() {
+		key := it.Item().Key()
+		if bytes.HasPrefix(key[labels.ResourcePrefixSize:], data[:]) {
+			// skip data prefix
+			continue
+		}
+		err := base.Decode(key)
+		if err != nil {
+			return err
+		}
+		err = it.Item().Value(s.UnmarshalBinary)
+		if err != nil {
+			return err
+		}
+		f(base, s)
+	}
+	return nil
 }
 
 func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *lsm.Samples {

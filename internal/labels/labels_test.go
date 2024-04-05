@@ -28,6 +28,6 @@ func TestLabel(t *testing.T) {
 			WithNamespace(v.ns).
 			WithResource(v.r).
 			WithPrefix(v.p).
-			WithKey(v.k).WithValue(v.v).Debug())
+			WithKey(v.k).WithValue(v.v).String())
 	}
 }

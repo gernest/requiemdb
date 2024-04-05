@@ -94,7 +94,10 @@ func (s *Storage) Save(data *v1.Data) error {
 	if err != nil {
 		return err
 	}
-	var key keys.Sample
+
+	key := keys.New()
+	defer key.Release()
+
 	sampleKey := key.WithResource(meta).
 		WithID(id).
 		Encode()
