@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
@@ -103,8 +104,13 @@ func (s *Storage) Save(data *v1.Data) error {
 		return err
 	}
 
+	// Track possible bitmap updates to ensure the cache will have latest bitmaps
+	// loaded
+	bitmaps := lsm.NewSamples()
+	defer bitmaps.Release()
+
 	err = ctx.Labels.Iter(func(lbl *labels.Label) error {
-		return saveLabel(txn, lbl.Encode(), id)
+		return saveLabel(txn, lbl.Encode(), id, bitmaps)
 	})
 	if err != nil {
 		return err
@@ -120,6 +126,12 @@ func (s *Storage) Save(data *v1.Data) error {
 		MaxTs:    ctx.MaxTs,
 		Resource: uint64(meta),
 	})
+
+	// Clear bitmap cache of updated bitmaps
+	it := bitmaps.Iterator()
+	for it.HasNext() {
+		s.bitmapCache.Del(it.Next())
+	}
 	return nil
 }
 
@@ -141,7 +153,7 @@ func resourceFrom(data *v1.Data) v1.RESOURCE {
 // serialize the bitmap before storing it in txn.
 //
 // This is acceptable because we only do this per sample.
-func saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error {
+func saveLabel(txn *badger.Txn, key []byte, sampleID uint64, bitmaps *lsm.Samples) error {
 	r := lsm.NewSamples()
 	defer r.Release()
 	it, err := txn.Get(key)
@@ -157,6 +169,9 @@ func saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error {
 		}
 		r.Add(sampleID)
 		r.RunOptimize()
+
+		// We only add when doing updates.
+		bitmaps.Add(xxhash.Sum64(key))
 	}
 	data, err := r.MarshalBinary()
 	if err != nil {
