@@ -64,9 +64,9 @@ func putDecoder(e *zstd.Decoder) {
 }
 
 var decoderPool = &sync.Pool{New: func() any {
-	w, err := zstd.NewWriter(nil)
+	w, err := zstd.NewReader(nil)
 	if err != nil {
-		logger.Fail("failed creating zstd encoder", "err", err)
+		logger.Fail("failed creating zstd decoder", "err", err)
 	}
 	return w
 }}

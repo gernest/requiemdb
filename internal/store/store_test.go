@@ -4,9 +4,13 @@ import (
 	"os"
 	"testing"
 
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/test"
+	"github.com/gernest/requiemdb/internal/x"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestMetrics(t *testing.T) {
@@ -57,5 +61,20 @@ func TestMetrics(t *testing.T) {
 		want, err := os.ReadFile("testdata/part.json")
 		require.NoError(t, err)
 		require.JSONEq(t, string(want), string(data))
+	})
+	t.Run("Must have data stored", func(t *testing.T) {
+		txn := store.db.NewTransaction(false)
+		defer txn.Discard()
+
+		var k keys.Sample
+		it, err := txn.Get(k.WithID(1).
+			WithResource(v1.RESOURCE_METRICS).
+			Encode())
+		require.NoError(t, err)
+		var size int64
+		var o v1.Data
+		err = it.Value(x.Decompress(&o, &size))
+		require.NoError(t, err)
+		require.True(t, proto.Equal(&o, data[1]))
 	})
 }
