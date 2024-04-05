@@ -1,12 +1,15 @@
 syntax = "proto3";
 package v1;
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "opentelemetry/proto/metrics/v1/metrics.proto";
 import "opentelemetry/proto/logs/v1/logs.proto";
 import "opentelemetry/proto/trace/v1/trace.proto";
 
 message Scan {
   SCOPE scope = 1;
+  // Timestamps to bound scan. This is optional, if it is not set a time range
+  // of the last 15 minutes since now.
   TimeRange time_range = 2;
   repeated Filter filters = 3;
   // Number of samples to process. Defauluts to no limit.
@@ -15,6 +18,16 @@ message Scan {
   // Scans in reverse order, with latest samples comming first.  To get the
   // latest sample you can set reverse to true and limit 1.
   bool reverse = 5;
+
+  // Now is current scan evaluation time. This is optional, when not set current
+  // system time is used.
+  //
+  // Useful for reprdocucible scanning by compining this with time_range a
+  // script can ensure it will be processing the same samples.
+  google.protobuf.Timestamp now = 6;
+
+  // Offset relative to current scanning time.
+  google.protobuf.Duration offset = 7;
 
   enum SCOPE {
     METRICS = 0;

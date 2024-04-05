@@ -14,6 +14,7 @@ import { MessageType } from "@protobuf-ts/runtime";
 import { TracesData } from "../../opentelemetry/proto/trace/v1/trace";
 import { LogsData } from "../../opentelemetry/proto/logs/v1/logs";
 import { MetricsData } from "../../opentelemetry/proto/metrics/v1/metrics";
+import { Duration } from "../../google/protobuf/duration";
 import { Timestamp } from "../../google/protobuf/timestamp";
 /**
  * @generated from protobuf message v1.Scan
@@ -24,6 +25,9 @@ export interface Scan {
      */
     scope: Scan_SCOPE;
     /**
+     * Timestamps to bound scan. This is optional, if it is not set a time range
+     * of the last 15 minutes since now.
+     *
      * @generated from protobuf field: v1.Scan.TimeRange time_range = 2;
      */
     timeRange?: Scan_TimeRange;
@@ -44,6 +48,22 @@ export interface Scan {
      * @generated from protobuf field: bool reverse = 5;
      */
     reverse: boolean;
+    /**
+     * Now is current scan evaluation time. This is optional, when not set current
+     * system time is used.
+     *
+     * Useful for reprdocucible scanning by compining this with time_range a
+     * script can ensure it will be processing the same samples.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp now = 6;
+     */
+    now?: Timestamp;
+    /**
+     * Offset relative to current scanning time.
+     *
+     * @generated from protobuf field: google.protobuf.Duration offset = 7;
+     */
+    offset?: Duration;
 }
 /**
  * @generated from protobuf message v1.Scan.Filter
@@ -231,7 +251,9 @@ class Scan$Type extends MessageType<Scan> {
             { no: 2, name: "time_range", kind: "message", T: () => Scan_TimeRange },
             { no: 3, name: "filters", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Scan_Filter },
             { no: 4, name: "limit", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 5, name: "reverse", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 5, name: "reverse", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "now", kind: "message", T: () => Timestamp },
+            { no: 7, name: "offset", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<Scan>): Scan {
@@ -261,6 +283,12 @@ class Scan$Type extends MessageType<Scan> {
                 case /* bool reverse */ 5:
                     message.reverse = reader.bool();
                     break;
+                case /* google.protobuf.Timestamp now */ 6:
+                    message.now = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.now);
+                    break;
+                case /* google.protobuf.Duration offset */ 7:
+                    message.offset = Duration.internalBinaryRead(reader, reader.uint32(), options, message.offset);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -288,6 +316,12 @@ class Scan$Type extends MessageType<Scan> {
         /* bool reverse = 5; */
         if (message.reverse !== false)
             writer.tag(5, WireType.Varint).bool(message.reverse);
+        /* google.protobuf.Timestamp now = 6; */
+        if (message.now)
+            Timestamp.internalBinaryWrite(message.now, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Duration offset = 7; */
+        if (message.offset)
+            Duration.internalBinaryWrite(message.offset, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

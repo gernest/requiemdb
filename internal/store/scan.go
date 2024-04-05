@@ -23,6 +23,14 @@ import (
 func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 	txn := s.db.NewTransaction(false)
 	defer txn.Discard()
+
+	ts := time.Now().UTC()
+	if scan.Now != nil {
+		ts = scan.Now.AsTime()
+	}
+	if scan.Offset != nil {
+		ts = ts.Add(-scan.Offset.AsDuration())
+	}
 	resource := v1.RESOURCE(scan.Scope)
 	var start, end uint64
 	var isInstant bool
@@ -30,8 +38,6 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 		start = uint64(scan.TimeRange.Start.AsTime().UnixNano())
 		end = uint64(scan.TimeRange.End.AsTime().UnixNano())
 	} else {
-		// Default to last 15 minutes
-		ts := time.Now().UTC()
 		begin := ts.Add(-5 * time.Minute)
 		start = uint64(begin.UnixNano())
 		end = uint64(ts.UnixNano())
