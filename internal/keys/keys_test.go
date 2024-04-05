@@ -15,10 +15,11 @@ func TestSample(t *testing.T) {
 		expect string
 	}
 	kases := []T{
-		{expect: "0:0:0"},
-		{ns: 1, rs: v1.RESOURCE_TRACES, id: 3, expect: "1:2:3"},
+		{expect: "0:0:12:0"},
+		{ns: 1, rs: v1.RESOURCE_TRACES, id: 3, expect: "1:2:12:3"},
 	}
 	id := New()
+	defer id.Release()
 	for _, k := range kases {
 		require.Equal(t, k.expect, id.Reset().WithResource(k.rs).
 			WithNamespace(k.ns).WithID(k.id).String())
