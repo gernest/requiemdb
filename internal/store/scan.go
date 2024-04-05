@@ -56,7 +56,9 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 		it = samples.ReverseIterator()
 	}
 	noFilters := len(scan.Filters) == 0
-	var key keys.Sample
+	key := keys.New()
+	defer key.Release()
+
 	if isInstant {
 		// We only choose the first sample matching the scan
 		return s.read(txn,
