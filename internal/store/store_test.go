@@ -100,3 +100,24 @@ func TestMetrics(t *testing.T) {
 		require.Equal(t, string(want), b.String())
 	})
 }
+
+func BenchmarkStore(b *testing.B) {
+	db, err := test.DB()
+	require.NoError(b, err)
+	defer db.Close()
+
+	tree, err := lsm.New(db)
+	require.NoError(b, err)
+	store, err := NewStore(db, tree)
+	require.NoError(b, err)
+	defer store.Close()
+
+	data, err := test.MetricsSamples()
+	require.NoError(b, err)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, v := range data {
+			store.Save(v)
+		}
+	}
+}
