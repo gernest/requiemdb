@@ -180,21 +180,25 @@ export class Config {
     }
 
 
-    protected setRange(ts: any) {
-        this.base.timeRange = this.createTimeRange(
-            ts.FromUnix(),
-            ts.ToUnix(),
-        )
-        return this
-    }
-
-
-
-    private createTimeRange(fromSecs: number, toSecs: number): Scan_TimeRange {
-        return {
-            start: { seconds: fromSecs, nanos: 0 },
-            end: { seconds: toSecs, nanos: 0 },
+    /**
+     * Sets timeRange field using native range Object. This is much faster
+     *  and efficient than serializing to/from protocol buffer.
+     * 
+     * @param range is a native js.Range object
+     * @returns 
+     */
+    protected setRange(range: any) {
+        this.base.timeRange = {
+            start: {
+                seconds: range.From.Unix() as number,
+                nanos: range.From.Nanosecond() as number,
+            },
+            end: {
+                seconds: range.To.Unix() as number,
+                nanos: range.To.Nanosecond() as number,
+            },
         }
+        return this
     }
 }
 
