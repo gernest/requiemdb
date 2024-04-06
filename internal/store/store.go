@@ -114,11 +114,10 @@ func (s *Storage) Save(data *v1.Data) error {
 	defer ctx.Release()
 	ctx.Process(data)
 	meta := resourceFrom(data)
-	next, err := s.seq.Next()
+	id, err := s.seq.Next()
 	if err != nil {
 		return err
 	}
-	id := uint64(next)
 	txn := s.db.NewTransaction(true)
 	defer txn.Discard()
 
