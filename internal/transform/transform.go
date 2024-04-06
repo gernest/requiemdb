@@ -1,3 +1,8 @@
+// Package transform provides primitives for extracting metadata from v1.Data
+// that is used for building indexes
+//
+// Metadata is organized in labels which generate unique keys that can be used
+// for persistance.
 package transform
 
 import (
