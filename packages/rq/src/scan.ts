@@ -5,6 +5,7 @@ import { MessageType } from "@protobuf-ts/runtime";
 import { TracesData } from "./trace";
 import { LogsData } from "./logs";
 import { MetricsData } from "./metrics";
+import { Duration } from "./duration";
 import { Timestamp } from "./timestamp";
 /**
  * @generated from protobuf message v1.Scan
@@ -15,6 +16,9 @@ export interface Scan {
      */
     scope: Scan_SCOPE;
     /**
+     * Timestamps to bound scan. This is optional, if it is not set a time range
+     * of the last 15 minutes since now.
+     *
      * @generated from protobuf field: v1.Scan.TimeRange time_range = 2;
      */
     timeRange?: Scan_TimeRange;
@@ -35,6 +39,22 @@ export interface Scan {
      * @generated from protobuf field: bool reverse = 5;
      */
     reverse: boolean;
+    /**
+     * Now is current scan evaluation time. This is optional, when not set current
+     * system time is used.
+     *
+     * Useful for reprdocucible scanning by compining this with time_range a
+     * script can ensure it will be processing the same samples.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp now = 6;
+     */
+    now?: Timestamp;
+    /**
+     * Offset relative to current scanning time.
+     *
+     * @generated from protobuf field: google.protobuf.Duration offset = 7;
+     */
+    offset?: Duration;
 }
 /**
  * @generated from protobuf message v1.Scan.Filter
@@ -222,7 +242,9 @@ class Scan$Type extends MessageType<Scan> {
             { no: 2, name: "time_range", kind: "message", T: () => Scan_TimeRange },
             { no: 3, name: "filters", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Scan_Filter },
             { no: 4, name: "limit", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 5, name: "reverse", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 5, name: "reverse", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "now", kind: "message", T: () => Timestamp },
+            { no: 7, name: "offset", kind: "message", T: () => Duration }
         ]);
     }
 }

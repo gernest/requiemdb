@@ -1,6 +1,6 @@
 {
   "name": "@requiemdb/rq",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "OpenTelemetry database",
   "main": "dist/index.js",
   "typings": "dist/rq.d.ts",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc && node build.js && api-extractor run --local",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "defs": "go run ../../internal/generate/def/main.go ./dist/rq.d.ts ../../ui/src/components/editor/defs.json "
   },
   "keywords": [
     "requiemdb"

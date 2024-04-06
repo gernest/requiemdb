@@ -4,6 +4,7 @@ import {
     Scan_AttributeProp, Data,
 } from "./scan";
 import { Struct } from "./struct";
+import { Duration } from "./duration";
 
 export class Config {
     base: Scan
@@ -19,8 +20,26 @@ export class Config {
     }
 
 
+    /**
+     * Limits the number of matched samples to process during scanning.
+     * 
+     * @param num_samples maximum number of matched samples to process
+     * @returns 
+     */
     public limit(num_samples: number) {
         this.base.limit = num_samples
+        return this
+    }
+
+    /**
+     * Duration relative to current scanning time to start evaluation.
+     *   endTime = current_scan_time - offset 
+     * 
+     * @param duration 
+     * @returns 
+     */
+    public offset(duration: Duration) {
+        this.base.offset = duration
         return this
     }
 
