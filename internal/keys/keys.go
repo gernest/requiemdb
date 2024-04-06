@@ -8,6 +8,15 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 )
 
+// Sample represents a unique key for a specific sample
+//
+//	8 bytes for namespace
+//	4 bytes for resource
+//	4 bytes for prefix which defaults to v1.PREFIX_DATA
+//	8 bytes for sample id
+//
+// This object is pooled so all uses must start by calling New and ensure
+// Release is called after use.
 type Sample [8 + 4 + 4 + 8]byte
 
 func New() *Sample {
