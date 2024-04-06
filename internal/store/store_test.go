@@ -17,16 +17,7 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
-	db, err := test.DB()
-	require.NoError(t, err)
-	defer db.Close()
-
-	tree, err := lsm.New(db)
-	require.NoError(t, err)
-	store, err := NewStore(db, tree)
-	require.NoError(t, err)
-	defer store.Close()
-
+	store := testStore(t)
 	data, err := test.MetricsSamples()
 	require.NoError(t, err)
 	for _, v := range data {
@@ -34,7 +25,7 @@ func TestMetrics(t *testing.T) {
 		require.NoError(t, err)
 	}
 	t.Run("Before compaction", func(t *testing.T) {
-		meta := tree.GetBuffer()
+		meta := store.tree.GetBuffer()
 		require.Equal(t, len(data), len(meta))
 
 		for i, m := range meta {
@@ -45,11 +36,11 @@ func TestMetrics(t *testing.T) {
 		}
 	})
 	t.Run("After compaction", func(t *testing.T) {
-		meta := tree.GetBuffer()
-		require.NoError(t, tree.Compact())
-		require.Zero(t, len(tree.GetBuffer()))
+		meta := store.tree.GetBuffer()
+		require.NoError(t, store.tree.Compact())
+		require.Zero(t, len(store.tree.GetBuffer()))
 		var parts []*lsm.Part
-		tree.Iter(func(p *lsm.Part) error {
+		store.tree.Iter(func(p *lsm.Part) error {
 			parts = append(parts, p)
 			return nil
 		})
@@ -57,7 +48,7 @@ func TestMetrics(t *testing.T) {
 		p := parts[0]
 		require.Equal(t, meta[0].MinTs, p.MinTS)
 		require.Equal(t, meta[len(meta)-1].MaxTs, p.MaxTS)
-		require.Equal(t, tree.Size(), p.Size)
+		require.Equal(t, store.tree.Size(), p.Size)
 		data, err := p.Record.MarshalJSON()
 		require.NoError(t, err)
 		// os.WriteFile("testdata/part.json", data, 0600)
@@ -120,4 +111,22 @@ func BenchmarkStore(b *testing.B) {
 			store.Save(v)
 		}
 	}
+}
+
+func testStore(t *testing.T) *Storage {
+	t.Helper()
+	db, err := test.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		db.Close()
+	})
+
+	tree, err := lsm.New(db)
+	require.NoError(t, err)
+	store, err := NewStore(db, tree)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		store.Close()
+	})
+	return store
 }
