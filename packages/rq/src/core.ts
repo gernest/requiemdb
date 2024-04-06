@@ -5,6 +5,7 @@ import {
 } from "./scan";
 import { Struct } from "./struct";
 import { Duration } from "./duration";
+import { Timestamp } from "./timestamp";
 
 export class Config {
     base: Scan
@@ -40,6 +41,18 @@ export class Config {
      */
     public offset(duration: Duration) {
         this.base.offset = duration
+        return this
+    }
+
+    /**
+     * Sets scan evaluation time. All time computations during scanning will
+     * be relative to this time. Useful for reproducible analysis
+     * 
+     * @param date 
+     * @returns 
+     */
+    public now(date: Date) {
+        this.base.now = Timestamp.fromDate(date)
         return this
     }
 
