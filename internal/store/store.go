@@ -87,8 +87,28 @@ func (s *Storage) Start(ctx context.Context) {
 // # Metadata Index
 //
 // This tracks minTs,maxTs observed in data. For efficiency we use LSM tree
-// containing arrow.Record of *v1.Meta. This index is kep in memory and
-// persisted for durability but all computation are in memory.
+// containing arrow.Record of *v1.Meta. This index is kept in memory and
+// persisted for durability but all computation are done in memory using arrow
+// compute package.
+//
+// # Roaring Bitmap Index
+//
+// This is per label key and kept globally per resource. a single
+// roaring64.Bitmap containing all samples that the label was observed is stored
+// on the underlying key value store.
+//
+// Currently , for existing label key we decode the value into a
+// *roaring64.Bitmap then we add the sample id and then encode the result before
+// updating the key value store with the new value. While memory wise we are
+// efficient(we reuse memory to avoid new allocation) this can be adding a lot
+// of spikes on cpu so it is probably an area that will benefit further research
+// and optimization
+//
+// Extensive caching is used for keys in this index, we make sure the cache is
+// up to date when we observe new labels.
+//
+// This index is used for performing AND queries where a scan with filters does
+// And operation on all matching bitmaps.
 func (s *Storage) Save(data *v1.Data) error {
 	ctx := transform.NewContext()
 	defer ctx.Release()
