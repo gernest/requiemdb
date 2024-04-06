@@ -77,6 +77,18 @@ func (s *Storage) Start(ctx context.Context) {
 	s.tree.Start(ctx)
 }
 
+// Save indexes and saves compressed data into badger key/value store. See
+// transform package on which metadata is extracted from data for indexing.
+//
+// Two indexes are kept, all mapping to data. We generate a unique uint64 for
+// data which is used to identify data, id is auto increment, giving a sorted
+// property of samples.
+//
+// # Metadata Index
+//
+// This tracks minTs,maxTs observed in data. For efficiency we use LSM tree
+// containing arrow.Record of *v1.Meta. This index is kep in memory and
+// persisted for durability but all computation are in memory.
 func (s *Storage) Save(data *v1.Data) error {
 	ctx := transform.NewContext()
 	defer ctx.Release()
