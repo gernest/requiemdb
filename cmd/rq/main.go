@@ -12,6 +12,7 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
+	"github.com/gernest/requiemdb/internal/commands/query"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/service"
@@ -50,6 +51,9 @@ func main() {
 				Value:   7 * 24 * time.Hour, //one week
 				Sources: cli.EnvVars("RQ_DATA_RETENTION_PERIOD"),
 			},
+		},
+		Commands: []*cli.Command{
+			query.Cmd(),
 		},
 		Action: run,
 	}
