@@ -266,7 +266,7 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 		if acceptRange(n.value.MinTS, n.value.MaxTS, start, end) {
 			n.value.Record.Retain()
 			defer n.value.Record.Release()
-			ids, err := ComputeSample(n.value.Record, resource, start, end)
+			ids, err := ComputeSample(n.value.Record, uint64(resource), start, end)
 			if err != nil {
 				return err
 			}
@@ -300,7 +300,7 @@ func contains(min, max uint64, slot uint64) bool {
 // end range.
 //
 //	start < id <= end
-func ComputeSample(r arrow.Record, resource v1.RESOURCE, start, end uint64) (ids []uint64, err error) {
+func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, err error) {
 	ctx := context.Background()
 
 	rsc, err := compute.CallFunction(ctx, "equal", nil, compute.NewDatumWithoutOwning(

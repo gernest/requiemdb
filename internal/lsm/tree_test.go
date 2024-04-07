@@ -3,11 +3,44 @@ package lsm
 import (
 	"testing"
 
+	"github.com/apache/arrow/go/v16/arrow/memory"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/protoarrow"
 	"github.com/stretchr/testify/require"
 )
 
 func TestComputeSamples(t *testing.T) {
+	meta := []*v1.Meta{
+		{
+			Id:    1,
+			MinTs: 1,
+			MaxTs: 3,
+		},
+		{
+			Id:    2,
+			MinTs: 4,
+			MaxTs: 6,
+		},
+		{
+			Id:       2,
+			MinTs:    4,
+			MaxTs:    6,
+			Resource: 1,
+		},
+		{
+			Id:    2,
+			MinTs: 4,
+			MaxTs: 6,
+		},
+	}
+	b := protoarrow.New(memory.DefaultAllocator, &v1.Meta{})
+	defer b.Release()
 
+	for _, m := range meta {
+		b.Append(m)
+	}
+	r := b.NewRecord()
+	defer r.Release()
 }
 
 func TestAcceptRange(t *testing.T) {
