@@ -43,7 +43,7 @@ type Service struct {
 	store    *store.Storage
 	hand     http.Handler
 	data     chan *v1.Data
-	v1.UnimplementedRQServer
+	v1.UnsafeRQServer
 }
 
 func NewService(ctx context.Context, db *badger.DB, listen string, retention time.Duration) (*Service, error) {
