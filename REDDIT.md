@@ -76,6 +76,8 @@ My dream is gone, and so is my livelihood. I am desperate, anyone out there who
 is looking for a humble, mid-level software engineer please give me a chance, I promise
 you won't be disappointed (My email is on my profile).
 
-
+If you find my project useful please share my story with your boss, I would
+rather have my application read than a github star, it very hard to get first
+interview screening for me right now.
 
 
