@@ -276,7 +276,6 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 			if n.value.MaxTS < end {
 				return nil
 			}
-			return io.EOF
 		}
 		return io.EOF
 	})
