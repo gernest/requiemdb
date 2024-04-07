@@ -290,7 +290,7 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 
 func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
 	return contains(minTs, maxTs, start) ||
-		contains(minTs, maxTs, end)
+		(start < maxTs && end > minTs)
 }
 
 func contains(min, max uint64, slot uint64) bool {
