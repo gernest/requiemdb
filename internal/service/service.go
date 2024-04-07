@@ -48,7 +48,7 @@ type Service struct {
 	data     chan *v1.Data
 
 	stats struct {
-		processedSamples metric.Int64Counter
+		processed metric.Int64Counter
 	}
 	v1.UnsafeRQServer
 }
@@ -127,7 +127,7 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 		base.ServeHTTP(w, r)
 	}), &http2.Server{})
 	service.hand = corsMiddleware().Handler(root)
-	service.stats.processedSamples, err = self.Meter().Int64Counter(
+	service.stats.processed, err = self.Meter().Int64Counter(
 		"samples.processed",
 		metric.WithDescription("Total number of samples processed"),
 	)
@@ -149,7 +149,7 @@ func (s *Service) save(ctx context.Context) {
 		if err != nil {
 			slog.Error("failed saving data sample", "err", err)
 		}
-		s.stats.processedSamples.Add(ctx, 1)
+		s.stats.processed.Add(ctx, 1)
 	}
 }
 
