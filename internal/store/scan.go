@@ -20,6 +20,10 @@ import (
 	"github.com/gernest/requiemdb/internal/x"
 )
 
+const (
+	DefaultTimeRange = 15 * time.Minute
+)
+
 func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 	txn := s.db.NewTransaction(false)
 	defer txn.Discard()
@@ -80,9 +84,11 @@ func utc() time.Time {
 
 // finds time boundary for the scan
 func timeBounds(now func() time.Time, scan *v1.Scan) (start, end uint64) {
-	ts := now()
+	var ts time.Time
 	if scan.Now != nil {
 		ts = scan.Now.AsTime()
+	} else {
+		ts = now()
 	}
 	if scan.Offset != nil {
 		ts = ts.Add(-scan.Offset.AsDuration())
@@ -91,7 +97,7 @@ func timeBounds(now func() time.Time, scan *v1.Scan) (start, end uint64) {
 		start = uint64(scan.TimeRange.Start.AsTime().UnixNano())
 		end = uint64(scan.TimeRange.End.AsTime().UnixNano())
 	} else {
-		begin := ts.Add(-5 * time.Minute)
+		begin := ts.Add(-DefaultTimeRange)
 		start = uint64(begin.UnixNano())
 		end = uint64(ts.UnixNano())
 	}

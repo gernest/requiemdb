@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io"
 	"path"
+	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
@@ -45,4 +46,12 @@ func DB() (*badger.DB, error) {
 			WithInMemory(true).
 			WithLogger(nil),
 	)
+}
+
+var ts, _ = time.Parse(time.RFC822, time.RFC822)
+var UTC = ts.UTC()
+
+// Default now used in testing. This ensures consistent starting point
+func Now() time.Time {
+	return UTC
 }
