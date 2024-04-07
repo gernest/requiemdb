@@ -24,25 +24,12 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 	txn := s.db.NewTransaction(false)
 	defer txn.Discard()
 
-	ts := time.Now().UTC()
-	if scan.Now != nil {
-		ts = scan.Now.AsTime()
-	}
-	if scan.Offset != nil {
-		ts = ts.Add(-scan.Offset.AsDuration())
-	}
 	resource := v1.RESOURCE(scan.Scope)
-	var start, end uint64
-	var isInstant bool
-	if scan.TimeRange != nil {
-		start = uint64(scan.TimeRange.Start.AsTime().UnixNano())
-		end = uint64(scan.TimeRange.End.AsTime().UnixNano())
-	} else {
-		begin := ts.Add(-5 * time.Minute)
-		start = uint64(begin.UnixNano())
-		end = uint64(ts.UnixNano())
-		isInstant = true
-	}
+	start, end := timeBounds(utc, scan)
+
+	// Instant scans have no time range.
+	isInstant := scan.TimeRange == nil
+
 	samples, err := s.tree.Scan(resource, start, end)
 	if err != nil {
 		return nil, err
@@ -85,6 +72,30 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 		result = append(result, data)
 	}
 	return dataOps.Collapse(result), nil
+}
+
+func utc() time.Time {
+	return time.Now().UTC()
+}
+
+// finds time boundary for the scan
+func timeBounds(now func() time.Time, scan *v1.Scan) (start, end uint64) {
+	ts := now()
+	if scan.Now != nil {
+		ts = scan.Now.AsTime()
+	}
+	if scan.Offset != nil {
+		ts = ts.Add(-scan.Offset.AsDuration())
+	}
+	if scan.TimeRange != nil {
+		start = uint64(scan.TimeRange.Start.AsTime().UnixNano())
+		end = uint64(scan.TimeRange.End.AsTime().UnixNano())
+	} else {
+		begin := ts.Add(-5 * time.Minute)
+		start = uint64(begin.UnixNano())
+		end = uint64(ts.UnixNano())
+	}
+	return
 }
 
 func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool) (*v1.Data, error) {
