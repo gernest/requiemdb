@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 
+	"github.com/gernest/requiemdb/internal/version"
 	"go.opentelemetry.io/contrib/instrumentation/host"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -67,4 +69,12 @@ func Setup(ctx context.Context, m collector_metrics.MetricsServiceServer, t coll
 		return nil, err
 	}
 	return closers{tp, provider}, nil
+}
+
+// Meter returns metrics meter for current version of rq
+func Meter() metric.Meter {
+	return otel.GetMeterProvider().Meter(
+		"rq",
+		metric.WithInstrumentationVersion(version.VERSION),
+	)
 }

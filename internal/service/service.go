@@ -12,6 +12,7 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/lsm"
+	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
 	"github.com/gernest/requiemdb/ui"
@@ -20,6 +21,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/metric"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	collector_trace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
@@ -33,9 +35,10 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var rootFS, _ = fs.Sub(ui.FS, "dist")
-
-var fileServer = http.FileServer(http.FS(rootFS))
+var (
+	rootFS, _  = fs.Sub(ui.FS, "dist")
+	fileServer = http.FileServer(http.FS(rootFS))
+)
 
 type Service struct {
 	db       *badger.DB
@@ -43,6 +46,10 @@ type Service struct {
 	store    *store.Storage
 	hand     http.Handler
 	data     chan *v1.Data
+
+	stats struct {
+		processedSamples metric.Int64Counter
+	}
 	v1.UnsafeRQServer
 }
 
@@ -120,20 +127,29 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 		base.ServeHTTP(w, r)
 	}), &http2.Server{})
 	service.hand = corsMiddleware().Handler(root)
+	service.stats.processedSamples, err = self.Meter().Int64Counter(
+		"samples.processed",
+		metric.WithDescription("Total number of samples processed"),
+	)
+	if err != nil {
+		service.Close()
+		return nil, err
+	}
 	return service, nil
 }
 
 func (s *Service) Start(ctx context.Context) {
 	go s.store.Start(ctx)
-	go s.save()
+	go s.save(ctx)
 }
 
-func (s *Service) save() {
+func (s *Service) save(ctx context.Context) {
 	for data := range s.data {
 		err := s.store.Save(data)
 		if err != nil {
 			slog.Error("failed saving data sample", "err", err)
 		}
+		s.stats.processedSamples.Add(ctx, 1)
 	}
 }
 
