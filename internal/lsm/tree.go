@@ -256,6 +256,7 @@ func (t *Tree) save(r arrow.Record) error {
 }
 
 func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
+	t.Flush()
 
 	samples := NewSamples()
 	err := t.root.Iterate(func(n *Node[*Part]) error {
@@ -284,7 +285,6 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 		samples.Release()
 		return nil, err
 	}
-	t.scanBuffer(samples, resource, start, end)
 	return samples, nil
 }
 
@@ -371,22 +371,6 @@ func computeID(r arrow.Record, resource v1.RESOURCE, start, end uint64) (ids []u
 	}
 	defer rs.Release()
 	return rs.(*array.Uint64).Uint64Values(), nil
-}
-
-func (t *Tree) scanBuffer(samples *Samples, resource v1.RESOURCE, start, end uint64) {
-	t.bufferMu.RLock()
-	defer t.bufferMu.RUnlock()
-	ls := t.buffer
-	if len(ls) == 0 {
-		return
-	}
-	rs := uint64(resource)
-	// We don't keep a lot meta in the buffer. For correctness, perform a linear search
-	for _, m := range t.buffer {
-		if m.Resource == rs && acceptRange(m.MinTs, m.MaxTs, start, end) {
-			samples.Add(m.Id)
-		}
-	}
 }
 
 func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
