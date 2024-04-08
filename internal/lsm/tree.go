@@ -288,9 +288,9 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 }
 
 func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
-	return (minTs < start && start <= maxTs) ||
-		(start < minTs && end < maxTs) ||
-		(start < minTs && maxTs < end)
+	return (minTs <= start && start <= maxTs) ||
+		(start <= minTs && end < maxTs) ||
+		(start <= minTs && maxTs < end)
 }
 
 // ComputeSample returns all sample id for resource that are within start and
