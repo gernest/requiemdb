@@ -360,7 +360,18 @@ func compute00(ctx context.Context, r arrow.Record, start, end uint64) (compute.
 		return nil, err
 	}
 	defer case02.Release()
-	return compute.CallFunction(ctx, "or", nil, case01, case02)
+	case03, err := compute03(ctx, r, start, end)
+	if err != nil {
+		return nil, err
+	}
+	defer case03.Release()
+
+	base, err := compute.CallFunction(ctx, "or", nil, case01, case02)
+	if err != nil {
+		return nil, err
+	}
+	defer base.Release()
+	return compute.CallFunction(ctx, "or", nil, base, case03)
 }
 
 // Matches the first case where a sample contains the start timestamp. In this
@@ -394,6 +405,26 @@ func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.
 	}
 	defer lo.Release()
 	hi, err := compute.CallFunction(ctx, "greater", nil,
+		compute.NewDatumWithoutOwning(r.Column(MaxTSColumn)),
+		&compute.ScalarDatum{Value: scalar.MakeScalar(end)})
+	if err != nil {
+		return nil, err
+	}
+	defer hi.Release()
+	return compute.CallFunction(ctx, "and", nil, lo, hi)
+}
+
+// The whole range is within the start, end scope
+// start < mints and maxTs < end
+func compute03(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
+	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
+	lo, err := compute.CallFunction(ctx, "greater", nil,
+		compute.NewDatumWithoutOwning(r.Column(MinTSColumn)), value)
+	if err != nil {
+		return nil, err
+	}
+	defer lo.Release()
+	hi, err := compute.CallFunction(ctx, "less", nil,
 		compute.NewDatumWithoutOwning(r.Column(MaxTSColumn)),
 		&compute.ScalarDatum{Value: scalar.MakeScalar(end)})
 	if err != nil {

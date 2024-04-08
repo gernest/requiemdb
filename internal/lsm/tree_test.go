@@ -24,13 +24,13 @@ func TestComputeSamples(t *testing.T) {
 		{
 			Id:       2,
 			MinTs:    4,
-			MaxTs:    6,
+			MaxTs:    8,
 			Resource: 1,
 		},
 		{
 			Id:    2,
 			MinTs: 4,
-			MaxTs: 6,
+			MaxTs: 8,
 		},
 	}
 	b := protoarrow.New(memory.DefaultAllocator, &v1.Meta{})
@@ -41,6 +41,12 @@ func TestComputeSamples(t *testing.T) {
 	}
 	r := b.NewRecord()
 	defer r.Release()
+
+	t.Run("with resource", func(t *testing.T) {
+		ids, err := ComputeSample(r, 1, 5, 7)
+		require.NoError(t, err)
+		require.Equal(t, []uint64{2}, ids)
+	})
 }
 
 func TestAcceptRange(t *testing.T) {
