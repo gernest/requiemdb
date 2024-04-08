@@ -392,7 +392,8 @@ func compute01(ctx context.Context, r arrow.Record, start uint64) (compute.Datum
 }
 
 // [minTs,[start...end],maxTs]
-// minTs >= start && maxTs > end
+//
+//	minTs >= start && maxTs > end
 func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
 	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
 	lo, err := compute.CallFunction(ctx, "greater_equal", nil,
@@ -412,7 +413,8 @@ func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.
 }
 
 // [start,[minTs...maxTs],end]
-// minTs >= start  && maxTs < end
+//
+//	minTs >= start  && maxTs < end
 func compute03(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
 	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
 	lo, err := compute.CallFunction(ctx, "greater_equal", nil,
