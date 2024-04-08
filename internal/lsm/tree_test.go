@@ -1,8 +1,10 @@
 package lsm
 
 import (
+	"context"
 	"testing"
 
+	"github.com/apache/arrow/go/v16/arrow/compute"
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/protoarrow"
@@ -13,24 +15,18 @@ func TestComputeSamples(t *testing.T) {
 	meta := []*v1.Meta{
 		{
 			Id:    1,
-			MinTs: 1,
+			MinTs: 0,
 			MaxTs: 3,
 		},
 		{
 			Id:    2,
 			MinTs: 4,
-			MaxTs: 6,
+			MaxTs: 7,
 		},
 		{
-			Id:       2,
-			MinTs:    4,
-			MaxTs:    8,
-			Resource: 1,
-		},
-		{
-			Id:    2,
-			MinTs: 4,
-			MaxTs: 8,
+			Id:    3,
+			MinTs: 8,
+			MaxTs: 11,
 		},
 	}
 	b := protoarrow.New(memory.DefaultAllocator, &v1.Meta{})
@@ -41,12 +37,25 @@ func TestComputeSamples(t *testing.T) {
 	}
 	r := b.NewRecord()
 	defer r.Release()
-
-	t.Run("with resource", func(t *testing.T) {
-		ids, err := ComputeSample(r, 1, 5, 7)
+	ctx := context.Background()
+	t.Run("compute01", func(t *testing.T) {
+		datum, err := compute01(ctx, r, 5)
 		require.NoError(t, err)
-		require.Equal(t, []uint64{2}, ids)
+		require.Equal(t, "[false true false]", format(datum))
+		datum, err = compute01(ctx, r, 4)
+		require.NoError(t, err)
+		require.Equal(t, "[false true false]", format(datum))
+		datum, err = compute01(ctx, r, 8)
+		require.NoError(t, err)
+		require.Equal(t, "[false false true]", format(datum))
+		datum, err = compute01(ctx, r, 11)
+		require.NoError(t, err)
+		require.Equal(t, "[false false false]", format(datum))
 	})
+}
+
+func format(d compute.Datum) string {
+	return d.(*compute.ArrayDatum).MakeArray().String()
 }
 
 func TestAcceptRange(t *testing.T) {
