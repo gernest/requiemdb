@@ -288,12 +288,9 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 }
 
 func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
-	return contains(minTs, maxTs, start) ||
-		(start < maxTs && end > minTs)
-}
-
-func contains(min, max uint64, slot uint64) bool {
-	return slot >= min && slot <= max
+	return (minTs < start && start <= maxTs) ||
+		(start < minTs && end < maxTs) ||
+		(start < minTs && maxTs < end)
 }
 
 // ComputeSample returns all sample id for resource that are within start and
@@ -374,8 +371,8 @@ func compute00(ctx context.Context, r arrow.Record, start, end uint64) (compute.
 	return compute.CallFunction(ctx, "or", nil, base, case03)
 }
 
-// Matches the first case where a sample contains the start timestamp. In this
-// case minTs < start && start <= endTS
+// [minTs,[start],maxTs]
+// case minTs < start && maxTs > start
 func compute01(ctx context.Context, r arrow.Record, start uint64) (compute.Datum, error) {
 	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
 	lo, err := compute.CallFunction(ctx, "less", nil,
@@ -393,9 +390,8 @@ func compute01(ctx context.Context, r arrow.Record, start uint64) (compute.Datum
 	return compute.CallFunction(ctx, "and", nil, lo, hi)
 }
 
-// The case where the starting timestamp is lower than minTs and end is less
-// than maxTs.
-// start < minTs && end < maxTs
+// [minTs,[start...end],maxTs]
+// minTs > start && maxTs > end
 func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
 	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
 	lo, err := compute.CallFunction(ctx, "greater", nil,
@@ -414,8 +410,8 @@ func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.
 	return compute.CallFunction(ctx, "and", nil, lo, hi)
 }
 
-// The whole range is within the start, end scope
-// start < mints and maxTs < end
+// [start,[minTs...maxTs],end]
+// minTs > start  && maxTs < end
 func compute03(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
 	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
 	lo, err := compute.CallFunction(ctx, "greater", nil,
