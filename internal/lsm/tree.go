@@ -296,10 +296,8 @@ func contains(min, max uint64, slot uint64) bool {
 	return slot >= min && slot <= max
 }
 
-// ComputeSample returns all sample id for resource that are withing start and
+// ComputeSample returns all sample id for resource that are within start and
 // end range.
-//
-//	start < id <= end
 func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, err error) {
 	ctx := context.Background()
 
@@ -317,49 +315,24 @@ func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, e
 	if rsc.Len() == 0 {
 		return []uint64{}, nil
 	}
-	min, err := compute.CallFunction(ctx, "greater", nil, compute.NewDatumWithoutOwning(
-		r.Column(MinTSColumn),
-	),
-		compute.NewDatumWithoutOwning(
-			scalar.MakeScalar(start),
-		),
-	)
+	contains, err := compute00(ctx, r, start, end)
 	if err != nil {
 		return nil, err
 	}
-	defer min.Release()
-	max, err := compute.CallFunction(ctx, "less_equal", nil, compute.NewDatumWithoutOwning(
-		r.Column(MaxTSColumn),
-	),
-		compute.NewDatumWithoutOwning(
-			scalar.MakeScalar(end),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer max.Release()
+	defer contains.Release()
 
-	// filter by min_ts and max_ts
-	and, err := compute.CallFunction(ctx, "and", nil, min, max)
+	and, err := compute.CallFunction(ctx, "and", nil, rsc, contains)
 	if err != nil {
 		return nil, err
 	}
 	defer and.Release()
 
-	// filter by resource
-	andRsc, err := compute.CallFunction(ctx, "and", nil, and, rsc)
-	if err != nil {
-		return nil, err
-	}
-	defer andRsc.Release()
-
-	filter := andRsc.(*compute.ArrayDatum).MakeArray().(*array.Boolean)
+	filter := and.(*compute.ArrayDatum).MakeArray().(*array.Boolean)
 	defer filter.Release()
 
 	b := array.NewUint32Builder(memory.DefaultAllocator)
 	b.Reserve(filter.Len())
-	for i := 0; i < b.Len(); i++ {
+	for i := 0; i < filter.Len(); i++ {
 		if filter.Value(i) {
 			b.Append(uint32(i))
 		}
@@ -374,6 +347,60 @@ func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, e
 	}
 	defer rs.Release()
 	return rs.(*array.Uint64).Uint64Values(), nil
+}
+
+func compute00(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
+	case01, err := compute01(ctx, r, start)
+	if err != nil {
+		return nil, err
+	}
+	defer case01.Release()
+	case02, err := compute02(ctx, r, start, end)
+	if err != nil {
+		return nil, err
+	}
+	defer case02.Release()
+	return compute.CallFunction(ctx, "or", nil, case01, case02)
+}
+
+// Matches the first case where a sample contains the start timestamp. In this
+// case minTs < start && start <= endTS
+func compute01(ctx context.Context, r arrow.Record, start uint64) (compute.Datum, error) {
+	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
+	lo, err := compute.CallFunction(ctx, "less", nil,
+		compute.NewDatumWithoutOwning(r.Column(MinTSColumn)), value)
+	if err != nil {
+		return nil, err
+	}
+	defer lo.Release()
+	hi, err := compute.CallFunction(ctx, "greater", nil,
+		compute.NewDatumWithoutOwning(r.Column(MaxTSColumn)), value)
+	if err != nil {
+		return nil, err
+	}
+	defer hi.Release()
+	return compute.CallFunction(ctx, "and", nil, lo, hi)
+}
+
+// The case where the starting timestamp is lower than minTs and end is less
+// than maxTs.
+// start < minTs && end < maxTs
+func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
+	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
+	lo, err := compute.CallFunction(ctx, "greater", nil,
+		compute.NewDatumWithoutOwning(r.Column(MinTSColumn)), value)
+	if err != nil {
+		return nil, err
+	}
+	defer lo.Release()
+	hi, err := compute.CallFunction(ctx, "greater", nil,
+		compute.NewDatumWithoutOwning(r.Column(MaxTSColumn)),
+		&compute.ScalarDatum{Value: scalar.MakeScalar(end)})
+	if err != nil {
+		return nil, err
+	}
+	defer hi.Release()
+	return compute.CallFunction(ctx, "and", nil, lo, hi)
 }
 
 func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
