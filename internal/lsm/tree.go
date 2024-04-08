@@ -393,10 +393,42 @@ func compute01(ctx context.Context, r arrow.Record, start uint64) (compute.Datum
 
 // [minTs,[start...end],maxTs]
 //
-//	minTs >= start && maxTs > end
+//	(start >= minTs && start <=maxTs) && (end > minTs && end <maxTs)
 func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.Datum, error) {
+	lo, err := containsStart(ctx, r, start)
+	if err != nil {
+		return nil, err
+	}
+	defer lo.Release()
+	hi, err := containsEnd(ctx, r, end)
+	if err != nil {
+		return nil, err
+	}
+	defer hi.Release()
+	return compute.CallFunction(ctx, "and", nil, lo, hi)
+}
+
+func containsStart(ctx context.Context, r arrow.Record, start uint64) (compute.Datum, error) {
 	value := &compute.ScalarDatum{Value: scalar.MakeScalar(start)}
-	lo, err := compute.CallFunction(ctx, "greater_equal", nil,
+	lo, err := compute.CallFunction(ctx, "less_equal", nil,
+		compute.NewDatumWithoutOwning(r.Column(MinTSColumn)), value)
+	if err != nil {
+		return nil, err
+	}
+	defer lo.Release()
+	hi, err := compute.CallFunction(ctx, "greater_equal", nil,
+		compute.NewDatumWithoutOwning(r.Column(MaxTSColumn)),
+		value)
+	if err != nil {
+		return nil, err
+	}
+	defer hi.Release()
+	return compute.CallFunction(ctx, "and", nil, lo, hi)
+}
+
+func containsEnd(ctx context.Context, r arrow.Record, end uint64) (compute.Datum, error) {
+	value := &compute.ScalarDatum{Value: scalar.MakeScalar(end)}
+	lo, err := compute.CallFunction(ctx, "less", nil,
 		compute.NewDatumWithoutOwning(r.Column(MinTSColumn)), value)
 	if err != nil {
 		return nil, err
@@ -404,7 +436,7 @@ func compute02(ctx context.Context, r arrow.Record, start, end uint64) (compute.
 	defer lo.Release()
 	hi, err := compute.CallFunction(ctx, "greater", nil,
 		compute.NewDatumWithoutOwning(r.Column(MaxTSColumn)),
-		&compute.ScalarDatum{Value: scalar.MakeScalar(end)})
+		value)
 	if err != nil {
 		return nil, err
 	}
