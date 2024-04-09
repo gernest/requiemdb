@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"errors"
+	"io"
+	"sync"
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
@@ -144,8 +146,11 @@ func (s *Storage) Save(data *v1.Data) error {
 	bitmaps := lsm.NewSamples()
 	defer bitmaps.Release()
 
+	txnData := arena()
+	defer txnData.Release()
+
 	err = ctx.Labels.Iter(func(lbl *labels.Label) error {
-		return saveLabel(txn, lbl.Encode(), id, bitmaps)
+		return saveLabel(txn, txnData, lbl.Encode(), id, bitmaps)
 	})
 	if err != nil {
 		return err
@@ -188,7 +193,7 @@ func resourceFrom(data *v1.Data) v1.RESOURCE {
 // serialize the bitmap before storing it in txn.
 //
 // This is acceptable because we only do this per sample.
-func saveLabel(txn *badger.Txn, key []byte, sampleID uint64, bitmaps *lsm.Samples) error {
+func saveLabel(txn *badger.Txn, ctx *Arena, key []byte, sampleID uint64, bitmaps *lsm.Samples) error {
 	r := lsm.NewSamples()
 	defer r.Release()
 	it, err := txn.Get(key)
@@ -208,9 +213,44 @@ func saveLabel(txn *badger.Txn, key []byte, sampleID uint64, bitmaps *lsm.Sample
 		// We only add when doing updates.
 		bitmaps.Add(xxhash.Sum64(key))
 	}
-	data, err := r.MarshalBinary()
+	_, err = r.WriteTo(ctx.NewWriter())
 	if err != nil {
 		return err
 	}
-	return txn.SetEntry(badger.NewEntry(key, data))
+	return txn.SetEntry(badger.NewEntry(key, ctx.Bytes()))
 }
+
+// there is a hard requirement that memory should e not reused before a
+// transaction has been committed. This data structure allows to keep used
+// writes around and free them at once.
+type Arena struct {
+	data   []byte
+	offset int
+}
+
+func (a *Arena) NewWriter() io.Writer {
+	a.offset = len(a.data)
+	return a
+}
+
+func (a *Arena) Bytes() []byte {
+	return a.data[a.offset:]
+}
+
+func (a *Arena) Write(p []byte) (int, error) {
+	a.data = append(a.data, p...)
+	return len(p), nil
+}
+
+func (a *Arena) Release() {
+	clear(a.data)
+	a.data = a.data[:0]
+	a.offset = 0
+	arenaPool.Put(a)
+}
+
+func arena() *Arena {
+	return arenaPool.Get().(*Arena)
+}
+
+var arenaPool = &sync.Pool{New: func() any { return new(Arena) }}
