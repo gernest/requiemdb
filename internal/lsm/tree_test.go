@@ -60,6 +60,17 @@ func TestComputeSamples(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "[false true false]", format(datum))
 	})
+	t.Run("compute03", func(t *testing.T) {
+		datum, err := compute03(ctx, r, 0, 8)
+		require.NoError(t, err)
+		require.Equal(t, "[true true false]", format(datum))
+		datum, err = compute03(ctx, r, 0, 4)
+		require.NoError(t, err)
+		require.Equal(t, "[true false false]", format(datum))
+		datum, err = compute03(ctx, r, 4, 9)
+		require.NoError(t, err)
+		require.Equal(t, "[false true false]", format(datum))
+	})
 }
 
 func format(d compute.Datum) string {
