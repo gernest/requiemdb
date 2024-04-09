@@ -24,21 +24,8 @@ func TestMetrics(t *testing.T) {
 		err = store.Save(v)
 		require.NoError(t, err)
 	}
-	t.Run("Before compaction", func(t *testing.T) {
-		meta := store.tree.GetBuffer()
-		require.Equal(t, len(data), len(meta))
-
-		for i, m := range meta {
-			require.NotZero(t, m.MinTs)
-			require.NotZero(t, m.MaxTs)
-			require.Less(t, m.MinTs, m.MaxTs)
-			require.Equal(t, uint64(i), m.Id)
-		}
-	})
 	t.Run("After compaction", func(t *testing.T) {
-		meta := store.tree.GetBuffer()
 		require.NoError(t, store.tree.Compact())
-		require.Zero(t, len(store.tree.GetBuffer()))
 		var parts []*lsm.Part
 		store.tree.Iter(func(p *lsm.Part) error {
 			parts = append(parts, p)
@@ -46,8 +33,6 @@ func TestMetrics(t *testing.T) {
 		})
 		require.Equal(t, 1, len(parts))
 		p := parts[0]
-		require.Equal(t, meta[0].MinTs, p.MinTS)
-		require.Equal(t, meta[len(meta)-1].MaxTs, p.MaxTS)
 		require.Equal(t, store.tree.Size(), p.Size)
 		data, err := p.Record.MarshalJSON()
 		require.NoError(t, err)

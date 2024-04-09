@@ -67,10 +67,11 @@ func NewStore(db *badger.DB, tree *lsm.Tree) (*Storage, error) {
 	}, nil
 }
 
-func (s *Storage) Close() {
+func (s *Storage) Close() error {
 	s.dataCache.Close()
 	s.bitmapCache.Close()
 	s.seq.Release()
+	return s.tree.Close()
 }
 
 func (s *Storage) Start(ctx context.Context) {

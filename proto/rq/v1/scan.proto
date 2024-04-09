@@ -33,7 +33,6 @@ message Scan {
     METRICS = 0;
     TRACES = 2;
     LOGS = 3;
-    SNIPPETS = 4;
   }
 
   enum BaseProp {

@@ -5,8 +5,6 @@ enum RESOURCE {
   METRICS = 0;
   TRACES = 2;
   LOGS = 3;
-  SNIPPETS = 4;
   ID = 5;
   META = 6;
-  TRANSLATE = 7;
 }

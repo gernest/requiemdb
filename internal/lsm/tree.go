@@ -3,10 +3,10 @@ package lsm
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"log/slog"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,9 +25,6 @@ import (
 )
 
 const (
-	// BufferSize minimum number of v1.Meta before building arrow.Record
-	BufferSize = 4 << 10
-
 	IDColumn       = 0
 	MinTSColumn    = 1
 	MaxTSColumn    = 2
@@ -45,37 +42,24 @@ type Tree struct {
 	root *Node[*Part]
 	size atomic.Uint64
 
-	// It is wasteful to build records of single Meta message. We buffer them and
-	// search using binary search.
-	buffer     []*v1.Meta
-	bufferSize int
-	bufferMu   sync.RWMutex
-
-	build *protoarrow.Build
+	bufferMu sync.RWMutex
+	build    *protoarrow.Build
 
 	nodes   []*Node[*Part]
 	records []arrow.Record
 
 	db  *badger.DB
-	key [8 + 1]byte
+	key [8 + 4]byte
 }
 
 func New(db *badger.DB) (*Tree, error) {
 	t := &Tree{
-		root:       &Node[*Part]{},
-		buffer:     make([]*v1.Meta, 0, BufferSize),
-		bufferSize: BufferSize,
-		build:      protoarrow.New(memory.DefaultAllocator, &v1.Meta{}),
-		db:         db,
+		root:  &Node[*Part]{},
+		build: protoarrow.New(memory.DefaultAllocator, &v1.Meta{}),
+		db:    db,
 	}
-	t.key[len(t.key)-1] = byte(v1.RESOURCE_META)
+	binary.LittleEndian.PutUint32(t.key[8:], uint32(v1.RESOURCE_META))
 	return t, t.load()
-}
-
-func (t *Tree) GetBuffer() []*v1.Meta {
-	t.bufferMu.RLock()
-	defer t.bufferMu.RUnlock()
-	return slices.Clone(t.buffer)
 }
 
 func (t *Tree) Iter(f func(*Part) error) {
@@ -90,17 +74,25 @@ func (t *Tree) Iter(f func(*Part) error) {
 func (t *Tree) Append(meta *v1.Meta) {
 	t.bufferMu.Lock()
 	defer t.bufferMu.Unlock()
-	t.buffer = append(t.buffer, meta)
-	if len(t.buffer) < t.bufferSize {
-		return
-	}
-	t.unsafeSaveBuffer()
+	t.build.Append(meta)
 }
 
 func (t *Tree) Flush() {
 	t.bufferMu.Lock()
 	defer t.bufferMu.Unlock()
-	t.unsafeSaveBuffer()
+	r := t.build.NewRecord()
+	if r.NumRows() == 0 {
+		r.Release()
+		return
+	}
+	min := r.Column(MinTSColumn).(*array.Uint64).Uint64Values()
+	max := r.Column(MaxTSColumn).(*array.Uint64).Uint64Values()
+	t.add(&Part{
+		Record: r,
+		Size:   uint64(util.TotalRecordSize(r)),
+		MinTS:  min[0],
+		MaxTS:  max[len(max)-1],
+	})
 }
 
 func (t *Tree) Start(ctx context.Context) {
@@ -122,25 +114,6 @@ func (t *Tree) Start(ctx context.Context) {
 	}
 }
 
-func (t *Tree) unsafeSaveBuffer() {
-	if len(t.buffer) == 0 {
-		return
-	}
-	for _, m := range t.buffer {
-		t.build.Append(m)
-	}
-	defer func() {
-		t.buffer = t.buffer[:0]
-	}()
-	r := t.build.NewRecord()
-	t.add(&Part{
-		Record: r,
-		Size:   uint64(util.TotalRecordSize(r)),
-		MinTS:  t.buffer[0].MinTs,
-		MaxTS:  t.buffer[len(t.buffer)-1].MaxTs,
-	})
-}
-
 func (t *Tree) Size() uint64 {
 	return t.size.Load()
 }
@@ -148,6 +121,19 @@ func (t *Tree) Size() uint64 {
 func (t *Tree) add(part *Part) {
 	t.size.Add(part.Size)
 	t.root.Prepend(part)
+}
+
+func (t *Tree) Close() error {
+	err := t.Compact()
+	if err != nil {
+		return err
+	}
+	t.Iter(func(p *Part) error {
+		p.Record.Release()
+		return nil
+	})
+	t.root = &Node[*Part]{}
+	return nil
 }
 
 func (t *Tree) Compact() error {
@@ -168,7 +154,15 @@ func (t *Tree) Compact() error {
 		t.records = t.records[:0]
 	}()
 
-	if len(t.nodes) <= 1 {
+	if len(t.nodes) == 0 {
+		return nil
+	}
+	if len(t.nodes) == 1 {
+		err := t.save(t.records[0])
+		if err != nil {
+			t.records[0].Release()
+			return err
+		}
 		return nil
 	}
 	r, err := protoarrow.Merge(t.records)
@@ -240,6 +234,7 @@ func (t *Tree) load() error {
 func (t *Tree) save(r arrow.Record) error {
 	var b bytes.Buffer
 	w := ipc.NewWriter(&b,
+		ipc.WithSchema(r.Schema()),
 		ipc.WithZstd(),
 	)
 	err := w.Write(r)
@@ -288,9 +283,18 @@ func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
 }
 
 func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
-	return (minTs <= start && start <= maxTs) ||
-		(start <= minTs && end < maxTs) ||
-		(start <= minTs && maxTs < end)
+	return contains(minTs, maxTs, start) ||
+		containsUp(minTs, maxTs, end) ||
+		containsUp(start, end, minTs) ||
+		containsUp(start, end, maxTs)
+}
+
+func contains(start, end, slot uint64) bool {
+	return slot >= start && slot <= end
+}
+
+func containsUp(start, end, slot uint64) bool {
+	return slot > start && slot < end
 }
 
 // ComputeSample returns all sample id for resource that are within start and

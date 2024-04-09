@@ -8,6 +8,7 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/protoarrow"
+	"github.com/gernest/requiemdb/internal/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -127,10 +128,41 @@ func TestAcceptRange(t *testing.T) {
 		},
 	}
 
-	for _, v := range ls {
+	for i, v := range ls {
+
 		require.Equal(t, v.ok, acceptRange(
 			v.min, v.max, v.start, v.end,
-		))
+		), i)
 	}
+}
 
+func TestCompaction(t *testing.T) {
+	db, err := test.DB()
+	require.NoError(t, err)
+	defer db.Close()
+
+	tr, err := New(db)
+	require.NoError(t, err)
+	defer tr.Close()
+
+	for n := range 5 {
+		tr.Append(&v1.Meta{
+			MinTs: uint64(n),
+			MaxTs: uint64(n) + 5,
+		})
+	}
+	require.NoError(t, tr.Compact())
+
+	t.Run("compaction persists", func(t *testing.T) {
+		x, err := New(db)
+		require.NoError(t, err)
+		var part []*Part
+		x.Iter(func(p *Part) error {
+			part = append(part, p)
+			return nil
+		})
+		require.Equal(t, 1, len(part))
+		require.Equal(t, uint64(0), part[0].MinTS)
+		require.Equal(t, uint64(9), part[0].MaxTS)
+	})
 }

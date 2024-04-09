@@ -18,19 +18,11 @@ export enum RESOURCE {
      */
     LOGS = 3,
     /**
-     * @generated from protobuf enum value: SNIPPETS = 4;
-     */
-    SNIPPETS = 4,
-    /**
      * @generated from protobuf enum value: ID = 5;
      */
     ID = 5,
     /**
      * @generated from protobuf enum value: META = 6;
      */
-    META = 6,
-    /**
-     * @generated from protobuf enum value: TRANSLATE = 7;
-     */
-    TRANSLATE = 7
+    META = 6
 }
