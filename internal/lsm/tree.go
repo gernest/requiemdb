@@ -301,9 +301,9 @@ func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, e
 	rsc, err := compute.CallFunction(ctx, "equal", nil, compute.NewDatumWithoutOwning(
 		r.Column(ResourceColumn),
 	),
-		compute.NewDatumWithoutOwning(
-			scalar.MakeScalar(uint64(resource)),
-		),
+		&compute.ScalarDatum{Value: &scalar.Uint64{
+			Value: resource,
+		}},
 	)
 	if err != nil {
 		return nil, err
