@@ -124,7 +124,10 @@ func (s *Storage) Save(data *v1.Data) error {
 	txn := s.db.NewTransaction(true)
 	defer txn.Discard()
 
-	compressedData, err := x.Compress(proto.Marshal(data))
+	txnData := arena()
+	defer txnData.Release()
+
+	compressedData, err := x.Compress(txnData.Marshal(data))
 	if err != nil {
 		return err
 	}
@@ -145,9 +148,6 @@ func (s *Storage) Save(data *v1.Data) error {
 	// loaded
 	bitmaps := lsm.NewSamples()
 	defer bitmaps.Release()
-
-	txnData := arena()
-	defer txnData.Release()
 
 	err = ctx.Labels.Iter(func(lbl *labels.Label) error {
 		return saveLabel(txn, txnData, lbl.Encode(), id, bitmaps)
@@ -240,6 +240,17 @@ func (a *Arena) Bytes() []byte {
 func (a *Arena) Write(p []byte) (int, error) {
 	a.data = append(a.data, p...)
 	return len(p), nil
+}
+
+func (a *Arena) Marshal(msg proto.Message) (b []byte, err error) {
+	a.offset = len(a.data)
+	a.data, err = proto.MarshalOptions{}.MarshalAppend(a.data, msg)
+	if err != nil {
+		a.data = a.data[:a.offset]
+		return nil, err
+	}
+	b = a.data[a.offset:]
+	return
 }
 
 func (a *Arena) Release() {
