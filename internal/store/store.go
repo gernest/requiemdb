@@ -10,11 +10,11 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/compress"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/transform"
-	"github.com/gernest/requiemdb/internal/x"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -127,7 +127,7 @@ func (s *Storage) Save(data *v1.Data) error {
 	txnData := arena()
 	defer txnData.Release()
 
-	compressedData, err := x.Compress(txnData.Marshal(data))
+	compressedData, err := txnData.Compress(data)
 	if err != nil {
 		return err
 	}
@@ -240,6 +240,19 @@ func (a *Arena) Bytes() []byte {
 func (a *Arena) Write(p []byte) (int, error) {
 	a.data = append(a.data, p...)
 	return len(p), nil
+}
+
+func (a *Arena) Compress(msg proto.Message) ([]byte, error) {
+	data, err := a.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	err = compress.To(a.NewWriter(), data)
+	if err != nil {
+		a.data = a.data[:a.offset]
+		return nil, err
+	}
+	return a.Bytes(), nil
 }
 
 func (a *Arena) Marshal(msg proto.Message) (b []byte, err error) {

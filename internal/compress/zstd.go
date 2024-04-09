@@ -2,6 +2,7 @@ package compress
 
 import (
 	"bytes"
+	"io"
 	"sync"
 
 	"github.com/gernest/requiemdb/internal/logger"
@@ -22,6 +23,17 @@ func Compress(data []byte) ([]byte, error) {
 		return nil, err
 	}
 	return b.Bytes(), nil
+}
+
+func To(w io.Writer, data []byte) error {
+	e := getEncoder()
+	defer putEncoder(e)
+	e.Reset(w)
+	_, err := e.Write(data)
+	if err != nil {
+		return err
+	}
+	return e.Close()
 }
 
 func Decompress(data []byte) ([]byte, error) {

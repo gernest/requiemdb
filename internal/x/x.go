@@ -5,13 +5,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func Compress(data []byte, err error) ([]byte, error) {
-	if err != nil {
-		return nil, err
-	}
-	return compress.Compress(data)
-}
-
 func Decompress(msg proto.Message, size *int64) func(data []byte) error {
 	return func(data []byte) error {
 		data, err := compress.Decompress(data)
