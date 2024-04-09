@@ -45,10 +45,7 @@ message Data {
 
 # Why Typescript as query Language ?
 
-I need my tools to be useful to average Joe, and javascript is the lowest entry
-point.
-
-This gives me bandwidth to focus on performance and storage efficiency.
+It is easy to learn but powerful, I consider this choice to be tactical. 
 
 
 # Show me the code 
