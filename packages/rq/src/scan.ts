@@ -137,11 +137,7 @@ export enum Scan_SCOPE {
     /**
      * @generated from protobuf enum value: LOGS = 3;
      */
-    LOGS = 3,
-    /**
-     * @generated from protobuf enum value: SNIPPETS = 4;
-     */
-    SNIPPETS = 4
+    LOGS = 3
 }
 /**
  * @generated from protobuf enum v1.Scan.BaseProp
