@@ -134,20 +134,19 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples) (o visit.All) {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
-
+	resource := v1.RESOURCE(scan.Scope)
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
 		case *v1.Scan_Filter_Base:
 			if !s.apply(txn, lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Base.Prop)).
 				WithKey(e.Base.Value).
-				WithResource(v1.RESOURCE(scan.Scope)), r) {
+				WithResource(resource), r) {
 				return
 			}
 			switch e.Base.Prop {
 			case v1.Scan_RESOURCE_SCHEMA:
 				o.SetResourceSchema(e.Base.Value)
-
 			case v1.Scan_SCOPE_SCHEMA:
 				o.SetScopeSchema(e.Base.Value)
 			case v1.Scan_SCOPE_NAME:
@@ -170,7 +169,7 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples)
 				WithPrefix(v1.PREFIX(e.Attr.Prop)).
 				WithKey(e.Attr.Key).
 				WithValue(e.Attr.Value).
-				WithResource(v1.RESOURCE(scan.Scope)), r) {
+				WithResource(resource), r) {
 				return
 			}
 			switch e.Attr.Prop {
