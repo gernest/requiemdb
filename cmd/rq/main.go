@@ -13,6 +13,7 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	"github.com/gernest/requiemdb/internal/commands/query"
+	"github.com/gernest/requiemdb/internal/gc"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/service"
@@ -124,12 +125,14 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	}()
 	go func() {
 		defer cancel()
-		slog.Info("starting gROC otel collector server", "address", otelAddress)
+		slog.Info("starting gRPC otel collector server", "address", otelAddress)
 		err := oSvr.Serve(otelGRPC)
 		if err != nil {
 			slog.Error("exited grpc service", "err", err)
 		}
 	}()
+	// start gc  routines
+	gc.Run(ctx, db)
 	<-ctx.Done()
 	svr.Shutdown(context.Background())
 	oSvr.GracefulStop()
