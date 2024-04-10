@@ -2,10 +2,19 @@ package query
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/cespare/xxhash/v2"
+	"github.com/dop251/goja"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/commands"
+	"github.com/gernest/requiemdb/internal/compile"
+	"github.com/gernest/requiemdb/internal/js"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
@@ -13,12 +22,20 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-const doc = `rq query script.ts`
+const doc = `# executes a .js or .ts file 
+rq query script.ts
+
+# or
+rq query script.js
+
+# only @requiemdb/rq package can be imported by a script
+# if there is a package you can't live without please
+# open a feature request on github`
 
 func Cmd() *cli.Command {
 	return &cli.Command{
 		Name:        "query",
-		Usage:       "sends query to rq instance",
+		Usage:       "executes a js scripts that queries and process samples",
 		Description: doc,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -37,8 +54,13 @@ func Cmd() *cli.Command {
 }
 
 func run(ctx context.Context, cmd *cli.Command) error {
+	file := cmd.Args().First()
+	if file == "" {
+		return errors.New("missing .js or .ts file to execute")
+	}
 	logger.Setup(cmd.Root().String("logLevel"))
-	slog.Debug("opening remote connection", "target", cmd.String("hostPort"))
+	log := slog.Default().With("file", file)
+	log.Debug("opening remote connection", "target", cmd.String("hostPort"))
 	conn, err := grpc.Dial(cmd.String("hostPort"), grpc.WithTransportCredentials(
 		insecure.NewCredentials(),
 	))
@@ -48,26 +70,59 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	defer conn.Close()
 
 	rq := v1.NewRQClient(conn)
-	slog.Debug("reading script file", "file", cmd.Args().First())
+	log.Debug("reading script")
 	data, err := os.ReadFile(cmd.Args().First())
 	if err != nil {
 		return err
 	}
-	slog.Debug("sending query request", "IncludeLogs", cmd.Bool("logs"))
-	r, err := rq.Query(ctx, &v1.QueryRequest{
-		Query:       data,
-		IncludeLogs: cmd.Bool("logs"),
-	})
+	log.Debug("Compiling script")
+	compiled, err := build(log, data)
 	if err != nil {
 		return err
 	}
-	if len(r.Logs) != 0 {
-		os.Stdout.Write(r.Logs)
+	log.Debug("executing script")
+
+	vm := js.New().
+		WithScan(func(s *v1.Scan) (*v1.Data, error) {
+			return rq.ScanSamples(ctx, s)
+		}).
+		WithNow(time.Now)
+	defer vm.Release()
+	err = vm.Run(compiled)
+	if err != nil {
+		return err
 	}
-	o, err := protojson.MarshalOptions{Multiline: true}.Marshal(r.Result)
+	if cmd.Bool("logs") {
+		os.Stdout.Write(vm.Log.Bytes())
+	}
+	o, err := protojson.MarshalOptions{Multiline: true}.Marshal(vm.Output)
 	if err != nil {
 		return err
 	}
 	os.Stdout.Write(o)
 	return nil
+}
+
+func build(log *slog.Logger, data []byte) (*goja.Program, error) {
+	hash := xxhash.Sum64(data)
+	key := filepath.Join(commands.Cache(), fmt.Sprint(hash))
+	cached, err := os.ReadFile(key)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Debug("cache miss, compiling fresh package")
+			cached, err = compile.Compile(data)
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(key, cached, 0600)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	} else {
+		log.Debug("using cached package", "key", key)
+	}
+	return goja.Compile("scan.js", string(cached), true)
 }
