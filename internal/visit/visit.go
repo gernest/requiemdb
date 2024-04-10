@@ -13,33 +13,17 @@ import (
 	resourceV1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )
 
-type Visit interface {
-	AcceptResourceSchema(schema string) bool
-	AcceptResourceAttributes(attr []*commonV1.KeyValue) bool
-	AcceptScopeSchema(schema string) bool
-	AcceptScopeName(name string) bool
-	AcceptScopeVersion(version string) bool
-	AcceptScopeAttributes(attr []*commonV1.KeyValue) bool
-	AcceptName(name string) bool
-	AcceptAttributes(attr []*commonV1.KeyValue) bool
-	TimeRange() (start, end uint64)
-	AcceptLogLevel(lvl string) bool
-	AcceptTraceID(id []byte) bool
-	AcceptSpanID(id []byte) bool
-	AcceptParentSpanID(id []byte) bool
-}
-
 type BaseResource interface {
 	GetSchemaUrl() string
 	GetResource() *resourceV1.Resource
 }
 
-func AcceptResource(r BaseResource, a Visit) bool {
+func AcceptResource(r BaseResource, a *All) bool {
 	return a.AcceptResourceSchema(r.GetSchemaUrl()) &&
 		a.AcceptResourceAttributes(r.GetResource().GetAttributes())
 }
 
-func AcceptScope(schema string, r *commonV1.InstrumentationScope, a Visit) bool {
+func AcceptScope(schema string, r *commonV1.InstrumentationScope, a *All) bool {
 	return a.AcceptScopeSchema(schema) &&
 		a.AcceptScopeName(r.GetName()) &&
 		a.AcceptScopeVersion(r.GetVersion()) &&
@@ -52,12 +36,9 @@ type BaseDataPoint interface {
 }
 
 // We pass start and end to avoid calling TimeRange on each data point
-func AcceptDataPoint(tsn BaseDataPoint, start, end uint64, a Visit) bool {
-	if !a.AcceptAttributes(tsn.GetAttributes()) {
-		return false
-	}
-	ts := tsn.GetTimeUnixNano()
-	return ts >= start && ts < end
+func AcceptDataPoint(tsn BaseDataPoint, a *All) bool {
+	return a.AcceptTimestamp(tsn.GetTimeUnixNano()) &&
+		a.AcceptAttributes(tsn.GetAttributes())
 }
 
 func VisitData(data *v1.Data, a *All) *v1.Data {
@@ -257,6 +238,11 @@ func (a *All) AcceptSpanID(id []byte) bool {
 }
 func (a *All) AcceptParentSpanID(id []byte) bool {
 	return a.parent_span_id.IsEmpty() || a.parent_span_id.Contains(xxhash.Sum64(id))
+}
+
+func (a *All) AcceptTimestamp(ts uint64) bool {
+	return a.end_nano != 0 &&
+		ts >= a.start_nano && ts < a.end_nano
 }
 
 func matchAttr(a *roaring64.Bitmap, ls []*commonV1.KeyValue) bool {

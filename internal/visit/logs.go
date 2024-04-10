@@ -6,9 +6,8 @@ import (
 
 type Logs struct{}
 
-func (Logs) Visit(data *logsv1.LogsData, visitor Visit) *logsv1.LogsData {
+func (Logs) Visit(data *logsv1.LogsData, visitor *All) *logsv1.LogsData {
 	var resources []*logsv1.ResourceLogs
-	start, end := visitor.TimeRange()
 	for _, rm := range data.ResourceLogs {
 		if !AcceptResource(rm, visitor) {
 			continue
@@ -23,10 +22,9 @@ func (Logs) Visit(data *logsv1.LogsData, visitor Visit) *logsv1.LogsData {
 			var scope *logsv1.ScopeLogs
 			// We have the right scope now we need to select data points
 			for _, ms := range sm.LogRecords {
-				if !visitor.AcceptLogLevel(ms.SeverityText) {
-					continue
-				}
-				if !AcceptDataPoint(ms, start, end, visitor) {
+				if !(visitor.AcceptLogLevel(ms.SeverityText) &&
+					visitor.AcceptTimestamp(ms.TimeUnixNano) &&
+					visitor.AcceptAttributes(ms.Attributes)) {
 					continue
 				}
 				if scope == nil {

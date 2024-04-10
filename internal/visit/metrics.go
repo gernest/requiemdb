@@ -6,9 +6,8 @@ import (
 
 type Metrics struct{}
 
-func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.MetricsData {
+func (Metrics) Visit(data *metricsV1.MetricsData, visitor *All) *metricsV1.MetricsData {
 	var resources []*metricsV1.ResourceMetrics
-	start, end := visitor.TimeRange()
 	for _, rm := range data.ResourceMetrics {
 		if !AcceptResource(rm, visitor) {
 			continue
@@ -30,7 +29,7 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 				if v := ms.GetGauge(); v != nil {
 					var points []*metricsV1.NumberDataPoint
 					for _, d := range v.DataPoints {
-						if !AcceptDataPoint(d, start, end, visitor) {
+						if !AcceptDataPoint(d, visitor) {
 							continue
 						}
 						points = append(points, d)
@@ -55,7 +54,7 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 				if v := ms.GetSum(); v != nil {
 					var points []*metricsV1.NumberDataPoint
 					for _, d := range v.DataPoints {
-						if !AcceptDataPoint(d, start, end, visitor) {
+						if !AcceptDataPoint(d, visitor) {
 							continue
 						}
 						points = append(points, d)
@@ -82,7 +81,7 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 				if v := ms.GetHistogram(); v != nil {
 					var points []*metricsV1.HistogramDataPoint
 					for _, d := range v.DataPoints {
-						if !AcceptDataPoint(d, start, end, visitor) {
+						if !AcceptDataPoint(d, visitor) {
 							continue
 						}
 						points = append(points, d)
@@ -108,7 +107,7 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 				if v := ms.GetExponentialHistogram(); v != nil {
 					var points []*metricsV1.ExponentialHistogramDataPoint
 					for _, d := range v.DataPoints {
-						if !AcceptDataPoint(d, start, end, visitor) {
+						if !AcceptDataPoint(d, visitor) {
 							continue
 						}
 						points = append(points, d)
@@ -134,7 +133,7 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor Visit) *metricsV1.Metr
 				if v := ms.GetSummary(); v != nil {
 					var points []*metricsV1.SummaryDataPoint
 					for _, d := range v.DataPoints {
-						if !AcceptDataPoint(d, start, end, visitor) {
+						if !AcceptDataPoint(d, visitor) {
 							continue
 						}
 						points = append(points, d)

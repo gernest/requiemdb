@@ -6,9 +6,8 @@ import (
 
 type Trace struct{}
 
-func (Trace) Visit(data *tracev1.TracesData, visitor Visit) *tracev1.TracesData {
+func (Trace) Visit(data *tracev1.TracesData, visitor *All) *tracev1.TracesData {
 	var resources []*tracev1.ResourceSpans
-	start, end := visitor.TimeRange()
 	for _, rm := range data.ResourceSpans {
 		if !AcceptResource(rm, visitor) {
 			continue
@@ -24,13 +23,10 @@ func (Trace) Visit(data *tracev1.TracesData, visitor Visit) *tracev1.TracesData 
 			// We have the right scope now we need to select data points
 			for _, ms := range sm.Spans {
 				if !(visitor.AcceptName(ms.Name) &&
+					visitor.AcceptTimestamp(ms.StartTimeUnixNano) &&
 					visitor.AcceptTraceID(ms.TraceId) &&
 					visitor.AcceptParentSpanID(ms.SpanId) &&
 					visitor.AcceptAttributes(ms.Attributes)) {
-					continue
-				}
-				ts := ms.StartTimeUnixNano
-				if !(ts >= start && ts < end) {
 					continue
 				}
 				if scope == nil {
