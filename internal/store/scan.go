@@ -41,6 +41,9 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 	defer samples.Release()
 
 	all := s.CompileFilters(txn, scan, samples)
+	if all != nil {
+		all.Release()
+	}
 	if samples.IsEmpty() {
 		return data.Zero(resource), nil
 	}
@@ -61,7 +64,7 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 		return s.read(txn,
 			key.WithResource(resource).
 				WithID(it.Next()).
-				Encode(), &all, noFilters)
+				Encode(), all, noFilters)
 	}
 	result := make([]*v1.Data, 0, samples.GetCardinality())
 	for it.HasNext() {
@@ -69,7 +72,7 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 			key.Reset().
 				WithResource(resource).
 				WithID(it.Next()).
-				Encode(), &all, noFilters)
+				Encode(), all, noFilters)
 		if err != nil {
 			return nil, err
 		}
@@ -131,9 +134,10 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 	return visit.VisitData(data, a), nil
 }
 
-func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples) (o visit.All) {
+func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples) *visit.All {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
+	o := visit.New()
 	resource := v1.RESOURCE(scan.Scope)
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
@@ -142,7 +146,8 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples)
 				WithPrefix(v1.PREFIX(e.Base.Prop)).
 				WithKey(e.Base.Value).
 				WithResource(resource), r) {
-				return
+				o.Release()
+				return nil
 			}
 			switch e.Base.Prop {
 			case v1.Scan_RESOURCE_SCHEMA:
@@ -170,7 +175,8 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples)
 				WithKey(e.Attr.Key).
 				WithValue(e.Attr.Value).
 				WithResource(resource), r) {
-				return
+				o.Release()
+				return nil
 			}
 			switch e.Attr.Prop {
 			case v1.Scan_RESOURCE_ATTRIBUTES:
@@ -182,7 +188,7 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples)
 			}
 		}
 	}
-	return
+	return o
 }
 
 func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *lsm.Samples) bool {

@@ -73,7 +73,7 @@ const StaticSize = ResourcePrefixSize +
 	4 // prefix
 
 var (
-	valueSep = []byte("=")
+	ValueSep = []byte("=")
 )
 
 func (l *Label) WithNamespace(ns uint64) *Label {
@@ -121,7 +121,7 @@ func (l *Label) Encode() []byte {
 	binary.LittleEndian.PutUint32(l.buffer[8+4:], uint32(l.Prefix))
 	l.buffer = append(l.buffer, []byte(l.Key)...)
 	if l.Value != "" {
-		l.buffer = append(l.buffer, valueSep...)
+		l.buffer = append(l.buffer, ValueSep...)
 		l.buffer = append(l.buffer, []byte(l.Value)...)
 	}
 	return l.buffer
@@ -140,7 +140,7 @@ func (l *Label) Decode(data []byte) error {
 	l.Prefix = v1.PREFIX(
 		binary.LittleEndian.Uint32(data[8+4:]),
 	)
-	key, value, _ := bytes.Cut(data[StaticSize:], valueSep)
+	key, value, _ := bytes.Cut(data[StaticSize:], ValueSep)
 	l.Key = string(key)
 	l.Value = string(value)
 	return nil
