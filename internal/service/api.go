@@ -11,6 +11,10 @@ import (
 
 var _ v1.RQServer = (*Service)(nil)
 
+func (s *Service) ScanSamples(_ context.Context, req *v1.Scan) (*v1.Data, error) {
+	return s.store.Scan(req)
+}
+
 func (s *Service) Query(_ context.Context, req *v1.QueryRequest) (*v1.QueryResponse, error) {
 	vm := js.New().
 		WithScan(s.store.Scan).

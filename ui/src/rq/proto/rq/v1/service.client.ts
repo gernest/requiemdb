@@ -6,6 +6,8 @@ import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { RQ } from "./service";
 import type { Version } from "./service";
 import type { GetVersionRequest } from "./service";
+import type { Data } from "./scan";
+import type { Scan } from "./scan";
 import { stackIntercept } from "@protobuf-ts/runtime-rpc";
 import type { QueryResponse } from "./service";
 import type { QueryRequest } from "./service";
@@ -19,6 +21,10 @@ export interface IRQClient {
      * @generated from protobuf rpc: Query(v1.QueryRequest) returns (v1.QueryResponse);
      */
     query(input: QueryRequest, options?: RpcOptions): UnaryCall<QueryRequest, QueryResponse>;
+    /**
+     * @generated from protobuf rpc: ScanSamples(v1.Scan) returns (v1.Data);
+     */
+    scanSamples(input: Scan, options?: RpcOptions): UnaryCall<Scan, Data>;
     /**
      * @generated from protobuf rpc: GetVersion(v1.GetVersionRequest) returns (v1.Version);
      */
@@ -41,10 +47,17 @@ export class RQClient implements IRQClient, ServiceInfo {
         return stackIntercept<QueryRequest, QueryResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * @generated from protobuf rpc: ScanSamples(v1.Scan) returns (v1.Data);
+     */
+    scanSamples(input: Scan, options?: RpcOptions): UnaryCall<Scan, Data> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<Scan, Data>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: GetVersion(v1.GetVersionRequest) returns (v1.Version);
      */
     getVersion(input: GetVersionRequest, options?: RpcOptions): UnaryCall<GetVersionRequest, Version> {
-        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetVersionRequest, Version>("unary", this._transport, method, opt, input);
     }
 }

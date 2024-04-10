@@ -18,6 +18,12 @@ service RQ {
       body : "*"
     };
   };
+  rpc ScanSamples(Scan) returns (Data) {
+    option (google.api.http) = {
+      post : "/api/v1/scan",
+      body : "*"
+    };
+  };
 
   rpc GetVersion(GetVersionRequest) returns (Version) {
     option (google.api.http) = {
