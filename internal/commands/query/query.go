@@ -16,10 +16,10 @@ import (
 	"github.com/gernest/requiemdb/internal/compile"
 	"github.com/gernest/requiemdb/internal/js"
 	"github.com/gernest/requiemdb/internal/logger"
+	"github.com/gernest/requiemdb/internal/render"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const doc = `# executes a .js or .ts file 
@@ -95,12 +95,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	if cmd.Bool("logs") {
 		os.Stdout.Write(vm.Log.Bytes())
 	}
-	o, err := protojson.MarshalOptions{Multiline: true}.Marshal(vm.Output)
-	if err != nil {
-		return err
-	}
-	os.Stdout.Write(o)
-	return nil
+	return render.Result(os.Stdout, vm.Output)
 }
 
 func build(log *slog.Logger, data []byte) (*goja.Program, error) {
