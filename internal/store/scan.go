@@ -11,11 +11,11 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/data"
 	dataOps "github.com/gernest/requiemdb/internal/data"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
-	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
 )
@@ -134,7 +134,7 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 	return visit.VisitData(data, a), nil
 }
 
-func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples) *visit.All {
+func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitmap) *visit.All {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	o := visit.New()
@@ -191,21 +191,35 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *lsm.Samples)
 	return o
 }
 
-func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *lsm.Samples) bool {
+func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
 	b := s.load(txn, lbl)
 	if b != nil {
+		// We can avoid the lock on o entirely because o is  not coming from the
+		// bitmap cache but we need to have sound behavior and avoid confusion.
+		//
+		// We must always treat bitmap.Bitmap as a resources that can be accessed
+		// concurrently and such, use appropriate locks on all its locations.
+		o.Lock()  // lock o for writes
+		b.RLock() // lock b for reads
 		o.And(&b.Bitmap)
+		b.RUnlock()
+		o.Unlock()
 	} else {
 		// All labels must contain a sample , if a label is missing then no sample for
 		// the query should match.
 		//
 		// Clear any previous samples
+		o.Lock()
 		o.Clear()
+		o.Unlock()
 	}
-	return !o.IsEmpty()
+	o.RLock()
+	ok = !o.IsEmpty()
+	o.RLock()
+	return
 }
 
-func listLabels(db *badger.DB, base *labels.Label, f func(lbl *labels.Label, sample *lsm.Samples)) error {
+func listLabels(db *badger.DB, base *labels.Label, f func(lbl *labels.Label, sample *bitmaps.Bitmap)) error {
 	prefix := bytes.Clone(base.Encode()[:labels.ResourcePrefixSize])
 	txn := db.NewTransaction(false)
 	defer txn.Discard()
@@ -214,7 +228,7 @@ func listLabels(db *badger.DB, base *labels.Label, f func(lbl *labels.Label, sam
 	o.Prefix = prefix
 	it := txn.NewIterator(o)
 	defer it.Close()
-	s := lsm.NewSamples()
+	s := bitmaps.New()
 	defer s.Release()
 	var data [4]byte
 	binary.LittleEndian.PutUint32(data[:], uint32(v1.PREFIX_DATA))
@@ -238,11 +252,11 @@ func listLabels(db *badger.DB, base *labels.Label, f func(lbl *labels.Label, sam
 	return nil
 }
 
-func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *lsm.Samples {
+func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *bitmaps.Bitmap {
 	key := lbl.Encode()
 	hash := xxhash.Sum64(key)
 	if r, ok := s.bitmapCache.Get(hash); ok {
-		return r.(*lsm.Samples)
+		return r.(*bitmaps.Bitmap)
 	}
 	it, err := txn.Get(key)
 	if err != nil {
@@ -255,7 +269,7 @@ func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *lsm.Samples {
 		}
 		return nil
 	}
-	r := lsm.NewSamples()
+	r := bitmaps.New()
 	err = it.Value(r.UnmarshalBinary)
 	if err != nil {
 		slog.Error("failed decoding label bitmap", "err", err,

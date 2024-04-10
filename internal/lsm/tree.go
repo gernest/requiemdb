@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/apache/arrow/go/v16/arrow"
 	"github.com/apache/arrow/go/v16/arrow/array"
 	"github.com/apache/arrow/go/v16/arrow/compute"
@@ -21,6 +20,7 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/util"
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/protoarrow"
 )
 
@@ -250,10 +250,10 @@ func (t *Tree) save(r arrow.Record) error {
 	})
 }
 
-func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*Samples, error) {
+func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*bitmaps.Bitmap, error) {
 	t.Flush()
 
-	samples := NewSamples()
+	samples := bitmaps.New()
 	err := t.root.Iterate(func(n *Node[*Part]) error {
 		if n.value == nil {
 			return nil
@@ -479,20 +479,3 @@ func (t *Tree) findNode(node *Node[*Part]) (list *Node[*Part]) {
 	})
 	return
 }
-
-type Samples struct {
-	roaring64.Bitmap
-}
-
-func NewSamples() *Samples {
-	return samplesPool.Get().(*Samples)
-}
-
-func (s *Samples) Release() {
-	s.Clear()
-	samplesPool.Put(s)
-}
-
-var samplesPool = &sync.Pool{New: func() any {
-	return new(Samples)
-}}

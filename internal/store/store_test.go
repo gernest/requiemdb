@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/lsm"
@@ -65,7 +66,7 @@ func TestMetrics(t *testing.T) {
 		defer lbl.Release()
 		err := listLabels(store.db,
 			lbl.WithResource(v1.RESOURCE_METRICS),
-			func(lbl *labels.Label, sample *lsm.Samples) {
+			func(lbl *labels.Label, sample *bitmaps.Bitmap) {
 				fmt.Fprintln(&b, lbl.String(), sample.String())
 			},
 		)

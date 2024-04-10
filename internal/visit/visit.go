@@ -7,8 +7,8 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cespare/xxhash/v2"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/labels"
-	"github.com/gernest/requiemdb/internal/lsm"
 	commonV1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resourceV1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )
@@ -263,7 +263,7 @@ func matchAttr(a *roaring64.Bitmap, ls []*commonV1.KeyValue) bool {
 	if a.IsEmpty() {
 		return true
 	}
-	b := lsm.NewSamples()
+	b := bitmaps.New()
 	defer b.Release()
 	var h xxhash.Digest
 	for _, k := range ls {
