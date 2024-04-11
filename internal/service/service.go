@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
-	"github.com/gernest/requiemdb/ui"
 	"github.com/go-chi/cors"
 	grpc_protovalidate "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -33,11 +31,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-)
-
-var (
-	rootFS, _  = fs.Sub(ui.FS, "dist")
-	fileServer = http.FileServer(http.FS(rootFS))
 )
 
 const (
@@ -108,19 +101,9 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 	}
 
 	base := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/", "/index.html", "/logo.svg", "/robot.txt":
-			fileServer.ServeHTTP(w, r)
+		if strings.HasPrefix(r.URL.Path, "/api/v1/") {
+			api.ServeHTTP(w, r)
 			return
-		default:
-			if strings.HasPrefix(r.URL.Path, "/api/v1/") {
-				api.ServeHTTP(w, r)
-				return
-			}
-			if strings.HasPrefix(r.URL.Path, "/assets/") {
-				fileServer.ServeHTTP(w, r)
-				return
-			}
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	})
