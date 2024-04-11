@@ -29,8 +29,3 @@ plugins:
   #     - generate_dependencies
   #     - optimize_code_size
   #     - long_type_number
-
-  - plugin: buf.build/community/timostamm-protobuf-ts:v2.9.1
-    out: ui/src/rq/proto
-    opt:
-      - generate_dependencies
