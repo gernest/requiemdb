@@ -61,6 +61,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	t.Run("Generate bitmaps", func(t *testing.T) {
+		store.bitmapCache.Clear() // persist cached bitmaps
 		var b bytes.Buffer
 		lbl := labels.NewLabel()
 		defer lbl.Release()

@@ -22,6 +22,10 @@ func (s *Bitmap) WithKey(key []byte) *Bitmap {
 	return s
 }
 
+func (s *Bitmap) Key() []byte {
+	return s.key
+}
+
 var baseSize = int64(unsafe.Sizeof(Bitmap{}))
 
 // Size returns estimate of in memory size of s in bytes.
