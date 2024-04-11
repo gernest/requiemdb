@@ -40,6 +40,11 @@ var (
 	fileServer = http.FileServer(http.FS(rootFS))
 )
 
+const (
+	// Size of buffered channel that accepts samples.
+	DataBuffer = 8 << 10
+)
+
 type Service struct {
 	db       *badger.DB
 	snippets *snippets.Snippets
@@ -84,7 +89,7 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 		db:       db,
 		snippets: sn,
 		store:    storage,
-		data:     make(chan *v1.Data, 4<<10),
+		data:     make(chan *v1.Data, DataBuffer),
 	}
 	v1.RegisterRQServer(svr, service)
 	web := grpcweb.WrapServer(svr,
