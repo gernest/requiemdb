@@ -1,17 +1,17 @@
 package logger
 
 import (
+	"io"
 	"log/slog"
-	"os"
 )
 
-func Setup(logLevel string) slog.Level {
+func Setup(logLevel string, out io.Writer) slog.Level {
 	var level slog.Level
 	level.UnmarshalText([]byte(logLevel))
 	slog.SetDefault(
 		slog.New(
 			slog.NewJSONHandler(
-				os.Stdout,
+				out,
 				&slog.HandlerOptions{
 					Level: level,
 				},

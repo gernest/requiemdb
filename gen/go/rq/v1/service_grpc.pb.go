@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RQ_Query_FullMethodName       = "/v1.RQ/Query"
 	RQ_ScanSamples_FullMethodName = "/v1.RQ/ScanSamples"
 	RQ_GetVersion_FullMethodName  = "/v1.RQ/GetVersion"
 )
@@ -28,7 +27,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RQClient interface {
-	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	ScanSamples(ctx context.Context, in *Scan, opts ...grpc.CallOption) (*Data, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*Version, error)
 }
@@ -39,15 +37,6 @@ type rQClient struct {
 
 func NewRQClient(cc grpc.ClientConnInterface) RQClient {
 	return &rQClient{cc}
-}
-
-func (c *rQClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
-	out := new(QueryResponse)
-	err := c.cc.Invoke(ctx, RQ_Query_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *rQClient) ScanSamples(ctx context.Context, in *Scan, opts ...grpc.CallOption) (*Data, error) {
@@ -72,7 +61,6 @@ func (c *rQClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts .
 // All implementations must embed UnimplementedRQServer
 // for forward compatibility
 type RQServer interface {
-	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	ScanSamples(context.Context, *Scan) (*Data, error)
 	GetVersion(context.Context, *GetVersionRequest) (*Version, error)
 	mustEmbedUnimplementedRQServer()
@@ -82,9 +70,6 @@ type RQServer interface {
 type UnimplementedRQServer struct {
 }
 
-func (UnimplementedRQServer) Query(context.Context, *QueryRequest) (*QueryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Query not implemented")
-}
 func (UnimplementedRQServer) ScanSamples(context.Context, *Scan) (*Data, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ScanSamples not implemented")
 }
@@ -102,24 +87,6 @@ type UnsafeRQServer interface {
 
 func RegisterRQServer(s grpc.ServiceRegistrar, srv RQServer) {
 	s.RegisterService(&RQ_ServiceDesc, srv)
-}
-
-func _RQ_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RQServer).Query(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RQ_Query_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RQServer).Query(ctx, req.(*QueryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _RQ_ScanSamples_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -165,10 +132,6 @@ var RQ_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.RQ",
 	HandlerType: (*RQServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Query",
-			Handler:    _RQ_Query_Handler,
-		},
 		{
 			MethodName: "ScanSamples",
 			Handler:    _RQ_ScanSamples_Handler,

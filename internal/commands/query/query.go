@@ -16,7 +16,6 @@ import (
 	"github.com/gernest/requiemdb/internal/compile"
 	"github.com/gernest/requiemdb/internal/js"
 	"github.com/gernest/requiemdb/internal/logger"
-	"github.com/gernest/requiemdb/internal/render"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -43,11 +42,6 @@ func Cmd() *cli.Command {
 				Usage: "host:port address of rq",
 				Value: "localhost:8080",
 			},
-			&cli.BoolFlag{
-				Name:  "logs",
-				Usage: "collects console.log output",
-				Value: true,
-			},
 		},
 		Action: run,
 	}
@@ -58,7 +52,8 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	if file == "" {
 		return errors.New("missing .js or .ts file to execute")
 	}
-	logger.Setup(cmd.Root().String("logLevel"))
+
+	logger.Setup(cmd.Root().String("logLevel"), os.Stderr)
 	log := slog.Default().With("file", file)
 	log.Debug("opening remote connection", "target", cmd.String("hostPort"))
 	conn, err := grpc.Dial(cmd.String("hostPort"), grpc.WithTransportCredentials(
@@ -81,21 +76,14 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 	log.Debug("executing script")
-
 	vm := js.New().
 		WithScan(func(s *v1.Scan) (*v1.Data, error) {
 			return rq.ScanSamples(ctx, s)
 		}).
-		WithNow(time.Now)
+		WithNow(time.Now).
+		WithOutput(os.Stdout)
 	defer vm.Release()
-	err = vm.Run(compiled)
-	if err != nil {
-		return err
-	}
-	if cmd.Bool("logs") {
-		os.Stdout.Write(vm.Log.Bytes())
-	}
-	return render.Result(os.Stdout, vm.Output)
+	return vm.Run(compiled)
 }
 
 func build(log *slog.Logger, data []byte) (*goja.Program, error) {

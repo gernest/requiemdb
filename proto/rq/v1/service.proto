@@ -12,12 +12,6 @@ import "opentelemetry/proto/trace/v1/trace.proto";
 import "rq/v1/scan.proto";
 
 service RQ {
-  rpc Query(QueryRequest) returns (QueryResponse) {
-    option (google.api.http) = {
-      post : "/api/v1/query",
-      body : "*"
-    };
-  };
   rpc ScanSamples(Scan) returns (Data) {
     option (google.api.http) = {
       post : "/api/v1/scan",
@@ -34,30 +28,6 @@ service RQ {
 
 message GetVersionRequest {}
 message Version { string version = 1; }
-
-message QueryRequest {
-
-  // A typescript/javascript content to execute.
-  bytes query = 1;
-
-  // when true any logs associated with script execution will be included in the
-  // response.
-  bool include_logs = 3;
-}
-
-message QueryResponse {
-  Result result = 1;
-  Timings timings = 2;
-  // console.log output. This is gzipped stream.
-  bytes logs = 3;
-}
-
-message Result {
-  oneof result {
-    Data data = 1;
-    google.protobuf.Struct custom = 2;
-  }
-}
 
 message Timings {
   // Time taken to compile the query snippet before evealuation.

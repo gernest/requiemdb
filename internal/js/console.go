@@ -14,6 +14,6 @@ func console(r *goja.Runtime, w *JS) goja.Value {
 
 func log(o *JS) func(args ...any) {
 	return func(args ...any) {
-		fmt.Fprintln(&o.Log, args...)
+		fmt.Fprintln(o.Output, args...)
 	}
 }

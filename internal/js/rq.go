@@ -1,8 +1,8 @@
 package js
 
 import (
-	"bytes"
 	"errors"
+	"io"
 	"sync"
 	"time"
 
@@ -10,7 +10,6 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/logger"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type ScanFunc func(*v1.Scan) (*v1.Data, error)
@@ -18,11 +17,10 @@ type ScanFunc func(*v1.Scan) (*v1.Data, error)
 type NowFunc func() time.Time
 
 type JS struct {
-	Log     bytes.Buffer
+	Output  io.Writer
 	Runtime *goja.Runtime
 	Now     NowFunc
 	ScanFn  ScanFunc
-	Output  *v1.Result
 }
 
 func New() *JS {
@@ -34,11 +32,16 @@ func (o *JS) WithNow(now NowFunc) *JS {
 	return o
 }
 
+func (o *JS) WithOutput(w io.Writer) *JS {
+	o.Output = w
+	return o
+}
+
 func (o *JS) Reset() {
-	o.Log.Reset()
 	o.Now = nil
 	o.ScanFn = nil
 	o.Output = nil
+	o.Output = io.Discard
 }
 
 func (o *JS) GetNow() time.Time {
@@ -55,8 +58,10 @@ func (o *JS) Release() {
 
 func newJS() *JS {
 	r := goja.New()
-	o := &JS{}
-	o.Runtime = r
+	o := &JS{
+		Output:  io.Discard,
+		Runtime: r,
+	}
 	err := errors.Join(
 		r.Set("console", console(r, o)),
 		r.Set("TimeRange", &TimeRange{o: o}),
@@ -97,36 +102,6 @@ func (o *JS) Unmarshal(a []byte) (*v1.Data, error) {
 		return nil, err
 	}
 	return &data, nil
-}
-
-func (o *JS) RenderData(data []byte) error {
-	var v v1.Data
-	err := proto.Unmarshal(data, &v)
-	if err != nil {
-		return err
-	}
-	o.Output = &v1.Result{
-		Result: &v1.Result_Data{Data: &v},
-	}
-	return nil
-}
-
-func (o *JS) RenderStruct(data []byte) error {
-	var v structpb.Struct
-	err := proto.Unmarshal(data, &v)
-	if err != nil {
-		return err
-	}
-	o.Output = &v1.Result{
-		Result: &v1.Result_Custom{Custom: &v},
-	}
-	return nil
-}
-
-func (o *JS) RenderNative(data *v1.Data) {
-	o.Output = &v1.Result{
-		Result: &v1.Result_Data{Data: data},
-	}
 }
 
 func (o *JS) Run(program *goja.Program) error {

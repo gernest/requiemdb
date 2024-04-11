@@ -140,7 +140,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 }
 
 func setupLogging(cmd *cli.Command, o badger.Options) badger.Options {
-	level := logger.Setup(cmd.String("logLevel"))
+	level := logger.Setup(cmd.String("logLevel"), os.Stdout)
 	switch level {
 	case slog.LevelInfo:
 		return o.WithLoggingLevel(badger.INFO)
