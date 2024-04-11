@@ -29,13 +29,8 @@ type Storage struct {
 }
 
 const (
-	DataCacheSize = 256 << 20
-
-	// BitmapCacheSize number of *bitmap.Bitmap to keep in memory. Unlike Data
-	// cache , we use number of items as cost for bitmaps.
-	//
-	// SInce the heart of rq is with bitmaps we make sure they are always in memory.
-	BitmapCacheSize = 1 << 30
+	DataCacheSize   = 256 << 20
+	BitmapCacheSize = DataCacheSize / 2
 )
 
 func NewStore(db *badger.DB, tree *lsm.Tree) (*Storage, error) {
@@ -206,7 +201,7 @@ func (s *Storage) saveLabel(txn *badger.Txn, ctx *Arena, key []byte, sampleID ui
 			}
 		}
 		b.Add(sampleID)
-		s.bitmapCache.Set(hash, b, 1)
+		s.bitmapCache.Set(hash, b, b.Size())
 	}
 	b.RLock()
 	_, err := b.WriteTo(ctx.NewWriter())
