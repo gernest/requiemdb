@@ -1,10 +1,9 @@
-import { Config, ScanData } from "./core";
-import { Scan_SCOPE } from "./scan";
+import { Config, ScanData, Resource } from "./core";
 
 
 export class Metrics extends Config {
     constructor(name?: string) {
-        super(Scan_SCOPE.METRICS)
+        super(Resource.METRICS)
         if (name) {
             this.name(name)
         }

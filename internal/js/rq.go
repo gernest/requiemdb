@@ -64,7 +64,7 @@ func newJS() *JS {
 	}
 	err := errors.Join(
 		r.Set("console", console(r, o)),
-		r.Set("TimeRange", &TimeRange{o: o}),
+		r.Set("SCAN", &Scan{o: o}),
 		r.Set("RQ", o),
 	)
 	if err != nil {

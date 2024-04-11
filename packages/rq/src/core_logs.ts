@@ -1,8 +1,7 @@
-import { Config } from "./core";
-import { Scan_SCOPE } from "./scan";
+import { Config, Resource } from "./core";
 
 export class Logs extends Config {
     constructor() {
-        super(Scan_SCOPE.LOGS)
+        super(Resource.LOGS)
     }
 }
