@@ -71,7 +71,7 @@ func TestTrace(t *testing.T) {
 	ctx := NewContext()
 	for _, k := range kases {
 		ctx.Reset().Process(&v1.Data{
-			Data: &v1.Data_Trace{Trace: &tracev1.TracesData{ResourceSpans: k.r}},
+			Data: &v1.Data_Traces{Traces: &tracev1.TracesData{ResourceSpans: k.r}},
 		})
 		require.Equal(t, k.labels, ctx.Labels.Debug())
 		require.Equal(t, k.min, ctx.MinTs)

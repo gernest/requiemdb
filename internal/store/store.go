@@ -174,7 +174,7 @@ func resourceFrom(data *v1.Data) v1.RESOURCE {
 	switch data.Data.(type) {
 	case *v1.Data_Logs:
 		return v1.RESOURCE_LOGS
-	case *v1.Data_Trace:
+	case *v1.Data_Traces:
 		return v1.RESOURCE_TRACES
 	default:
 		return v1.RESOURCE_METRICS

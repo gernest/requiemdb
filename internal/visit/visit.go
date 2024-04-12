@@ -54,9 +54,9 @@ func VisitData(data *v1.Data, a *All) *v1.Data {
 		return &v1.Data{Data: &v1.Data_Logs{
 			Logs: Logs{}.Visit(e.Logs, a),
 		}}
-	case *v1.Data_Trace:
-		return &v1.Data{Data: &v1.Data_Trace{
-			Trace: Trace{}.Visit(e.Trace, a),
+	case *v1.Data_Traces:
+		return &v1.Data{Data: &v1.Data_Traces{
+			Traces: Trace{}.Visit(e.Traces, a),
 		}}
 	default:
 		return data

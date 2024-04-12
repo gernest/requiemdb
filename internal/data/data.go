@@ -14,7 +14,7 @@ func Zero(r v1.RESOURCE) *v1.Data {
 	case v1.RESOURCE_LOGS:
 		return &v1.Data{Data: &v1.Data_Logs{Logs: &logsv1.LogsData{}}}
 	case v1.RESOURCE_TRACES:
-		return &v1.Data{Data: &v1.Data_Trace{Trace: &tracev1.TracesData{}}}
+		return &v1.Data{Data: &v1.Data_Traces{Traces: &tracev1.TracesData{}}}
 	default:
 		return nil
 	}
@@ -41,12 +41,12 @@ func Collapse(ts []*v1.Data) *v1.Data {
 		}
 		return &v1.Data{Data: &v1.Data_Logs{Logs: CollapseLogs(o)}}
 	}
-	if ts[0].GetTrace() != nil {
+	if ts[0].GetTraces() != nil {
 		o := make([]*tracev1.TracesData, len(ts))
 		for i := range ts {
-			o[i] = ts[i].GetTrace()
+			o[i] = ts[i].GetTraces()
 		}
-		return &v1.Data{Data: &v1.Data_Trace{Trace: CollapseTrace(o)}}
+		return &v1.Data{Data: &v1.Data_Traces{Traces: CollapseTrace(o)}}
 	}
 	return nil
 }

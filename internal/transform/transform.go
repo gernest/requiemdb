@@ -34,9 +34,9 @@ func (c *Context) Process(data *v1.Data) {
 			c.transformMetrics(s)
 		}
 
-	case *v1.Data_Trace:
+	case *v1.Data_Traces:
 		c.WithResource(v1.RESOURCE_TRACES)
-		for _, s := range e.Trace.ResourceSpans {
+		for _, s := range e.Traces.ResourceSpans {
 			c.transformTrace(s)
 		}
 	case *v1.Data_Logs:

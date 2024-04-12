@@ -1,3 +1,4 @@
+export * from "./otel"
 export * from "./core"
 export * from "./core_metrics"
 export * from "./core_logs"

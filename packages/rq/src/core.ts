@@ -1,3 +1,10 @@
+import { MetricsData, TracesData, LogsData } from "./otel";
+
+export interface Data {
+    GetMetrics(): MetricsData
+    GetLogs(): LogsData
+    GetTraces(): TracesData
+}
 
 export enum RESOURCE {
     METRICS = "metrics",
@@ -12,9 +19,9 @@ export class Config {
         this.base = SCAN.Create(resource);
     }
 
-    public scan(): ScanData {
+    public scan(): Data {
         //@ts-ignore
-        return new ScanData(RQ.Scan(this.ptr))
+        return RQ.Scan(this.ptr) as Data
     }
 
 
@@ -157,6 +164,4 @@ export class Config {
 }
 
 
-export class ScanData {
-    constructor(private ptr: any) { }
-}
+

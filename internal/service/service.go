@@ -223,8 +223,8 @@ var _ collector_trace.TraceServiceServer = (*Trace)(nil)
 
 func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServiceRequest) (*collector_trace.ExportTraceServiceResponse, error) {
 	r.svc.data <- &v1.Data{
-		Data: &v1.Data_Trace{
-			Trace: &tracev1.TracesData{
+		Data: &v1.Data_Traces{
+			Traces: &tracev1.TracesData{
 				ResourceSpans: req.ResourceSpans,
 			},
 		},

@@ -82,6 +82,6 @@ message Data {
   oneof data {
     opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
     opentelemetry.proto.logs.v1.LogsData logs = 2;
-    opentelemetry.proto.trace.v1.TracesData trace = 3;
+    opentelemetry.proto.trace.v1.TracesData traces = 3;
   }
 }

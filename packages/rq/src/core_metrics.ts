@@ -1,5 +1,5 @@
-import { Config, ScanData, RESOURCE } from "./core";
-
+import { Config, RESOURCE } from "./core";
+import { MetricsData } from "./otel";
 
 export class Metrics extends Config {
     constructor(name?: string) {
@@ -9,8 +9,8 @@ export class Metrics extends Config {
         }
     }
 
-    query(): ScanData {
-        return this.scan();
+    query(): MetricsData {
+        return this.scan().GetMetrics();
     }
 }
 
