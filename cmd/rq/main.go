@@ -13,6 +13,7 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	"github.com/gernest/requiemdb/internal/commands/query"
+	"github.com/gernest/requiemdb/internal/commands/version"
 	"github.com/gernest/requiemdb/internal/gc"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/self"
@@ -55,6 +56,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			query.Cmd(),
+			version.Cmd(),
 		},
 		Action: run,
 	}

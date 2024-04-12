@@ -17,8 +17,6 @@ import (
 	"github.com/gernest/requiemdb/internal/js"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/urfave/cli/v3"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const doc = `# executes a .js or .ts file 
@@ -36,14 +34,8 @@ func Cmd() *cli.Command {
 		Name:        "query",
 		Usage:       "executes a js scripts that queries and process samples",
 		Description: doc,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "hostPort",
-				Usage: "host:port address of rq",
-				Value: "localhost:8080",
-			},
-		},
-		Action: run,
+		Flags:       commands.FLags(),
+		Action:      run,
 	}
 }
 
@@ -56,9 +48,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	logger.Setup(cmd.Root().String("logLevel"), os.Stderr)
 	log := slog.Default().With("file", file)
 	log.Debug("opening remote connection", "target", cmd.String("hostPort"))
-	conn, err := grpc.Dial(cmd.String("hostPort"), grpc.WithTransportCredentials(
-		insecure.NewCredentials(),
-	))
+	conn, err := commands.Conn(cmd)
 	if err != nil {
 		return err
 	}
