@@ -3,22 +3,14 @@ package service
 import (
 	"context"
 	"log/slog"
-	"net/http"
-	"strings"
 	"time"
 
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
-	"github.com/go-chi/cors"
-	grpc_protovalidate "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/metric"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
@@ -26,11 +18,6 @@ import (
 	logsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracev1 "go.opentelemetry.io/proto/otlp/trace/v1"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/reflection"
 )
 
 const (
@@ -42,7 +29,6 @@ type Service struct {
 	db       *badger.DB
 	snippets *snippets.Snippets
 	store    *store.Storage
-	hand     http.Handler
 	data     chan *v1.Data
 
 	stats struct {
@@ -52,10 +38,6 @@ type Service struct {
 }
 
 func NewService(ctx context.Context, db *badger.DB, listen string, retention time.Duration) (*Service, error) {
-	valid, err := protovalidate.New()
-	if err != nil {
-		return nil, err
-	}
 	sn, err := snippets.New()
 	if err != nil {
 		return nil, err
@@ -68,15 +50,6 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 	if err != nil {
 		return nil, err
 	}
-	svr := grpc.NewServer(
-		grpc.StreamInterceptor(
-			grpc_protovalidate.StreamServerInterceptor(valid),
-		),
-		grpc.UnaryInterceptor(
-			grpc_protovalidate.UnaryServerInterceptor(valid),
-		),
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
 
 	service := &Service{
 		db:       db,
@@ -84,37 +57,6 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 		store:    storage,
 		data:     make(chan *v1.Data, DataBuffer),
 	}
-	v1.RegisterRQServer(svr, service)
-	web := grpcweb.WrapServer(svr,
-		grpcweb.WithAllowNonRootResource(true),
-		grpcweb.WithOriginFunc(func(origin string) bool {
-			return true
-		}))
-	api := runtime.NewServeMux()
-	reflection.Register(svr)
-	dopts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err = v1.RegisterRQHandlerFromEndpoint(
-		ctx, api, listen, dopts,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	base := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/v1/") {
-			api.ServeHTTP(w, r)
-			return
-		}
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	})
-	root := h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
-			web.ServeHTTP(w, r)
-			return
-		}
-		base.ServeHTTP(w, r)
-	}), &http2.Server{})
-	service.hand = corsMiddleware().Handler(root)
 	service.stats.processed, err = self.Meter().Int64Counter(
 		"samples.processed",
 		metric.WithDescription("Total number of samples processed"),
@@ -147,31 +89,10 @@ func (s *Service) Close() {
 	s.snippets.Close()
 }
 
-func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.hand.ServeHTTP(w, r)
-}
-
-func corsMiddleware() *cors.Cors {
-	return cors.New(cors.Options{
-		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			return true
-		},
-		AllowedHeaders: []string{"*"},
-		AllowedMethods: []string{
-			http.MethodHead,
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-		},
-		AllowCredentials: true,
-	})
-}
-
 func (s *Service) Metrics() *Metrics {
 	return &Metrics{svc: s}
 }
+
 func (s *Service) Trace() *Trace {
 	return &Trace{svc: s}
 }

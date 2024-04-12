@@ -26,15 +26,16 @@ func Cache() string {
 func FLags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:  "hostPort",
-			Usage: "host:port address of rq",
-			Value: "localhost:8080",
+			Name:    "remoteAddress",
+			Usage:   "host:port address of remote rq",
+			Value:   "localhost:4317",
+			Sources: cli.EnvVars("RQ_REMOTE_ADDRESS"),
 		},
 	}
 }
 
 func Conn(cmd *cli.Command) (*grpc.ClientConn, error) {
-	return grpc.Dial(cmd.String("hostPort"), grpc.WithTransportCredentials(
+	return grpc.Dial(cmd.String("remoteAddress"), grpc.WithTransportCredentials(
 		insecure.NewCredentials(),
 	))
 }

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
+	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/commands/query"
 	"github.com/gernest/requiemdb/internal/commands/version"
 	_ "github.com/gernest/requiemdb/internal/compress"
@@ -36,12 +36,6 @@ func main() {
 				Name:    "logLevel",
 				Value:   "info",
 				Sources: cli.EnvVars("RQ_LOG_LEVEL"),
-			},
-			&cli.StringFlag{
-				Name:    "listen",
-				Usage:   "HTTP address to bind api server",
-				Value:   ":8080",
-				Sources: cli.EnvVars("RQ_LISTEN"),
 			},
 			&cli.StringFlag{
 				Name:    "otlpListen",
@@ -92,12 +86,6 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	}
 	defer api.Close()
 
-	svr := &http.Server{
-		Addr:        lsn,
-		Handler:     api,
-		BaseContext: func(l net.Listener) context.Context { return ctx },
-	}
-
 	otelAddress := cmd.String("otlpListen")
 	otelGRPC, err := net.Listen("tcp", otelAddress)
 	if err != nil {
@@ -106,6 +94,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	defer otelGRPC.Close()
 
 	oSvr := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	v1.RegisterRQServer(oSvr, api)
 	collector_metrics.RegisterMetricsServiceServer(oSvr, api.Metrics())
 	collector_logs.RegisterLogsServiceServer(oSvr, api.Logs())
 	collector_trace.RegisterTraceServiceServer(oSvr, api.Trace())
@@ -123,11 +112,6 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 
 	go func() {
 		defer cancel()
-		slog.Info("starting http server", "address", lsn)
-		exit = svr.ListenAndServe()
-	}()
-	go func() {
-		defer cancel()
 		slog.Info("starting gRPC otel collector server", "address", otelAddress)
 		err := oSvr.Serve(otelGRPC)
 		if err != nil {
@@ -137,7 +121,6 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	// start gc  routines
 	gc.Run(ctx, db)
 	<-ctx.Done()
-	svr.Shutdown(context.Background())
 	oSvr.GracefulStop()
 	return
 }
