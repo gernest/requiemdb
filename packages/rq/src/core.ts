@@ -1,5 +1,5 @@
 
-export enum Resource {
+export enum RESOURCE {
     METRICS = "metrics",
     LOGS = "logs",
     TRACES = "traces",
@@ -7,7 +7,7 @@ export enum Resource {
 
 export class Config {
     ptr: any
-    constructor(resource: Resource) {
+    constructor(resource: RESOURCE) {
         //@ts-ignore
         this.base = SCAN.Create(resource);
     }

@@ -1,9 +1,9 @@
-import { Config, ScanData, Resource } from "./core";
+import { Config, ScanData, RESOURCE } from "./core";
 
 
 export class Metrics extends Config {
     constructor(name?: string) {
-        super(Resource.METRICS)
+        super(RESOURCE.METRICS)
         if (name) {
             this.name(name)
         }

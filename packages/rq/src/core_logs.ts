@@ -1,7 +1,7 @@
-import { Config, Resource } from "./core";
+import { Config, RESOURCE } from "./core";
 
 export class Logs extends Config {
     constructor() {
-        super(Resource.LOGS)
+        super(RESOURCE.LOGS)
     }
 }
