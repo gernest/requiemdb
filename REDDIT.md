@@ -66,8 +66,7 @@ render(
 # Why a sad name ?
 
 I'm sad and broke, I have run out of savings trying to bootstrap a web analytics company
-[vince](https://github.com/vinceanalytics/vince). I have a big gap since my last employment so no one replies to my
-email applications anymore. And I took a sabbatical right when my career was taking off( yeah, spotty CV not very helpful)
+[vince](https://github.com/vinceanalytics/vince).
 
 My dream is gone, and so is my livelihood. I am desperate, anyone out there who
 is looking for a humble, mid-level software engineer please give me a chance, I promise
