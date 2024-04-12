@@ -14,6 +14,7 @@ import (
 	"github.com/dgraph-io/badger/v4/options"
 	"github.com/gernest/requiemdb/internal/commands/query"
 	"github.com/gernest/requiemdb/internal/commands/version"
+	_ "github.com/gernest/requiemdb/internal/compress"
 	"github.com/gernest/requiemdb/internal/gc"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/self"

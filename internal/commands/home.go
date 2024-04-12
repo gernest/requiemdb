@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	_ "github.com/gernest/requiemdb/internal/compress"
 	"github.com/gernest/requiemdb/internal/home"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
