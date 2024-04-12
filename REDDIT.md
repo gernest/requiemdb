@@ -30,18 +30,6 @@ and stored in a key value store.
 Extensive use of roaring bitmaps for the index combined with apache arrow
 allows faster and efficient sample lookup.
 
-Fundamental data stored is a union of otel sample data 
-
-```proto3
-message Data {
-  oneof data {
-    opentelemetry.proto.metrics.v1.MetricsData metrics = 1;
-    opentelemetry.proto.logs.v1.LogsData logs = 2;
-    opentelemetry.proto.trace.v1.TracesData trace = 3;
-  }
-}
-```
-
 
 # Why Typescript as query Language ?
 
