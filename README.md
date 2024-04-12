@@ -36,7 +36,7 @@ render(
 
 You can see release page for downloads if you have go installed do this
 
-```
+```bash
 go install github.com/gernest/requiemdb/cmd/rq@latest
 ```
 
@@ -54,6 +54,7 @@ Let's check the number of active goroutines our process has, create a file `goro
 and paste this content.
 
 ```ts
+// goroutines.ts
 import { Metrics, render } from "@requiemdb/rq";
 
 /**
@@ -66,18 +67,8 @@ render(
 )
 ```
 
-There are three ways to execute the script
-
-- **JSON REST API**
-
-- **gRPC API**: only go clients are generated see `gen/` directory.
-
-- `rq` tool: This uses `gRPC` api under the hood to talk to `rq` server.
-
-```
+```bash
 rq query goroutines.ts
 ```
 
 
- - **Web Console**: By default we serve a web ui on `http://localhost:8080` that
- you can use to write and execute queries.
