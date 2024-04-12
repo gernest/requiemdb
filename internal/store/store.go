@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
@@ -26,6 +27,7 @@ type Storage struct {
 	bitmapCache *ristretto.Cache
 	tree        *lsm.Tree
 	seq         *badger.Sequence
+	min, max    atomic.Uint64
 }
 
 const (
@@ -167,7 +169,23 @@ func (s *Storage) Save(data *v1.Data) error {
 		MaxTs:    ctx.MaxTs,
 		Resource: uint64(meta),
 	})
+	minTs := s.min.Load()
+	if minTs == 0 {
+		minTs = ctx.MinTs
+	}
+	minTs = min(minTs, ctx.MinTs)
+	maxTs := max(s.max.Load(), ctx.MaxTs)
+	s.min.Store(minTs)
+	s.max.Store(maxTs)
 	return nil
+}
+
+func (s *Storage) MinTs() uint64 {
+	return s.min.Load()
+}
+
+func (s *Storage) MaxTs() uint64 {
+	return s.max.Load()
 }
 
 func resourceFrom(data *v1.Data) v1.RESOURCE {

@@ -33,13 +33,11 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 
 	// Instant scans have no time range.
 	isInstant := scan.TimeRange == nil
-
 	samples, err := s.tree.Scan(resource, start, end)
 	if err != nil {
 		return nil, err
 	}
 	defer samples.Release()
-
 	all := s.CompileFilters(txn, scan, samples)
 	if all != nil {
 		all.Release()

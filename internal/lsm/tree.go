@@ -301,13 +301,10 @@ func containsUp(start, end, slot uint64) bool {
 // end range.
 func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, err error) {
 	ctx := context.Background()
-
 	rsc, err := compute.CallFunction(ctx, "equal", nil, compute.NewDatumWithoutOwning(
 		r.Column(ResourceColumn),
 	),
-		&compute.ScalarDatum{Value: &scalar.Uint64{
-			Value: resource,
-		}},
+		compute.NewDatumWithoutOwning(scalar.MakeScalar(resource)),
 	)
 	if err != nil {
 		return nil, err
@@ -329,6 +326,7 @@ func ComputeSample(r arrow.Record, resource, start, end uint64) (ids []uint64, e
 	defer and.Release()
 
 	filter := and.(*compute.ArrayDatum).MakeArray().(*array.Boolean)
+
 	defer filter.Release()
 
 	b := array.NewUint32Builder(memory.DefaultAllocator)
