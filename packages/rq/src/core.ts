@@ -16,7 +16,7 @@ export class Config {
     ptr: any
     constructor(resource: RESOURCE) {
         //@ts-ignore
-        this.base = SCAN.Create(resource);
+        this.ptr = SCAN.Create(resource);
     }
 
     public scan(): Data {

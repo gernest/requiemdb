@@ -80,9 +80,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		WithScan(func(s *v1.Scan) (*v1.Data, error) {
 			return rq.ScanSamples(ctx, s)
 		}).
-		WithNow(time.Now).
-		WithOutput(os.Stdout)
-	defer vm.Release()
+		WithNow(time.Now)
 	return vm.Run(compiled)
 }
 

@@ -2,14 +2,12 @@ package js
 
 import (
 	"errors"
-	"io"
 	"sync"
 	"time"
 
 	"github.com/dop251/goja"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/logger"
-	"google.golang.org/protobuf/proto"
 )
 
 type ScanFunc func(*v1.Scan) (*v1.Data, error)
@@ -21,12 +19,12 @@ type ExportOptions struct {
 }
 
 type JS struct {
-	Output        io.Writer
 	Runtime       *goja.Runtime
 	Now           NowFunc
 	ScanFn        ScanFunc
 	Export        goja.Value
 	ExportOptions ExportOptions
+	ScanRequest   *v1.Scan
 }
 
 func New() *JS {
@@ -38,17 +36,11 @@ func (o *JS) WithNow(now NowFunc) *JS {
 	return o
 }
 
-func (o *JS) WithOutput(w io.Writer) *JS {
-	o.Output = w
-	return o
-}
-
 func (o *JS) Reset() {
 	o.Now = nil
 	o.ScanFn = nil
-	o.Output = nil
-	o.Output = io.Discard
 	o.Export = nil
+	o.ScanRequest = nil
 	o.ExportOptions = ExportOptions{}
 }
 
@@ -72,12 +64,10 @@ func (o *JS) Release() {
 func newJS() *JS {
 	r := goja.New()
 	o := &JS{
-		Output:  io.Discard,
 		Runtime: r,
 	}
 	r.SetFieldNameMapper(goja.TagFieldNameMapper("json", false))
 	err := errors.Join(
-		r.Set("console", console(r, o)),
 		r.Set("SCAN", &Scan{o: o}),
 		r.Set("RQ", o),
 	)
@@ -89,33 +79,19 @@ func newJS() *JS {
 
 var jsPool = &sync.Pool{New: func() any { return newJS() }}
 
-func (r *JS) Scan(a []byte) (*v1.Data, error) {
+func (r *JS) Scan(a *v1.Scan) *v1.Data {
+	r.ScanRequest = a
 	if r.ScanFn != nil {
-		var scan v1.Scan
-		err := proto.Unmarshal(a, &scan)
-		if err != nil {
-			return nil, err
-		}
-		return r.ScanFn(&scan)
+		return must(r.ScanFn(a))
 	}
-	return nil, errors.New("RQ.Scan is not implemented")
+	panic(errors.New("RQ.Scan is not implemented"))
 }
 
-func (o *JS) Marshal(v *v1.Data) (goja.ArrayBuffer, error) {
-	data, err := proto.Marshal(v)
+func must[T any](v T, err error) T {
 	if err != nil {
-		return goja.ArrayBuffer{}, err
+		panic(err)
 	}
-	return o.Runtime.NewArrayBuffer(data), nil
-}
-
-func (o *JS) Unmarshal(a []byte) (*v1.Data, error) {
-	var data v1.Data
-	err := proto.Unmarshal(a, &data)
-	if err != nil {
-		return nil, err
-	}
-	return &data, nil
+	return v
 }
 
 func (o *JS) Run(program *goja.Program) error {
