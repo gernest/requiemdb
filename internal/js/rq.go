@@ -16,11 +16,17 @@ type ScanFunc func(*v1.Scan) (*v1.Data, error)
 
 type NowFunc func() time.Time
 
+type ExportOptions struct {
+	JSON bool `json:"json"`
+}
+
 type JS struct {
-	Output  io.Writer
-	Runtime *goja.Runtime
-	Now     NowFunc
-	ScanFn  ScanFunc
+	Output        io.Writer
+	Runtime       *goja.Runtime
+	Now           NowFunc
+	ScanFn        ScanFunc
+	Export        goja.Value
+	ExportOptions ExportOptions
 }
 
 func New() *JS {
@@ -42,6 +48,13 @@ func (o *JS) Reset() {
 	o.ScanFn = nil
 	o.Output = nil
 	o.Output = io.Discard
+	o.Export = nil
+	o.ExportOptions = ExportOptions{}
+}
+
+func (o *JS) RENDER(value goja.Value, opts ExportOptions) {
+	o.Export = value
+	o.ExportOptions = opts
 }
 
 func (o *JS) GetNow() time.Time {
@@ -62,6 +75,7 @@ func newJS() *JS {
 		Output:  io.Discard,
 		Runtime: r,
 	}
+	r.SetFieldNameMapper(goja.TagFieldNameMapper("json", false))
 	err := errors.Join(
 		r.Set("console", console(r, o)),
 		r.Set("SCAN", &Scan{o: o}),

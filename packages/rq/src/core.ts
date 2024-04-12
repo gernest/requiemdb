@@ -163,5 +163,18 @@ export class Config {
     }
 }
 
+export interface RenderOptions {
+    json?: boolean
+}
+
+export function render(value: any, options?: RenderOptions) {
+    if (options) {
+        //@ts-ignore
+        RQ.RENDER(value, options)
+    }
+    //@ts-ignore
+    RQ.RENDER(value, { json: true })
+}
+
 
 
