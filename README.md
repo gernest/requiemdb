@@ -34,9 +34,7 @@ rq
 
 Wait for 2 minutes to have `rq`  collect the process stats so we can query them.
 
-Let's check the number of active goroutines our process has, create a file `goroutines.ts`
-and paste this content.
-
+Let's check system cpu time, create a file `cpu.ts`
 ```ts
 // cpu.ts
 import { Metrics } from "@requiemdb/rq";
