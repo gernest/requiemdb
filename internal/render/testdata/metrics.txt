@@ -1,0 +1,83 @@
+=== https://opentelemetry.io/schemas/1.24.0
+--> go.opentelemetry.io/contrib/instrumentation/host
+process.cpu.time
+TIMESTAMP            VALUE         ATTRIBUTES            
+2024-04-03 14:37:40  976.264886ms  { state = "system" }  
+2024-04-03 14:37:40  1.146602151s  { state = "user" }    
+
+system.cpu.time
+TIMESTAMP            VALUE         ATTRIBUTES            
+2024-04-03 14:37:40  193h2m11.21s  { state = "idle" }    
+2024-04-03 14:37:40  13h36m20.38s  { state = "user" }    
+2024-04-03 14:37:40  8h20m8.09s    { state = "system" }  
+2024-04-03 14:37:40  0s            { state = "other" }   
+
+system.memory.usage
+TIMESTAMP            VALUE    ATTRIBUTES               
+2024-04-03 14:37:40  10 GiB   { state = "used" }       
+2024-04-03 14:37:40  6.0 GiB  { state = "available" }  
+
+system.memory.utilization
+TIMESTAMP            VALUE               ATTRIBUTES               
+2024-04-03 14:37:40  0.6239485740661621  { state = "used" }       
+2024-04-03 14:37:40  0.3760514259338379  { state = "available" }  
+
+system.network.io
+TIMESTAMP            VALUE    ATTRIBUTES                  
+2024-04-03 14:37:40  1.9 GiB  { direction = "transmit" }  
+2024-04-03 14:37:40  14 GiB   { direction = "receive" }   
+
+--> go.opentelemetry.io/contrib/instrumentation/runtime
+runtime.uptime
+TIMESTAMP            VALUE      ATTRIBUTES  
+2024-04-03 14:37:40  4m28.755s  {}          
+
+process.runtime.go.goroutines
+TIMESTAMP            VALUE  ATTRIBUTES  
+2024-04-03 14:37:40  32     {}          
+
+process.runtime.go.cgo.calls
+TIMESTAMP            VALUE  ATTRIBUTES  
+2024-04-03 14:37:40  44     {}          
+
+process.runtime.go.mem.heap_alloc
+TIMESTAMP            VALUE    ATTRIBUTES  
+2024-04-03 14:37:40  278 MiB  {}          
+
+process.runtime.go.mem.heap_idle
+TIMESTAMP            VALUE   ATTRIBUTES  
+2024-04-03 14:37:40  16 MiB  {}          
+
+process.runtime.go.mem.heap_inuse
+TIMESTAMP            VALUE    ATTRIBUTES  
+2024-04-03 14:37:40  280 MiB  {}          
+
+process.runtime.go.mem.heap_objects
+TIMESTAMP            VALUE  ATTRIBUTES  
+2024-04-03 14:37:40  43662  {}          
+
+process.runtime.go.mem.heap_released
+TIMESTAMP            VALUE    ATTRIBUTES  
+2024-04-03 14:37:40  2.6 MiB  {}          
+
+process.runtime.go.mem.heap_sys
+TIMESTAMP            VALUE    ATTRIBUTES  
+2024-04-03 14:37:40  295 MiB  {}          
+
+process.runtime.go.mem.lookups
+TIMESTAMP            VALUE  ATTRIBUTES  
+2024-04-03 14:37:40  0      {}          
+
+process.runtime.go.mem.live_objects
+TIMESTAMP            VALUE  ATTRIBUTES  
+2024-04-03 14:37:40  43662  {}          
+
+process.runtime.go.gc.count
+TIMESTAMP            VALUE  ATTRIBUTES  
+2024-04-03 14:37:40  6      {}          
+
+process.runtime.go.gc.pause_total_ns
+TIMESTAMP            VALUE      ATTRIBUTES  
+2024-04-03 14:37:40  918.029µs  {}          
+
+process.runtime.go.gc.pause_ns
