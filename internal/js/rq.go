@@ -2,12 +2,15 @@ package js
 
 import (
 	"errors"
+	"io"
 	"sync"
 	"time"
 
 	"github.com/dop251/goja"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/logger"
+	"github.com/gernest/requiemdb/internal/render"
+	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
 
 type ScanFunc func(*v1.Scan) (*v1.Data, error)
@@ -19,6 +22,7 @@ type ExportOptions struct {
 }
 
 type JS struct {
+	Output        io.Writer
 	Runtime       *goja.Runtime
 	Now           NowFunc
 	ScanFn        ScanFunc
@@ -38,6 +42,7 @@ func (o *JS) WithNow(now NowFunc) *JS {
 
 func (o *JS) Reset() {
 	o.Now = nil
+	o.Output = io.Discard
 	o.ScanFn = nil
 	o.Export = nil
 	o.ScanRequest = nil
@@ -65,6 +70,7 @@ func newJS() *JS {
 	r := goja.New()
 	o := &JS{
 		Runtime: r,
+		Output:  io.Discard,
 	}
 	r.SetFieldNameMapper(goja.TagFieldNameMapper("json", false))
 	err := errors.Join(
@@ -108,4 +114,22 @@ func (o *JS) WithData(data *v1.Data) *JS {
 func (o *JS) WithScan(f ScanFunc) *JS {
 	o.ScanFn = f
 	return o
+}
+
+func (o *JS) WithOutput(w io.Writer) *JS {
+	o.Output = w
+	return o
+}
+
+func (o *JS) RenderMetricsDataJSON(data *metricsv1.MetricsData, opts render.JSONOptions) {
+	b, err := render.MetricsDataJSON(data, opts)
+	if err != nil {
+		panic(err)
+	}
+	o.Output.Write(b)
+}
+
+func (o *JS) RenderMetricsData(data *metricsv1.MetricsData, opts render.MetricsFormatOption) {
+	b := render.MetricsData(data, opts)
+	o.Output.Write([]byte(b))
 }

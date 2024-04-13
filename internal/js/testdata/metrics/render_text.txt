@@ -1,0 +1,5 @@
+=== test.resource.schema
+--> test.scope
+foo
+TIMESTAMP            VALUE    ATTRIBUTES  
+2006-01-02 15:04:00  1.0 KiB  {}          

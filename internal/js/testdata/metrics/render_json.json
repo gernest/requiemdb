@@ -1,0 +1,1 @@
+{"resourceMetrics":[{"scopeMetrics":[{"scope":{"name":"test.scope","version":"v0.0.1"},"metrics":[{"name":"foo","description":"Size","unit":"By","gauge":{"dataPoints":[{"timeUnixNano":"1136214240000000000","asDouble":1024}]}}],"schemaUrl":"test.scope.schema"}],"schemaUrl":"test.resource.schema"}]}

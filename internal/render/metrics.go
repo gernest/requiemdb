@@ -7,12 +7,17 @@ import (
 	"time"
 
 	v1 "go.opentelemetry.io/proto/otlp/metrics/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type MetricsFormatOption struct {
 	Resource bool `json:"resource"`
 	Scope    bool `json:"scope"`
 	Metrics  bool `json:"metrics"`
+}
+
+func MetricsDataJSON(data *v1.MetricsData, o JSONOptions) ([]byte, error) {
+	return protojson.MarshalOptions{Multiline: o.Pretty}.Marshal(data)
 }
 
 func MetricsData(md *v1.MetricsData, o MetricsFormatOption) string {
