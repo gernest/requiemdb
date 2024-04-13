@@ -10,9 +10,9 @@ import (
 )
 
 type MetricsFormatOption struct {
-	Resource bool
-	Scope    bool
-	Metrics  bool
+	Resource bool `json:"resource"`
+	Scope    bool `json:"scope"`
+	Metrics  bool `json:"metrics"`
 }
 
 func MetricsData(md *v1.MetricsData, o MetricsFormatOption) string {

@@ -163,18 +163,21 @@ export class Config {
     }
 }
 
-export interface RenderOptions {
-    json?: boolean
+export interface JSONOptions {
+    pretty: boolean
 }
 
-export function render(value: any, options?: RenderOptions) {
-    if (options) {
-        //@ts-ignore
-        RQ.RENDER(value, options)
-    }
-    //@ts-ignore
-    RQ.RENDER(value, { json: true })
+export interface TextOptions {
+    /**
+     * Includes resource information in the output.Includes resource schema 
+     * and resource attributes
+     */
+    resource: boolean
+    /**
+     * Includes scope information in the output. Includes scope name, version, 
+     * schema and attributes
+     */
+    scope: boolean
 }
-
 
 

@@ -1,31 +1,10 @@
-import { Metrics, render } from "@requiemdb/rq";
+import { Metrics } from "@requiemdb/rq";
 
 /**
- *  Instant Vectors
+ * Query instant system.cpu.time
  */
-render(
-    (new Metrics())
-        .name("http_requests_total")
-        .query(),
+Metrics.render(
+    (new Metrics()).
+        name("system.cpu.time").
+        query()
 )
-
-// With attributes filter
-render(
-    (new Metrics())
-        .name("http_requests_total")
-        .attr("job", "rq")
-        .attr("group", "canary")
-        .query(),
-)
-
-/**
- * Range Vectors
- */
-render(
-    (new Metrics())
-        .name("http_requests_total")
-        .attr("job", "rq")
-        .ago("5m")
-        .query(),
-)
-
