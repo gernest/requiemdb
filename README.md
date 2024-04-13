@@ -14,22 +14,6 @@ Permanent Storage for Open Telemetry Data.
  applications. Work with samples as defined in [Open Telemetry Protocol](https://github.com/open-telemetry/opentelemetry-proto) using modern javascript or typescript.
 
 
-## Example querying instant metrics
-
-```ts
-import { Metrics, render } from "@requiemdb/rq";
-
-/**
- *  Instant Vectors
- */
-render(
-    (new Metrics())
-        .name("http_requests_total")
-        .query(),
-)
-```
-
-
 # Getting started
 
 ## Installation
@@ -54,21 +38,21 @@ Let's check the number of active goroutines our process has, create a file `goro
 and paste this content.
 
 ```ts
-// goroutines.ts
-import { Metrics, render } from "@requiemdb/rq";
+// cpu.ts
+import { Metrics } from "@requiemdb/rq";
 
 /**
- *  Instant Vectors
+ * Query instant system.cpu.time
  */
-render(
-    (new Metrics())
-        .name("process.runtime.go.goroutines")
-        .query(),
+Metrics.render(
+    (new Metrics()).
+        name("system.cpu.time").
+        query()
 )
 ```
 
 ```bash
-rq query goroutines.ts
+rq query cpu.ts
 ```
 
 
