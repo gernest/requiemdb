@@ -52,5 +52,12 @@ Metrics.render(
 ```bash
 rq query cpu.ts
 ```
-
+```
+system.cpu.time
+TIMESTAMP            VALUE         ATTRIBUTES            
+2024-04-03 14:37:40  193h2m11.21s  { state = "idle" }    
+2024-04-03 14:37:40  13h36m20.38s  { state = "user" }    
+2024-04-03 14:37:40  8h20m8.09s    { state = "system" }  
+2024-04-03 14:37:40  0s            { state = "other" }   
+```
 
