@@ -17,18 +17,12 @@ type ScanFunc func(*v1.Scan) (*v1.Data, error)
 
 type NowFunc func() time.Time
 
-type ExportOptions struct {
-	JSON bool `json:"json"`
-}
-
 type JS struct {
-	Output        io.Writer
-	Runtime       *goja.Runtime
-	Now           NowFunc
-	ScanFn        ScanFunc
-	Export        goja.Value
-	ExportOptions ExportOptions
-	ScanRequest   *v1.Scan
+	Output      io.Writer
+	Runtime     *goja.Runtime
+	Now         NowFunc
+	ScanFn      ScanFunc
+	ScanRequest *v1.Scan
 }
 
 func New() *JS {
@@ -44,14 +38,7 @@ func (o *JS) Reset() {
 	o.Now = nil
 	o.Output = io.Discard
 	o.ScanFn = nil
-	o.Export = nil
 	o.ScanRequest = nil
-	o.ExportOptions = ExportOptions{}
-}
-
-func (o *JS) RENDER(value goja.Value, opts ExportOptions) {
-	o.Export = value
-	o.ExportOptions = opts
 }
 
 func (o *JS) GetNow() time.Time {
