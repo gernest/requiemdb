@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestMetrics(t *testing.T) {
@@ -83,6 +84,17 @@ func TestMetrics(t *testing.T) {
 		want, err := os.ReadFile("testdata/metrics/render_text.txt")
 		require.NoError(t, err)
 		require.Equal(t, string(want), b.String())
+	})
+	t.Run("name", func(t *testing.T) {
+		run(t, `import { Metrics,render } from "@requiemdb/rq";
+		Metrics.render((new Metrics("system.cpu.time")).query());
+		`)
+		d, err := protojson.Marshal(vm.ScanRequest)
+		require.NoError(t, err)
+		// os.WriteFile("testdata/metrics/scan_request.json", d, 0600)
+		want, err := os.ReadFile("testdata/metrics/scan_request.json")
+		require.NoError(t, err)
+		require.JSONEq(t, string(want), string(d))
 	})
 }
 

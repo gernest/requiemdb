@@ -14,6 +14,10 @@ type Scan struct {
 	scan *v1.Scan
 }
 
+func (s *Scan) Scan() *v1.Scan {
+	return s.scan
+}
+
 func (s *Scan) Create(resource string) *Scan {
 	r := &Scan{
 		o:    s.o,

@@ -21,7 +21,7 @@ export class Config {
 
     public scan(): Data {
         //@ts-ignore
-        return RQ.Scan(this.ptr) as Data
+        return RQ.Scan(this.ptr.Scan()) as Data
     }
 
 
