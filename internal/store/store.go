@@ -206,8 +206,8 @@ func (s *Storage) saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error 
 	if r, ok := s.bitmapCache.Get(hash); ok {
 		b = r.(*bitmaps.Bitmap)
 		b.Lock()
+		defer b.Unlock()
 		b.Add(sampleID)
-		b.Unlock()
 	} else {
 		b = bitmaps.New().WithKey(key)
 		it, err := txn.Get(key)

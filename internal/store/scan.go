@@ -37,12 +37,10 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	defer samples.Release()
 	key := keys.New()
 	defer key.Release()
-
+	all := visit.New()
+	defer all.Release()
 	err = s.db.View(func(txn *badger.Txn) error {
-		all := s.CompileFilters(txn, scan, samples)
-		if all != nil {
-			all.Release()
-		}
+		s.CompileFilters(txn, scan, samples, all)
 		if samples.IsEmpty() {
 			result = data.Zero(resource)
 			return nil
@@ -135,10 +133,9 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 	return visit.VisitData(data, a), nil
 }
 
-func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitmap) *visit.All {
+func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All) {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
-	o := visit.New()
 	resource := v1.RESOURCE(scan.Scope)
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
@@ -147,8 +144,7 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitm
 				WithPrefix(v1.PREFIX(e.Base.Prop)).
 				WithKey(e.Base.Value).
 				WithResource(resource), r) {
-				o.Release()
-				return nil
+				return
 			}
 			switch e.Base.Prop {
 			case v1.Scan_RESOURCE_SCHEMA:
@@ -176,8 +172,7 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitm
 				WithKey(e.Attr.Key).
 				WithValue(e.Attr.Value).
 				WithResource(resource), r) {
-				o.Release()
-				return nil
+				return
 			}
 			switch e.Attr.Prop {
 			case v1.Scan_RESOURCE_ATTRIBUTES:
@@ -189,34 +184,22 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitm
 			}
 		}
 	}
-	return o
 }
 
 func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
 	b := s.load(txn, lbl)
 	if b != nil {
-		// We can avoid the lock on o entirely because o is  not coming from the
-		// bitmap cache but we need to have sound behavior and avoid confusion.
-		//
-		// We must always treat bitmap.Bitmap as a resources that can be accessed
-		// concurrently and such, use appropriate locks on all its locations.
-		o.Lock()  // lock o for writes
-		b.RLock() // lock b for reads
+		b.RLock()
+		defer b.RUnlock()
 		o.And(&b.Bitmap)
-		b.RUnlock()
-		o.Unlock()
 	} else {
 		// All labels must contain a sample , if a label is missing then no sample for
 		// the query should match.
 		//
 		// Clear any previous samples
-		o.Lock()
 		o.Clear()
-		o.Unlock()
 	}
-	o.RLock()
 	ok = !o.IsEmpty()
-	o.RLock()
 	return
 }
 
