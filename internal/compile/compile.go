@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	pattern = "rq-cor-*"
+	pattern = "rq-compile-*"
 )
 
 func Compile(data []byte) ([]byte, error) {
@@ -20,7 +20,7 @@ func Compile(data []byte) ([]byte, error) {
 		return nil, err
 	}
 	defer os.RemoveAll(dir)
-	slog.Info("Compiling file", "path", dir)
+	slog.Debug("Compiling file", "path", dir)
 	result := api.Build(api.BuildOptions{
 		Bundle:        true,
 		Alias:         alias,
