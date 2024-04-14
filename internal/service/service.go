@@ -26,7 +26,6 @@ const (
 )
 
 type Service struct {
-	db       *badger.DB
 	snippets *snippets.Snippets
 	store    *store.Storage
 
@@ -51,7 +50,6 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 	}
 
 	service := &Service{
-		db:       db,
 		snippets: sn,
 		store:    storage,
 	}
