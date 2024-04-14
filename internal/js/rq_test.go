@@ -59,31 +59,31 @@ func TestMetrics(t *testing.T) {
 	vm := New().WithData(data).WithOutput(&b)
 	defer vm.Release()
 
-	t.Run("json", func(t *testing.T) {
+	run := func(t *testing.T, src string) {
+		t.Helper()
 		b.Reset()
-		program := setup(t, `import { Metrics,render } from "@requiemdb/rq";
-		Metrics.renderJSON((new Metrics()).query());
-		`)
+		program := setup(t, src)
 		err := vm.Run(program)
 		require.NoError(t, err)
+	}
+	t.Run("json", func(t *testing.T) {
+		run(t, `import { Metrics,render } from "@requiemdb/rq";
+		Metrics.renderJSON((new Metrics()).query());
+		`)
 		// os.WriteFile("testdata/metrics/render_json.json", b.Bytes(), 0600)
 		want, err := os.ReadFile("testdata/metrics/render_json.json")
 		require.NoError(t, err)
 		require.JSONEq(t, string(want), b.String())
 	})
 	t.Run("text", func(t *testing.T) {
-		b.Reset()
-		program := setup(t, `import { Metrics,render } from "@requiemdb/rq";
+		run(t, `import { Metrics,render } from "@requiemdb/rq";
 		Metrics.render((new Metrics()).query());
 		`)
-		err := vm.Run(program)
-		require.NoError(t, err)
 		// os.WriteFile("testdata/metrics/render_text.txt", b.Bytes(), 0600)
 		want, err := os.ReadFile("testdata/metrics/render_text.txt")
 		require.NoError(t, err)
 		require.Equal(t, string(want), b.String())
 	})
-
 }
 
 func setup(t *testing.T, data string) *goja.Program {
