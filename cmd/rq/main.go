@@ -15,7 +15,6 @@ import (
 	"github.com/gernest/requiemdb/internal/commands/query"
 	"github.com/gernest/requiemdb/internal/commands/version"
 	_ "github.com/gernest/requiemdb/internal/compress"
-	"github.com/gernest/requiemdb/internal/gc"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/service"
@@ -118,8 +117,6 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 			slog.Error("exited grpc service", "err", err)
 		}
 	}()
-	// start gc  routines
-	gc.Run(ctx, db)
 	<-ctx.Done()
 	oSvr.GracefulStop()
 	return
