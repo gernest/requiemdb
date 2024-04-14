@@ -24,10 +24,7 @@ const (
 	DefaultTimeRange = 15 * time.Minute
 )
 
-func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
-	txn := s.db.NewTransaction(false)
-	defer txn.Discard()
-
+func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	resource := v1.RESOURCE(scan.Scope)
 	start, end := timeBounds(utc, scan)
 
@@ -38,45 +35,51 @@ func (s *Storage) Scan(scan *v1.Scan) (*v1.Data, error) {
 		return nil, err
 	}
 	defer samples.Release()
-	all := s.CompileFilters(txn, scan, samples)
-	if all != nil {
-		all.Release()
-	}
-	if samples.IsEmpty() {
-		return data.Zero(resource), nil
-	}
-
-	var it roaring64.IntIterable64 = samples.Iterator()
-	if isInstant || scan.Reverse {
-		// For instant vectors we are only interested in the latest matching sample,
-		// since samples are sorted we use reverse iterator to ensure the last sample
-		// observed is the first we choose to process.
-		it = samples.ReverseIterator()
-	}
-	noFilters := len(scan.Filters) == 0
 	key := keys.New()
 	defer key.Release()
 
-	if isInstant {
-		// We only choose the first sample matching the scan
-		return s.read(txn,
-			key.WithResource(resource).
-				WithID(it.Next()).
-				Encode(), all, noFilters)
-	}
-	result := make([]*v1.Data, 0, samples.GetCardinality())
-	for it.HasNext() {
-		data, err := s.read(txn,
-			key.Reset().
-				WithResource(resource).
-				WithID(it.Next()).
-				Encode(), all, noFilters)
-		if err != nil {
-			return nil, err
+	err = s.db.View(func(txn *badger.Txn) error {
+		all := s.CompileFilters(txn, scan, samples)
+		if all != nil {
+			all.Release()
 		}
-		result = append(result, data)
-	}
-	return dataOps.Collapse(result), nil
+		if samples.IsEmpty() {
+			result = data.Zero(resource)
+			return nil
+		}
+		var it roaring64.IntIterable64 = samples.Iterator()
+		if isInstant || scan.Reverse {
+			// For instant vectors we are only interested in the latest matching sample,
+			// since samples are sorted we use reverse iterator to ensure the last sample
+			// observed is the first we choose to process.
+			it = samples.ReverseIterator()
+		}
+		noFilters := len(scan.Filters) == 0
+
+		if isInstant {
+			// We only choose the first sample matching the scan
+			result, err = s.read(txn,
+				key.WithResource(resource).
+					WithID(it.Next()).
+					Encode(), all, noFilters)
+			return err
+		}
+		rs := make([]*v1.Data, 0, samples.GetCardinality())
+		for it.HasNext() {
+			data, err := s.read(txn,
+				key.Reset().
+					WithResource(resource).
+					WithID(it.Next()).
+					Encode(), all, noFilters)
+			if err != nil {
+				return err
+			}
+			rs = append(rs, data)
+		}
+		result = dataOps.Collapse(rs)
+		return nil
+	})
+	return
 }
 
 func utc() time.Time {

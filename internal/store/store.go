@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -11,6 +12,7 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
+	"github.com/dustin/go-humanize"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/compress"
@@ -129,12 +131,9 @@ func (s *Storage) Save(data *v1.Data) error {
 	if err != nil {
 		return err
 	}
-	txn := s.db.NewTransaction(true)
-	defer txn.Discard()
 
 	txnData := arena()
 	defer txnData.Release()
-
 	compressedData, err := txnData.Compress(data)
 	if err != nil {
 		return err
@@ -143,22 +142,22 @@ func (s *Storage) Save(data *v1.Data) error {
 	key := keys.New()
 	defer key.Release()
 
-	sampleKey := key.WithResource(meta).
-		WithID(id).
-		Encode()
-
-	err = txn.SetEntry(badger.NewEntry(sampleKey, compressedData))
-	if err != nil {
-		return err
-	}
-
-	err = ctx.Labels.Iter(func(lbl *labels.Label) error {
-		return s.saveLabel(txn, lbl.Encode(), id)
+	err = s.db.Update(func(txn *badger.Txn) error {
+		sampleKey := key.WithResource(meta).
+			WithID(id)
+		fmt.Println(sampleKey, humanize.IBytes(uint64(len(compressedData))))
+		err = txn.Set(sampleKey.Encode(), compressedData)
+		if err != nil {
+			return err
+		}
+		err = ctx.Labels.Iter(func(lbl *labels.Label) error {
+			return s.saveLabel(txn, lbl.Encode(), id)
+		})
+		if err != nil {
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-	err = txn.Commit()
 	if err != nil {
 		return err
 	}
