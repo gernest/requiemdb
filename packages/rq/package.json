@@ -1,6 +1,6 @@
 {
   "name": "@requiemdb/rq",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "SDK for requiemdb , a permanent storage for Open Telemetry Metrics, Traces and Logs",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

@@ -180,4 +180,20 @@ export interface TextOptions {
     scope: boolean
 }
 
+/**
+ * writes args to script stdout
+ * @param args 
+ */
+export function print(...args: any[]) {
+    //@ts-ignore
+    RQ.Print(...args)
+}
 
+/**
+ * Like print but adds a new line
+ * @param args 
+ */
+export function println(...args: any[]) {
+    //@ts-ignore
+    RQ.PrintLn(...args)
+}

@@ -2,6 +2,7 @@ package js
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -119,4 +120,12 @@ func (o *JS) RenderMetricsDataJSON(data *metricsv1.MetricsData, opts render.JSON
 func (o *JS) RenderMetricsData(data *metricsv1.MetricsData, opts render.MetricsFormatOption) {
 	b := render.MetricsData(data, opts)
 	o.Output.Write([]byte(b))
+}
+
+func (o *JS) Print(args ...any) {
+	fmt.Fprint(o.Output, args...)
+}
+
+func (o *JS) PrintLn(args ...any) {
+	fmt.Fprintln(o.Output, args...)
 }
