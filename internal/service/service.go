@@ -29,7 +29,6 @@ type Service struct {
 	db       *badger.DB
 	snippets *snippets.Snippets
 	store    *store.Storage
-	data     chan *v1.Data
 
 	stats struct {
 		processed metric.Int64Counter
@@ -55,7 +54,6 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 		db:       db,
 		snippets: sn,
 		store:    storage,
-		data:     make(chan *v1.Data, DataBuffer),
 	}
 	service.stats.processed, err = self.Meter().Int64Counter(
 		"samples.processed",
@@ -70,21 +68,9 @@ func NewService(ctx context.Context, db *badger.DB, listen string, retention tim
 
 func (s *Service) Start(ctx context.Context) {
 	go s.store.Start(ctx)
-	go s.save(ctx)
-}
-
-func (s *Service) save(ctx context.Context) {
-	for data := range s.data {
-		err := s.store.Save(data)
-		if err != nil {
-			slog.Error("failed saving data sample", "err", err)
-		}
-		s.stats.processed.Add(ctx, 1)
-	}
 }
 
 func (s *Service) Close() {
-	close(s.data)
 	s.store.Close()
 	s.snippets.Close()
 }
@@ -109,10 +95,14 @@ type Metrics struct {
 var _ collector_metrics.MetricsServiceServer = (*Metrics)(nil)
 
 func (r *Metrics) Export(ctx context.Context, req *collector_metrics.ExportMetricsServiceRequest) (*collector_metrics.ExportMetricsServiceResponse, error) {
-	r.svc.data <- &v1.Data{
+	err := r.svc.store.Save(&v1.Data{
 		Data: &v1.Data_Metrics{Metrics: &metricsv1.MetricsData{
 			ResourceMetrics: req.ResourceMetrics,
 		}},
+	})
+	if err != nil {
+		slog.Error("failed saving data", "err", err)
+		return nil, err
 	}
 	return &collector_metrics.ExportMetricsServiceResponse{}, nil
 }
@@ -125,12 +115,16 @@ type Logs struct {
 var _ collector_logs.LogsServiceServer = (*Logs)(nil)
 
 func (r *Logs) Export(ctx context.Context, req *collector_logs.ExportLogsServiceRequest) (*collector_logs.ExportLogsServiceResponse, error) {
-	r.svc.data <- &v1.Data{
+	err := r.svc.store.Save(&v1.Data{
 		Data: &v1.Data_Logs{
 			Logs: &logsv1.LogsData{
 				ResourceLogs: req.ResourceLogs,
 			},
 		},
+	})
+	if err != nil {
+		slog.Error("failed saving data", "err", err)
+		return nil, err
 	}
 	return &collector_logs.ExportLogsServiceResponse{}, nil
 }
@@ -143,12 +137,16 @@ type Trace struct {
 var _ collector_trace.TraceServiceServer = (*Trace)(nil)
 
 func (r *Trace) Export(ctx context.Context, req *collector_trace.ExportTraceServiceRequest) (*collector_trace.ExportTraceServiceResponse, error) {
-	r.svc.data <- &v1.Data{
+	err := r.svc.store.Save(&v1.Data{
 		Data: &v1.Data_Traces{
 			Traces: &tracev1.TracesData{
 				ResourceSpans: req.ResourceSpans,
 			},
 		},
+	})
+	if err != nil {
+		slog.Error("failed saving data", "err", err)
+		return nil, err
 	}
 	return &collector_trace.ExportTraceServiceResponse{}, nil
 }
