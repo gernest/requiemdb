@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"sync"
@@ -37,9 +38,9 @@ const (
 
 func NewStore(db *badger.DB, tree *lsm.Tree) (*Storage, error) {
 
-	// first 8 is for namespace
-	seqKey := make([]byte, 9)
-	seqKey[len(seqKey)-1] = byte(v1.RESOURCE_ID)
+	// first 8 is reserved for namespace
+	seqKey := make([]byte, 8+4)
+	binary.LittleEndian.PutUint32(seqKey[8:], uint32(v1.RESOURCE_ID))
 
 	seq, err := db.GetSequence(seqKey, 1<<20)
 	if err != nil {
