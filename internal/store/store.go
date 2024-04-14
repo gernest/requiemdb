@@ -105,9 +105,8 @@ func (s *Storage) Start(ctx context.Context) {
 // Save indexes and saves compressed data into badger key/value store. See
 // transform package on which metadata is extracted from data for indexing.
 //
-// Two indexes are kept, all mapping to data. We generate a unique uint64 for
-// data which is used to identify data, id is auto increment, giving a sorted
-// property of samples.
+// data is assigned a SampleID and two indexes are built for this SampleID
+// lookup.
 //
 // # Metadata Index
 //
