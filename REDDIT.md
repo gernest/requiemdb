@@ -8,27 +8,45 @@ javascript or typescript as query language.
 
 - [Open Telemetry](https://github.com/open-telemetry) standard for Metrics, Traces and Logs collection.
 - [badger](https://github.com/dgraph-io/badger) the underlying key/value store
-- [Roaring Bitmaps](https://github.com/RoaringBitmap/roaring) for labels indexing
-- [Apache Arrow](https://github.com/apache/arrow/tree/main/go) for global sample metadata indexing
+- [Roaring Bitmaps](https://github.com/RoaringBitmap/roaring) for attributes indexing
 - [goja](https://github.com/dop251/goja) Embedded JS engine to power query api
 
 # Why ?
 
-All existing solutions are not purpose built for open telemetry.A lot of
-information is lost during ingestion.
+Early iteration of [vince](https://www.vinceanalytics.com/) relied on open telemetry to track events. Due to my limited
+budget I needed a very cheap open telemetry storage that is capable of serving the samples as 
+they were observed.
 
-I wanted to work with samples as they were observed, and there is no existing
-solution for this.
+Requirements were
 
+ - very low resource usage (compute/memory/storage)
+ - understand Open Telemetry standards
+ - very fast scans
+
+I would do further processing locally on my dev machine(which is more powerful) If I needed,
+`vince` as a company has since folded, so I am sharing this hoping someone will find useful.
 
 # How ?
 
-Processing is done at Sample level. A reverse index that maps to samples is
-generated during ingestion. Samples are serialized and compressed using zstd
-and stored in a key value store.
+Open Telemetry Data is compressed and stored in a key value store. An index is
+generated during ingestion mapping attributes and various interesting properties 
+of samples to the incoming sample ID.
 
-Extensive use of roaring bitmaps for the index combined with apache arrow
-allows faster and efficient sample lookup.
+So, scans are against samples not individual data points within the samples. It is
+possible to additionally pre process these samples before serving them.
+
+A `js` runtime is used to drive the `go` backend.
+
+Basically when  calling   `rq query cpu.ts`,  depending on `cpu.ts` contents it might involve scanning for 
+interesting samples remotely and further processing them locally, either natively in `go` or you can
+lift the native values into `js` and deal with them as you please.
+
+`rq query` works locally. For efficiency,  samples are always compressed
+when they are not being processed.
+
+We use `ztsd compressed gRPC` for communication. In short, the whole setup is
+very cost effective and insanely powerful. You have access to your `Metrics`, `Traces`,
+ and `Logs` in a single `js` script and you can interpret the data as you see fit.
 
 
 # Why Typescript as query Language ?
@@ -38,28 +56,47 @@ It is easy to learn but powerful, I consider this choice to be tactical.
 
 # Show me the code 
 
-```js
-import { Metrics, render } from "@requiemdb/rq";
+```ts
+// cpu.ts
+import { Metrics } from "@requiemdb/rq";
 
 /**
- *  Instant Vectors
+ * Query instant system.cpu.time
  */
-render(
-    (new Metrics())
-        .name("http_requests_total")
-        .query(),
+Metrics.render(
+    (new Metrics()).
+        name("system.cpu.time").
+        query()
 )
+```
+
+```bash
+rq query cpu.ts
+```
+```
+system.cpu.time
+TIMESTAMP            VALUE         ATTRIBUTES            
+2024-04-03 14:37:40  193h2m11.21s  { state = "idle" }    
+2024-04-03 14:37:40  13h36m20.38s  { state = "user" }    
+2024-04-03 14:37:40  8h20m8.09s    { state = "system" }  
+2024-04-03 14:37:40  0s            { state = "other" }   
 ```
 
 # Why a sad name ?
 
-I'm sad and broke, I have run out of savings trying to bootstrap a web analytics company
+I'm sad and broke, I have run out of savings trying to bootstrap a now defunct web analytics company
 [vince](https://github.com/vinceanalytics/vince).
 
 My dream is gone, and so is my livelihood. I am desperate, anyone out there who
 is looking for a humble, mid-level software engineer please give me a chance, I promise
 you won't be disappointed (My email is on my github profile).
 
-.
+
+
+# Why feature x is missing?
+
+My priority right now is to find employment. Contributions are welcome, but my effort will only  go towards things that will increase my odds of getting a job at the moment.
+
+After I sort my work situation, I will go back to this.
 
 
