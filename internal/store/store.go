@@ -4,15 +4,14 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
-	"github.com/dustin/go-humanize"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/compress"
@@ -20,6 +19,7 @@ import (
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/lsm"
+	"github.com/gernest/requiemdb/internal/retry"
 	"github.com/gernest/requiemdb/internal/transform"
 	"google.golang.org/protobuf/proto"
 )
@@ -123,14 +123,29 @@ func (s *Storage) Start(ctx context.Context) {
 // A label to bitmap of samples mapping. This is kept in bitmap cache and
 // persisted on tha key value store upon eviction.
 func (s *Storage) Save(data *v1.Data) error {
-	ctx := transform.NewContext()
-	defer ctx.Release()
-	ctx.Process(data)
-	meta := resourceFrom(data)
 	id, err := s.seq.Next()
 	if err != nil {
 		return err
 	}
+	save := func() error {
+		err := s.save(data, id)
+		if err != nil {
+			if !errors.Is(err, badger.ErrConflict) {
+				return backoff.Permanent(err)
+			}
+			// Retry only when we hit txn conflicts
+			return err
+		}
+		return nil
+	}
+	return retry.Do(save)
+}
+
+func (s *Storage) save(data *v1.Data, id uint64) error {
+	ctx := transform.NewContext()
+	defer ctx.Release()
+	ctx.Process(data)
+	meta := resourceFrom(data)
 
 	txnData := arena()
 	defer txnData.Release()
@@ -145,7 +160,6 @@ func (s *Storage) Save(data *v1.Data) error {
 	err = s.db.Update(func(txn *badger.Txn) error {
 		sampleKey := key.WithResource(meta).
 			WithID(id)
-		fmt.Println(sampleKey, humanize.IBytes(uint64(len(compressedData))))
 		err = txn.Set(sampleKey.Encode(), compressedData)
 		if err != nil {
 			return err
