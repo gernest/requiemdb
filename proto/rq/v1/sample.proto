@@ -39,9 +39,6 @@ message Meta {
 
   // Minimum timetamp observed in this sample in milliseconds
   repeated uint64 min_ts = 2;
-
-  // Maximum timestamp observed in this sample in milliseconds
-  repeated uint64 max_ts = 3;
 }
 
 message MetaInfo {

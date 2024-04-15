@@ -13,7 +13,6 @@ import (
 type meta struct {
 	id  []uint64
 	min []uint64
-	max []uint64
 }
 
 func (m *meta) Len() int {
@@ -27,38 +26,29 @@ func (m *meta) Less(i, j int) bool {
 func (m *meta) Swap(i, j int) {
 	m.id[i], m.id[j] = m.id[j], m.id[i]
 	m.min[i], m.min[j] = m.min[j], m.min[i]
-	m.max[i], m.max[j] = m.max[j], m.max[i]
 }
 
-func (m *meta) add(id, minTs, maxTs uint64) {
+func (m *meta) add(id, minTs uint64) {
 	m.id = append(m.id, id)
 	m.min = append(m.min, minTs)
-	m.max = append(m.max, maxTs)
 }
 
 func (m *meta) merge(o *meta) {
 	m.id = append(m.id, o.id...)
 	m.min = append(m.min, o.min...)
-	m.max = append(m.max, o.max...)
 }
 
 func (m *meta) Search(o *bitmaps.Bitmap, start, end uint64) {
 	lo := bitmaps.New()
-	hi := bitmaps.New()
 	m.find(lo, m.min, start, end)
-	m.find(hi, m.max, start, end)
-	lo.And(&hi.Bitmap)
 	o.Or(&lo.Bitmap)
-	hi.Release()
 	lo.Release()
 }
 
 func (m *meta) find(set *bitmaps.Bitmap, a []uint64, lo, hi uint64) {
 	from, _ := slices.BinarySearch(a, lo)
 	to, _ := slices.BinarySearch(a, hi)
-
-	size := len(a)
-	for i := from; i < size && i < to && to < size; i++ {
+	for i := from; i < to; i++ {
 		set.Add(m.id[i])
 	}
 }
@@ -66,7 +56,6 @@ func (m *meta) find(set *bitmaps.Bitmap, a []uint64, lo, hi uint64) {
 func (m *meta) Reset() {
 	m.id = m.id[:0]
 	m.min = m.min[:0]
-	m.max = m.max[:0]
 }
 
 var baseMetaSize = int(unsafe.Sizeof(meta{}))
@@ -75,7 +64,6 @@ func (m *meta) Size() (n int) {
 	n = baseMetaSize
 	n += len(m.id) * 8
 	n += len(m.min) * 8
-	n += len(m.max) * 8
 	return
 }
 
@@ -83,7 +71,6 @@ func fromProto(m *v1.Meta) meta {
 	return meta{
 		id:  m.GetId(),
 		min: m.GetMinTs(),
-		max: m.GetMaxTs(),
 	}
 }
 
@@ -91,7 +78,6 @@ func (m *meta) Proto() *v1.Meta {
 	return &v1.Meta{
 		Id:    m.id,
 		MinTs: m.min,
-		MaxTs: m.max,
 	}
 }
 
@@ -99,7 +85,6 @@ func SearchMeta(m *v1.Meta, o *bitmaps.Bitmap, start, end uint64) {
 	(&meta{
 		id:  m.Id,
 		min: m.MinTs,
-		max: m.MaxTs,
 	}).Search(o, start, end)
 }
 
@@ -201,11 +186,11 @@ func (r *Meta) Info() *v1.MetaInfo {
 func (r *Meta) Add(resource v1.RESOURCE, id, minTx, maxTs uint64) {
 	switch resource {
 	case v1.RESOURCE_METRICS:
-		r.metrics.add(id, minTx, maxTs)
+		r.metrics.add(id, minTx)
 	case v1.RESOURCE_LOGS:
-		r.logs.add(id, minTx, maxTs)
+		r.logs.add(id, minTx)
 	case v1.RESOURCE_TRACES:
-		r.traces.add(id, minTx, maxTs)
+		r.traces.add(id, minTx)
 	}
 	r.bounds(minTx, maxTs)
 }
