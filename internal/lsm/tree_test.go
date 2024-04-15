@@ -49,7 +49,7 @@ func TestAcceptRange(t *testing.T) {
 
 	for i, v := range ls {
 
-		require.Equal(t, v.ok, acceptRange(
+		require.Equal(t, v.ok, accept(
 			v.min, v.max, v.start, v.end,
 		), i)
 	}

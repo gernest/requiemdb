@@ -257,13 +257,12 @@ func (t *Tree) load() error {
 
 func (t *Tree) Scan(resource v1.RESOURCE, start, end uint64) (*bitmaps.Bitmap, error) {
 	t.Flush()
-
 	samples := bitmaps.New()
 	err := t.root.Iterate(func(n *Node[*meta.Meta]) error {
 		if n.value == nil {
 			return nil
 		}
-		if acceptRange(n.value.Min(), n.value.Max(), start, end) {
+		if accept(n.value.Min(), n.value.Max(), start, end) {
 			if n.value.Compacted() {
 				err := t.readCompacted(n.value, samples, resource, start, end)
 				if err != nil {
@@ -301,24 +300,13 @@ func (t *Tree) readCompacted(m *meta.Meta, o *bitmaps.Bitmap, resource v1.RESOUR
 		if err != nil {
 			return err
 		}
-		meta.SearchMeta(&data, o, start, end)
+		meta.Find(o, data.Id, data.MinTs, start, end)
 		return nil
 	})
 }
 
-func acceptRange(minTs, maxTs uint64, start, end uint64) bool {
-	return contains(minTs, maxTs, start) ||
-		containsUp(minTs, maxTs, end) ||
-		containsUp(start, end, minTs) ||
-		containsUp(start, end, maxTs)
-}
-
-func contains(start, end, slot uint64) bool {
-	return slot >= start && slot <= end
-}
-
-func containsUp(start, end, slot uint64) bool {
-	return slot > start && slot < end
+func accept(min, max uint64, start, end uint64) bool {
+	return (min < end) && (start <= max)
 }
 
 func (t *Tree) findNode(node *Node[*meta.Meta]) (list *Node[*meta.Meta]) {

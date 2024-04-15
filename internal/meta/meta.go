@@ -39,18 +39,18 @@ func (m *meta) merge(o *meta) {
 }
 
 func (m *meta) Search(o *bitmaps.Bitmap, start, end uint64) {
-	lo := bitmaps.New()
-	m.find(lo, m.min, start, end)
-	o.Or(&lo.Bitmap)
-	lo.Release()
+	Find(o, m.id, m.min, start, end)
 }
 
-func (m *meta) find(set *bitmaps.Bitmap, a []uint64, lo, hi uint64) {
-	from, _ := slices.BinarySearch(a, lo)
-	to, _ := slices.BinarySearch(a, hi)
+func Find(o *bitmaps.Bitmap, id, min []uint64, start, end uint64) {
+	set := bitmaps.New()
+	defer set.Release()
+	from, _ := slices.BinarySearch(min, start)
+	to, _ := slices.BinarySearch(min, end)
 	for i := from; i < to; i++ {
-		set.Add(m.id[i])
+		set.Add(id[i])
 	}
+	o.Or(&set.Bitmap)
 }
 
 func (m *meta) Reset() {
@@ -67,25 +67,11 @@ func (m *meta) Size() (n int) {
 	return
 }
 
-func fromProto(m *v1.Meta) meta {
-	return meta{
-		id:  m.GetId(),
-		min: m.GetMinTs(),
-	}
-}
-
 func (m *meta) Proto() *v1.Meta {
 	return &v1.Meta{
 		Id:    m.id,
 		MinTs: m.min,
 	}
-}
-
-func SearchMeta(m *v1.Meta, o *bitmaps.Bitmap, start, end uint64) {
-	(&meta{
-		id:  m.Id,
-		min: m.MinTs,
-	}).Search(o, start, end)
 }
 
 type Meta struct {
