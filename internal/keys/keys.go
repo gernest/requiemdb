@@ -70,3 +70,63 @@ func (s *Sample) String() string {
 		binary.LittleEndian.Uint64(s[8+4+4:]),
 	)
 }
+
+type Meta [8 + 4 + 4 + +8]byte
+
+func NewMeta() *Meta {
+	return metaPool.Get().(*Meta)
+}
+
+func (m *Meta) Encode() []byte {
+	return m[:]
+}
+
+func (m *Meta) Info() *Meta {
+	binary.LittleEndian.PutUint32(m[8:], uint32(v1.RESOURCE_META_INFO))
+	return m
+}
+
+func (m *Meta) Data() *Meta {
+	binary.LittleEndian.PutUint32(m[8:], uint32(v1.RESOURCE_META))
+	return m
+}
+
+func (m *Meta) WithID(id uint64) *Meta {
+	binary.LittleEndian.PutUint64(m[8+4+4:], id)
+	return m
+}
+
+func (m *Meta) WithRESOURCE(res v1.RESOURCE) *Meta {
+	binary.LittleEndian.PutUint32(m[8+4+8:], uint32(res))
+	return m
+}
+
+func (m *Meta) WithNS(id uint64) *Meta {
+	binary.LittleEndian.PutUint64(m[0:], id)
+	return m
+}
+
+func (m *Meta) Reset() *Meta {
+	clear(m[:])
+	binary.LittleEndian.PutUint32(m[8:], uint32(v1.RESOURCE_META))
+	return m
+}
+
+func (m *Meta) String() string {
+	return fmt.Sprintf("%d:%d:%d:%d",
+		binary.LittleEndian.Uint64(m[:]),
+		binary.LittleEndian.Uint32(m[8:]),
+		binary.LittleEndian.Uint64(m[8+4:]),
+		binary.LittleEndian.Uint32(m[8+4+8:]),
+	)
+}
+
+func (m *Meta) Release() {
+	metaPool.Put(m)
+}
+
+var metaPool = &sync.Pool{New: func() any {
+	var m Meta
+	binary.LittleEndian.PutUint32(m[8:], uint32(v1.RESOURCE_META))
+	return &m
+}}

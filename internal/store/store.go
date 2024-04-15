@@ -2,10 +2,7 @@ package store
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
-	"io"
-	"sync"
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
@@ -13,15 +10,15 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/arena"
 	"github.com/gernest/requiemdb/internal/bitmaps"
-	"github.com/gernest/requiemdb/internal/compress"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/retry"
+	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/transform"
-	"google.golang.org/protobuf/proto"
 )
 
 type Storage struct {
@@ -29,7 +26,7 @@ type Storage struct {
 	dataCache   *ristretto.Cache
 	bitmapCache *ristretto.Cache
 	tree        *lsm.Tree
-	seq         *badger.Sequence
+	seq         *seq.Seq
 	min, max    atomic.Uint64
 }
 
@@ -38,16 +35,7 @@ const (
 	BitmapCacheSize = DataCacheSize * 2
 )
 
-func NewStore(db *badger.DB, tree *lsm.Tree) (*Storage, error) {
-
-	// first 8 is reserved for namespace
-	seqKey := make([]byte, 8+4)
-	binary.LittleEndian.PutUint32(seqKey[8:], uint32(v1.RESOURCE_ID))
-
-	seq, err := db.GetSequence(seqKey, 1<<20)
-	if err != nil {
-		return nil, err
-	}
+func NewStore(db *badger.DB, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -79,7 +67,7 @@ func persistBitmaps(db *badger.DB) func(a any) {
 	return func(a any) {
 		b := a.(*bitmaps.Bitmap)
 		defer b.Release()
-		ga := arena()
+		ga := arena.New()
 		defer ga.Release()
 		_, err := b.WriteTo(ga.NewWriter())
 		if err != nil {
@@ -123,10 +111,7 @@ func (s *Storage) Start(ctx context.Context) {
 // A label to bitmap of samples mapping. This is kept in bitmap cache and
 // persisted on tha key value store upon eviction.
 func (s *Storage) Save(data *v1.Data) error {
-	id, err := s.seq.Next()
-	if err != nil {
-		return err
-	}
+	id := s.seq.SampleID()
 	save := func() error {
 		err := s.save(data, id)
 		if err != nil {
@@ -147,7 +132,7 @@ func (s *Storage) save(data *v1.Data, id uint64) error {
 	ctx.Process(data)
 	meta := resourceFrom(data)
 
-	txnData := arena()
+	txnData := arena.New()
 	defer txnData.Release()
 	compressedData, err := txnData.Compress(data)
 	if err != nil {
@@ -175,13 +160,7 @@ func (s *Storage) save(data *v1.Data, id uint64) error {
 	if err != nil {
 		return err
 	}
-	// Add sample to index
-	s.tree.Append(&v1.Meta{
-		Id:       id,
-		MinTs:    ctx.MinTs,
-		MaxTs:    ctx.MaxTs,
-		Resource: uint64(meta),
-	})
+	s.tree.Append(meta, id, ctx.MinTs, ctx.MaxTs)
 	minTs := s.min.Load()
 	if minTs == 0 {
 		minTs = ctx.MinTs
@@ -240,62 +219,3 @@ func (s *Storage) saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error 
 	}
 	return nil
 }
-
-// there is a hard requirement that memory should e not reused before a
-// transaction has been committed. This data structure allows to keep used
-// writes around and free them at once.
-type Arena struct {
-	data   []byte
-	offset int
-}
-
-func (a *Arena) NewWriter() io.Writer {
-	a.offset = len(a.data)
-	return a
-}
-
-func (a *Arena) Bytes() []byte {
-	return a.data[a.offset:]
-}
-
-func (a *Arena) Write(p []byte) (int, error) {
-	a.data = append(a.data, p...)
-	return len(p), nil
-}
-
-func (a *Arena) Compress(msg proto.Message) ([]byte, error) {
-	data, err := a.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-	err = compress.To(a.NewWriter(), data)
-	if err != nil {
-		a.data = a.data[:a.offset]
-		return nil, err
-	}
-	return a.Bytes(), nil
-}
-
-func (a *Arena) Marshal(msg proto.Message) (b []byte, err error) {
-	a.offset = len(a.data)
-	a.data, err = proto.MarshalOptions{}.MarshalAppend(a.data, msg)
-	if err != nil {
-		a.data = a.data[:a.offset]
-		return nil, err
-	}
-	b = a.data[a.offset:]
-	return
-}
-
-func (a *Arena) Release() {
-	clear(a.data)
-	a.data = a.data[:0]
-	a.offset = 0
-	arenaPool.Put(a)
-}
-
-func arena() *Arena {
-	return arenaPool.Get().(*Arena)
-}
-
-var arenaPool = &sync.Pool{New: func() any { return new(Arena) }}

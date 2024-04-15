@@ -2,9 +2,12 @@ syntax = "proto3";
 package v1;
 
 enum RESOURCE {
-  METRICS = 0;
+  UNKOWN = 0;
+  METRICS = 1;
   TRACES = 2;
   LOGS = 3;
-  ID = 5;
-  META = 6;
+  SAMPLE_ID = 4;
+  META = 5;
+  META_ID = 6;
+  META_INFO = 8;
 }

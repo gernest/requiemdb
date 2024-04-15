@@ -9,6 +9,7 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/self"
+	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
 	"go.opentelemetry.io/otel/metric"
@@ -35,16 +36,16 @@ type Service struct {
 	v1.UnsafeRQServer
 }
 
-func NewService(ctx context.Context, db *badger.DB, listen string, retention time.Duration) (*Service, error) {
+func NewService(ctx context.Context, db *badger.DB, seq *seq.Seq, listen string, retention time.Duration) (*Service, error) {
 	sn, err := snippets.New()
 	if err != nil {
 		return nil, err
 	}
-	tree, err := lsm.New(db)
+	tree, err := lsm.New(db, seq)
 	if err != nil {
 		return nil, err
 	}
-	storage, err := store.NewStore(db, tree)
+	storage, err := store.NewStore(db, seq, tree)
 	if err != nil {
 		return nil, err
 	}
