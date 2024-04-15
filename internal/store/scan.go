@@ -35,6 +35,9 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 		return nil, err
 	}
 	defer samples.Release()
+	if samples.IsEmpty() {
+		return data.Zero(resource), nil
+	}
 	key := keys.New()
 	defer key.Release()
 	all := visit.New()
