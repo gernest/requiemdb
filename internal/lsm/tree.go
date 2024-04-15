@@ -117,6 +117,7 @@ func (t *Tree) Flush() {
 		r.Release()
 		return
 	}
+	r.Sort()
 	t.add(r)
 }
 
