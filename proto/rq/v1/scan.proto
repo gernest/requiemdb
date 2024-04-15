@@ -30,7 +30,8 @@ message Scan {
   google.protobuf.Duration offset = 7;
 
   enum SCOPE {
-    METRICS = 0;
+    UNKOWN = 0;
+    METRICS = 1;
     TRACES = 2;
     LOGS = 3;
   }

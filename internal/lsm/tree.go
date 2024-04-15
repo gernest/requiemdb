@@ -157,7 +157,10 @@ func (t *Tree) Close() error {
 	m := meta.New()
 	defer m.Release()
 	t.root.Iterate(func(n *Node[*meta.Meta]) error {
-		if n.value == nil || n.value.Compacted() {
+		if n.value == nil {
+			return nil
+		}
+		if n.value.Compacted() {
 			n.value.Release()
 			n.value = nil
 			return nil
