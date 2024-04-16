@@ -89,7 +89,7 @@ I'm sad and broke, I have run out of savings trying to bootstrap a now defunct w
 
 My dream is gone, and so is my livelihood. I am desperate, anyone out there who
 is looking for a humble, mid-level software engineer please give me a chance, I promise
-you won't be disappointed (My email is on my github profile).
+you won't be disappointed [Here is my Resume](https://github.com/gernest/resume).
 
 
 
