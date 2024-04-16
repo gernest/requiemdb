@@ -1,37 +1,12 @@
 syntax = "proto3";
 package v1;
-import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/struct.proto";
-import "google/api/annotations.proto";
-import "buf/validate/validate.proto";
-import "opentelemetry/proto/common/v1/common.proto";
-import "opentelemetry/proto/metrics/v1/metrics.proto";
-import "opentelemetry/proto/logs/v1/logs.proto";
-import "opentelemetry/proto/trace/v1/trace.proto";
 import "rq/v1/scan.proto";
 
 service RQ {
-  rpc ScanSamples(Scan) returns (Data) {
-    option (google.api.http) = {
-      post : "/api/v1/scan",
-      body : "*"
-    };
-  };
+  rpc ScanSamples(Scan) returns (Data) {};
 
-  rpc GetVersion(GetVersionRequest) returns (Version) {
-    option (google.api.http) = {
-      get : "/api/v1/version",
-    };
-  };
+  rpc GetVersion(GetVersionRequest) returns (Version) {};
 }
 
 message GetVersionRequest {}
 message Version { string version = 1; }
-
-message Timings {
-  // Time taken to compile the query snippet before evealuation.
-  google.protobuf.Duration compiling = 1;
-  // Time taken to evaluate compiled query.
-  google.protobuf.Duration evaluating = 2;
-}

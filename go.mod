@@ -3,7 +3,6 @@ module github.com/gernest/requiemdb
 go 1.22.0
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240221180331-f05a6f4403ce.1
 	github.com/RoaringBitmap/roaring v1.9.1
 	github.com/apache/arrow/go/v16 v16.0.0-20240322222433-fa36cde1105c
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -14,7 +13,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/evanw/esbuild v0.20.2
 	github.com/google/go-cmp v0.6.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0
 	github.com/jinzhu/now v1.1.5
 	github.com/klauspost/compress v1.17.7
 	github.com/stretchr/testify v1.9.0
@@ -28,7 +26,6 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.24.0
 	go.opentelemetry.io/otel/trace v1.24.0
 	go.opentelemetry.io/proto/otlp v1.1.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240125205218-1f4bbc51befe
 	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.33.0
 )
@@ -52,6 +49,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v24.3.7+incompatible // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
@@ -78,7 +76,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.19.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto v0.0.0-20240205150955-31a09d347014 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240125205218-1f4bbc51befe // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240213162025-012b6fc9bca9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
