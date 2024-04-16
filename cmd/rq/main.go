@@ -19,6 +19,7 @@ import (
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/service"
+	rversion "github.com/gernest/requiemdb/internal/version"
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
@@ -29,8 +30,9 @@ import (
 
 func main() {
 	cmd := cli.Command{
-		Name:  "rq",
-		Usage: "OpenTelemetry database",
+		Name:    "rq",
+		Version: rversion.VERSION,
+		Usage:   "OpenTelemetry database",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "logLevel",
