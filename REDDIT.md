@@ -32,7 +32,7 @@ Open Telemetry Data is compressed and stored in a key value store. An index is
 generated during ingestion mapping attributes and various interesting properties 
 of samples to the incoming sample ID.
 
-So, scans are against samples not individual data points within the samples. It is
+Scans are against samples not individual data points within the samples. It is
 possible to additionally pre process these samples before serving them.
 
 A `js` runtime is used to drive the `go` backend.

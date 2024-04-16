@@ -61,3 +61,10 @@ TIMESTAMP            VALUE         ATTRIBUTES
 2024-04-03 14:37:40  0s            { state = "other" }   
 ```
 
+# Sending data
+
+```
+RQ_OTLP_LISTEN=localhost:4317 rq
+```
+
+Configure your gRPC exporter to use `RQ_OTLP_LISTEN` endpoint.
