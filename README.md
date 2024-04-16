@@ -34,6 +34,9 @@ rq
 
 Wait for 2 minutes to have `rq`  collect the process stats so we can query them.
 
+> Metrics,traces and logs emitted by `rq` are stored in the same `rq`  instance.
+> This is to allow quick evaluation of `rq` capabilities before  deployment.
+
 Let's check system cpu time, create a file `cpu.ts`
 ```ts
 // cpu.ts
