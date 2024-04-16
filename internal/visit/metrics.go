@@ -58,7 +58,6 @@ func (Metrics) Visit(data *metricsV1.MetricsData, visitor *All) *metricsV1.Metri
 							continue
 						}
 						points = append(points, d)
-
 					}
 					if len(points) > 0 {
 						if scope == nil {

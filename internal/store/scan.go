@@ -42,6 +42,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	defer key.Release()
 	all := visit.New()
 	defer all.Release()
+	all.SetTimeRange(start, end)
 	err = s.db.View(func(txn *badger.Txn) error {
 		s.CompileFilters(txn, scan, samples, all)
 		if samples.IsEmpty() {
@@ -59,9 +60,10 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 
 		if isInstant {
 			// We only choose the first sample matching the scan
+			next := it.Next()
 			result, err = s.read(txn,
 				key.WithResource(resource).
-					WithID(it.Next()).
+					WithID(next).
 					Encode(), all, noFilters)
 			return err
 		}
@@ -140,6 +142,7 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitm
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	resource := v1.RESOURCE(scan.Scope)
+
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
 		case *v1.Scan_Filter_Base:

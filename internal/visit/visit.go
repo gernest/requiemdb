@@ -213,6 +213,7 @@ func (a *All) AcceptScopeVersion(version string) bool {
 func (a *All) AcceptScopeAttributes(attr []*commonV1.KeyValue) bool {
 	return matchAttr(&a.scope_attr, attr)
 }
+
 func (a *All) AcceptName(name string) bool {
 	return a.name.IsEmpty() ||
 		a.name.Contains(xxhash.Sum64String(name))
@@ -241,8 +242,7 @@ func (a *All) AcceptParentSpanID(id []byte) bool {
 }
 
 func (a *All) AcceptTimestamp(ts uint64) bool {
-	return a.end_nano != 0 &&
-		ts >= a.start_nano && ts < a.end_nano
+	return ts >= a.start_nano && ts < a.end_nano
 }
 
 func matchAttr(a *roaring64.Bitmap, ls []*commonV1.KeyValue) bool {

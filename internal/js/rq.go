@@ -73,19 +73,12 @@ func newJS() *JS {
 
 var jsPool = &sync.Pool{New: func() any { return newJS() }}
 
-func (r *JS) Scan(a *v1.Scan) *v1.Data {
+func (r *JS) Scan(a *v1.Scan) (*v1.Data, error) {
 	r.ScanRequest = a
 	if r.ScanFn != nil {
-		return must(r.ScanFn(a))
+		return r.ScanFn(a)
 	}
-	panic(errors.New("RQ.Scan is not implemented"))
-}
-
-func must[T any](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return v
+	return nil, errors.New("RQ.Scan is not implemented")
 }
 
 func (o *JS) Run(program *goja.Program) error {
@@ -109,12 +102,13 @@ func (o *JS) WithOutput(w io.Writer) *JS {
 	return o
 }
 
-func (o *JS) RenderMetricsDataJSON(data *metricsv1.MetricsData, opts render.JSONOptions) {
+func (o *JS) RenderMetricsDataJSON(data *metricsv1.MetricsData, opts render.JSONOptions) error {
 	b, err := render.MetricsDataJSON(data, opts)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	o.Output.Write(b)
+	_, err = o.Output.Write(b)
+	return err
 }
 
 func (o *JS) RenderMetricsData(data *metricsv1.MetricsData, opts render.MetricsFormatOption) {
