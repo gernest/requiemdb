@@ -30,6 +30,7 @@ type Service struct {
 	snippets *snippets.Snippets
 	store    *store.Storage
 	data     chan *v1.Data
+	seq      *seq.Seq
 	stats    struct {
 		processed metric.Int64Counter
 	}
@@ -53,6 +54,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *seq.Seq, listen string,
 	service := &Service{
 		snippets: sn,
 		store:    storage,
+		seq:      seq,
 		data:     make(chan *v1.Data, DataBuffer),
 	}
 	service.stats.processed, err = self.Meter().Int64Counter(
