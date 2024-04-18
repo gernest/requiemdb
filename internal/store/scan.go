@@ -1,21 +1,20 @@
 package store
 
 import (
-	"bytes"
-	"encoding/binary"
-	"errors"
 	"log/slog"
 	"time"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
+	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/data"
 	dataOps "github.com/gernest/requiemdb/internal/data"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
+	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
 )
@@ -43,12 +42,13 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	all := visit.New()
 	defer all.Release()
 	all.SetTimeRange(start, end)
+
+	s.CompileFilters(scan, samples, all)
+	if samples.IsEmpty() {
+		result = data.Zero(resource)
+		return
+	}
 	err = s.db.View(func(txn *badger.Txn) error {
-		s.CompileFilters(txn, scan, samples, all)
-		if samples.IsEmpty() {
-			result = data.Zero(resource)
-			return nil
-		}
 		var it roaring64.IntIterable64 = samples.Iterator()
 		if isInstant || scan.Reverse {
 			// For instant vectors we are only interested in the latest matching sample,
@@ -138,10 +138,14 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 	return visit.VisitData(data, a), nil
 }
 
-func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All) {
+func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All) {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	resource := v1.RESOURCE(scan.Scope)
+	txn, err := s.bitmapDB.Begin(false)
+	if err != nil {
+		logger.Fail("Failed getting read transaction", "err", err)
+	}
 
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
@@ -192,84 +196,25 @@ func (s *Storage) CompileFilters(txn *badger.Txn, scan *v1.Scan, r *bitmaps.Bitm
 	}
 }
 
-func (s *Storage) apply(txn *badger.Txn, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
-	b := s.load(txn, lbl)
-	if b != nil {
-		b.RLock()
-		defer b.RUnlock()
-		o.And(&b.Bitmap)
-	} else {
-		// All labels must contain a sample , if a label is missing then no sample for
-		// the query should match.
-		//
-		// Clear any previous samples
+func (s *Storage) apply(txn *rbf.Tx, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
+	c, err := txn.Cursor(lbl.String())
+	if err != nil {
+		slog.Error("failed getting cursor", "err", err)
 		o.Clear()
+		return
 	}
-	ok = !o.IsEmpty()
-	return
-}
-
-func listLabels(db *badger.DB, base *labels.Label, f func(lbl *labels.Label, sample *bitmaps.Bitmap)) error {
-	prefix := bytes.Clone(base.Encode()[:labels.ResourcePrefixSize])
-	txn := db.NewTransaction(false)
-	defer txn.Discard()
-
-	o := badger.DefaultIteratorOptions
-	o.Prefix = prefix
-	it := txn.NewIterator(o)
-	defer it.Close()
-	s := bitmaps.New()
-	defer s.Release()
-	var data [4]byte
-	binary.LittleEndian.PutUint32(data[:], uint32(v1.PREFIX_DATA))
-
-	for it.Rewind(); it.ValidForPrefix(prefix); it.Next() {
-		key := it.Item().Key()
-		if bytes.HasPrefix(key[labels.ResourcePrefixSize:], data[:]) {
-			// skip data prefix
-			continue
-		}
-		err := base.Decode(key)
+	it := o.Iterator()
+	for it.HasNext() {
+		v := it.Next()
+		ok, err = c.Contains(v)
 		if err != nil {
-			return err
+			slog.Error("failed checking if bit is set", "err", err)
+			o.Clear()
+			return
 		}
-		err = it.Item().Value(s.UnmarshalBinary)
-		if err != nil {
-			return err
+		if !ok {
+			o.Remove(v)
 		}
-		f(base, s)
 	}
-	return nil
-}
-
-func (s *Storage) load(txn *badger.Txn, lbl *labels.Label) *bitmaps.Bitmap {
-	key := lbl.Encode()
-	hash := xxhash.Sum64(key)
-	if r, ok := s.bitmapCache.Get(hash); ok {
-		return r.(*bitmaps.Bitmap)
-	}
-	it, err := txn.Get(key)
-	if err != nil {
-		if !errors.Is(err, badger.ErrKeyNotFound) {
-			slog.Error("failed loading label", "err", err,
-				"key", lbl.Key,
-				"value", lbl.Value,
-				"resource", lbl.Resource,
-			)
-		}
-		return nil
-	}
-	r := bitmaps.New()
-	err = it.Value(r.UnmarshalBinary)
-	if err != nil {
-		slog.Error("failed decoding label bitmap", "err", err,
-			"key", lbl.Key,
-			"value", lbl.Value,
-			"resource", lbl.Resource,
-		)
-		r.Release()
-		return nil
-	}
-	s.bitmapCache.Set(hash, r, int64(r.GetSizeInBytes()))
-	return r
+	return !o.IsEmpty()
 }

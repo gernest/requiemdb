@@ -11,7 +11,9 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
+	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/commands"
 	"github.com/gernest/requiemdb/internal/commands/query"
 	"github.com/gernest/requiemdb/internal/commands/version"
 	_ "github.com/gernest/requiemdb/internal/compress"
@@ -65,22 +67,28 @@ func main() {
 
 func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	data := cmd.Args().First()
-	o := badger.DefaultOptions(data).
+	dbPath := commands.DB(data)
+	o := badger.DefaultOptions(dbPath).
 		WithLogger(Logger{}).
 		WithCompression(
 			options.ZSTD,
 		)
 	o = setupLogging(cmd, o)
-	if data == "" {
-		slog.Warn("missing data path, opening in memory database")
-		o = o.WithInMemory(true)
-	}
+	slog.Info("Setup  database", "path", dbPath)
 	db, err := badger.Open(o)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
+	indexPath := commands.Index(data)
 
+	idx := rbf.NewDB(indexPath, nil)
+	slog.Info("Setup index", "path", indexPath)
+	err = idx.Open()
+	if err != nil {
+		return err
+	}
+	defer idx.Close()
 	sequence, err := seq.New(db)
 	if err != nil {
 		return err
@@ -88,7 +96,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	defer sequence.Release()
 
 	lsn := cmd.String("listen")
-	api, err := service.NewService(ctx, db, sequence, lsn, cmd.Duration("retentionPeriod"))
+	api, err := service.NewService(ctx, db, sequence, idx, lsn, cmd.Duration("retentionPeriod"))
 	if err != nil {
 		return err
 	}

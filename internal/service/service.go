@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
+	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/lsm"
+	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/snippets"
@@ -29,7 +32,8 @@ const (
 type Service struct {
 	snippets *snippets.Snippets
 	store    *store.Storage
-	data     chan *v1.Data
+	dataMu   sync.Mutex
+	data     *samples.List
 	seq      *seq.Seq
 	stats    struct {
 		processed metric.Int64Counter
@@ -37,7 +41,10 @@ type Service struct {
 	v1.UnsafeRQServer
 }
 
-func NewService(ctx context.Context, db *badger.DB, seq *seq.Seq, listen string, retention time.Duration) (*Service, error) {
+func NewService(ctx context.Context, db *badger.DB,
+	seq *seq.Seq,
+	idx *rbf.DB,
+	listen string, retention time.Duration) (*Service, error) {
 	sn, err := snippets.New()
 	if err != nil {
 		return nil, err
@@ -46,7 +53,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *seq.Seq, listen string,
 	if err != nil {
 		return nil, err
 	}
-	storage, err := store.NewStore(db, seq, tree)
+	storage, err := store.NewStore(db, idx, seq, tree)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +62,7 @@ func NewService(ctx context.Context, db *badger.DB, seq *seq.Seq, listen string,
 		snippets: sn,
 		store:    storage,
 		seq:      seq,
-		data:     make(chan *v1.Data, DataBuffer),
+		data:     samples.Get(),
 	}
 	service.stats.processed, err = self.Meter().Int64Counter(
 		"samples.processed",
@@ -69,25 +76,40 @@ func NewService(ctx context.Context, db *badger.DB, seq *seq.Seq, listen string,
 
 func (s *Service) Start(ctx context.Context) {
 	go s.store.Start(ctx)
-	go s.start()
+	go s.start(ctx)
 }
 
-func (s *Service) start() {
-	for data := range s.data {
-		err := s.store.Save(data)
-		if err != nil {
-			slog.Error("failed to save data", "err", err)
+func (s *Service) start(ctx context.Context) {
+	tick := time.NewTicker(time.Minute)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+			s.dataMu.Lock()
+			ls := s.data
+			s.data = samples.Get()
+			s.dataMu.Unlock()
+			err := s.store.SaveSamples(ls)
+			if err != nil {
+				slog.Error("Failed to save samples", "err", err)
+			}
+			ls.Release()
 		}
 	}
 }
 
 func (s *Service) Save(data *v1.Data) error {
-	s.data <- data
+	s.dataMu.Lock()
+	s.data.Items = append(s.data.Items, &v1.Sample{
+		Id:   s.seq.SampleID(),
+		Data: data,
+	})
 	return nil
 }
 
 func (s *Service) Close() {
-	close(s.data)
 	s.store.Close()
 	s.snippets.Close()
 }

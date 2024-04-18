@@ -1,33 +1,29 @@
 package store
 
 import (
+	"bytes"
 	"context"
-	"errors"
 	"sync/atomic"
 
-	"github.com/cenkalti/backoff/v4"
-	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
+	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/arena"
-	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/keys"
-	"github.com/gernest/requiemdb/internal/labels"
-	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/lsm"
-	"github.com/gernest/requiemdb/internal/retry"
+	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/transform"
 )
 
 type Storage struct {
-	db          *badger.DB
-	dataCache   *ristretto.Cache
-	bitmapCache *ristretto.Cache
-	tree        *lsm.Tree
-	seq         *seq.Seq
-	min, max    atomic.Uint64
+	db        *badger.DB
+	dataCache *ristretto.Cache
+	bitmapDB  *rbf.DB
+	tree      *lsm.Tree
+	seq       *seq.Seq
+	min, max  atomic.Uint64
 }
 
 const (
@@ -35,7 +31,7 @@ const (
 	BitmapCacheSize = DataCacheSize * 2
 )
 
-func NewStore(db *badger.DB, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
+func NewStore(db *badger.DB, bdb *rbf.DB, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -44,47 +40,19 @@ func NewStore(db *badger.DB, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	bitmapCache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e7,
-		MaxCost:     BitmapCacheSize,
-		BufferItems: 64,
-		OnExit:      persistBitmaps(db),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &Storage{
-		db:          db,
-		dataCache:   dataCache,
-		bitmapCache: bitmapCache,
-		tree:        tree,
-		seq:         seq,
-	}, nil
-}
 
-// Saves evicted bitmaps to db
-func persistBitmaps(db *badger.DB) func(a any) {
-	return func(a any) {
-		b := a.(*bitmaps.Bitmap)
-		defer b.Release()
-		ga := arena.New()
-		defer ga.Release()
-		_, err := b.WriteTo(ga.NewWriter())
-		if err != nil {
-			logger.Fail("BUG: failed serializing bitmap")
-		}
-		err = db.Update(func(txn *badger.Txn) error {
-			return txn.Set(b.Key(), ga.Bytes())
-		})
-		if err != nil {
-			logger.Fail("BUG: failed saving bitmap")
-		}
-	}
+	return &Storage{
+		db:        db,
+		dataCache: dataCache,
+		bitmapDB:  bdb,
+		tree:      tree,
+		seq:       seq,
+	}, nil
 }
 
 func (s *Storage) Close() error {
 	s.dataCache.Close()
-	s.bitmapCache.Close()
+	s.bitmapDB.Close()
 	s.seq.Release()
 	return s.tree.Close()
 }
@@ -93,82 +61,57 @@ func (s *Storage) Start(ctx context.Context) {
 	s.tree.Start(ctx)
 }
 
-// Save indexes and saves compressed data into badger key/value store. See
-// transform package on which metadata is extracted from data for indexing.
-//
-// data is assigned a SampleID and two indexes are built for this SampleID
-// lookup.
-//
-// # Metadata Index
-//
-// This tracks minTs,maxTs observed in data. For efficiency we use LSM tree
-// containing arrow.Record of *v1.Meta. This index is kept in memory and
-// persisted for durability but all computation are done in memory using arrow
-// compute package.
-//
-// # Roaring Bitmap Index
-//
-// A label to bitmap of samples mapping. This is kept in bitmap cache and
-// persisted on tha key value store upon eviction.
-func (s *Storage) Save(data *v1.Data) error {
-	id := s.seq.SampleID()
-	save := func() error {
-		err := s.save(data, id)
-		if err != nil {
-			if !errors.Is(err, badger.ErrConflict) {
-				return backoff.Permanent(err)
-			}
-			// Retry only when we hit txn conflicts
-			return err
-		}
-		return nil
-	}
-	return retry.Do(save)
-}
-
-func (s *Storage) save(data *v1.Data, id uint64) error {
+func (s *Storage) SaveSamples(list *samples.List) error {
 	ctx := transform.NewContext()
 	defer ctx.Release()
-	ctx.Process(data)
-	meta := resourceFrom(data)
+	ctx.ProcessSamples(list.Items...)
+	err := s.save(list.Items)
+	if err != nil {
+		return err
+	}
+	txn, err := s.bitmapDB.Begin(true)
+	if err != nil {
+		return err
+	}
+	for k, v := range ctx.Bitmaps {
+		_, err := txn.Add(k, v.ToArray()...)
+		if err != nil {
+			txn.Rollback()
+			return err
+		}
+	}
+	return txn.Commit()
+}
 
+func (s *Storage) save(samples []*v1.Sample) error {
+	batch := s.db.NewWriteBatch()
 	txnData := arena.New()
 	defer txnData.Release()
-	compressedData, err := txnData.Compress(data)
-	if err != nil {
-		return err
-	}
-
 	key := keys.New()
 	defer key.Release()
-
-	err = s.db.Update(func(txn *badger.Txn) error {
+	for _, sample := range samples {
+		meta := resourceFrom(sample.Data)
+		compressedData, err := txnData.Compress(sample.Data)
+		if err != nil {
+			batch.Cancel()
+			return err
+		}
 		sampleKey := key.WithResource(meta).
-			WithID(id)
-		err = txn.Set(sampleKey.Encode(), compressedData)
+			WithID(sample.Id)
+		sk := bytes.Clone(sampleKey.Encode())
+		err = batch.Set(sk, compressedData)
 		if err != nil {
+			batch.Cancel()
 			return err
 		}
-		err = ctx.Labels.Iter(func(lbl *labels.Label) error {
-			return s.saveLabel(txn, lbl.Encode(), id)
-		})
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	}
+	err := batch.Flush()
 	if err != nil {
 		return err
 	}
-	s.tree.Append(meta, id, ctx.MinTs, ctx.MaxTs)
-	minTs := s.min.Load()
-	if minTs == 0 {
-		minTs = ctx.MinTs
+	for _, sample := range samples {
+		s.tree.Append(resourceFrom(sample.Data), sample.Id, sample.MinTs, sample.MaxTs)
 	}
-	minTs = min(minTs, ctx.MinTs)
-	maxTs := max(s.max.Load(), ctx.MaxTs)
-	s.min.Store(minTs)
-	s.max.Store(maxTs)
 	return nil
 }
 
@@ -189,33 +132,4 @@ func resourceFrom(data *v1.Data) v1.RESOURCE {
 	default:
 		return v1.RESOURCE_METRICS
 	}
-}
-
-// Saves sampleID in a roaring bitmap for key. key is a serialized label
-// generated by transform.Context on a sample.
-func (s *Storage) saveLabel(txn *badger.Txn, key []byte, sampleID uint64) error {
-	hash := xxhash.Sum64(key)
-	var b *bitmaps.Bitmap
-	if r, ok := s.bitmapCache.Get(hash); ok {
-		b = r.(*bitmaps.Bitmap)
-		b.Lock()
-		defer b.Unlock()
-		b.Add(sampleID)
-	} else {
-		b = bitmaps.New().WithKey(key)
-		it, err := txn.Get(key)
-		if err != nil {
-			if !errors.Is(err, badger.ErrKeyNotFound) {
-				return err
-			}
-		} else {
-			err = it.Value(b.UnmarshalBinary)
-			if err != nil {
-				return err
-			}
-		}
-		b.Add(sampleID)
-		s.bitmapCache.Set(hash, b, b.Size())
-	}
-	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/labels"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resource1 "go.opentelemetry.io/proto/otlp/resource/v1"
@@ -17,6 +18,8 @@ import (
 type Context struct {
 	Resource v1.RESOURCE
 	Labels   labels.Labels
+	Bitmaps  map[string]*bitmaps.Bitmap
+	SampleID uint64
 	MinTs    uint64
 	MaxTs    uint64
 }
@@ -24,6 +27,26 @@ type Context struct {
 func NewContext() *Context {
 	ctx := contextPool.Get().(*Context)
 	return ctx
+}
+
+func (c *Context) reset() {
+	c.Labels.Reset()
+	c.MinTs = 0
+	c.MaxTs = 0
+}
+
+func (c *Context) ProcessSamples(ls ...*v1.Sample) {
+	for _, v := range ls {
+		c.processSample(v)
+	}
+}
+
+func (c *Context) processSample(sample *v1.Sample) {
+	c.reset()
+	c.SampleID = sample.Id
+	c.Process(sample.Data)
+	sample.MinTs = c.MinTs
+	sample.MaxTs = c.MaxTs
 }
 
 func (c *Context) Process(data *v1.Data) {
@@ -101,7 +124,15 @@ func (c *Context) addScope(b scopeBase) {
 }
 
 func (c *Context) Label(f func(lbl *labels.Label)) {
-	f(c.Labels.New().WithResource(c.Resource))
+	lbl := c.Labels.New().WithResource(c.Resource)
+	f(lbl)
+	key := lbl.String()
+	b, ok := c.Bitmaps[key]
+	if !ok {
+		b = bitmaps.New()
+		c.Bitmaps[key] = b
+	}
+	b.Add(c.SampleID)
 }
 
 func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
@@ -127,10 +158,18 @@ func (c *Context) Reset() *Context {
 }
 
 func (c *Context) Release() {
+	for _, m := range c.Bitmaps {
+		m.Release()
+	}
+	clear(c.Bitmaps)
 	contextPool.Put(c.Reset())
 }
 
-var contextPool = &sync.Pool{New: func() any { return &Context{} }}
+var contextPool = &sync.Pool{New: func() any {
+	return &Context{
+		Bitmaps: make(map[string]*bitmaps.Bitmap),
+	}
+}}
 
 func (c *Context) Timestamp(ts uint64) {
 	if c.MinTs == 0 {

@@ -11,14 +11,35 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func Home() string {
-	h := filepath.Join(home.Dir(), ".rq")
+func Home(base ...string) string {
+	if len(base) == 0 || len(base) == 1 && base[0] == "" {
+		base = []string{home.Dir(), ".rq"}
+	}
+	h := filepath.Join(base...)
 	os.MkdirAll(h, 0755)
 	return h
 }
 
-func Cache() string {
-	h := filepath.Join(Home(), "cache")
+func Cache(base ...string) string {
+	h := filepath.Join(Home(base...), "cache")
+	os.MkdirAll(h, 0755)
+	return h
+}
+
+func Data(base ...string) string {
+	h := filepath.Join(Home(base...), "data")
+	os.MkdirAll(h, 0755)
+	return h
+}
+
+func DB(base ...string) string {
+	h := filepath.Join(Data(base...), "db")
+	os.MkdirAll(h, 0755)
+	return h
+}
+
+func Index(base ...string) string {
+	h := filepath.Join(Data(base...), "index")
 	os.MkdirAll(h, 0755)
 	return h
 }

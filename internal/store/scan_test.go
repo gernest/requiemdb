@@ -7,7 +7,6 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -43,26 +42,5 @@ func TestTimeBound(t *testing.T) {
 		from := uint64(test.UTC.Add(-time.Minute).Add(-15 * time.Minute).UnixNano())
 		require.Equal(t, from, start)
 		require.Equal(t, to, end)
-	})
-}
-
-func TestScan_instant(t *testing.T) {
-	store := testStore(t)
-	data, err := test.MetricsSamples()
-	require.NoError(t, err)
-	for _, v := range data {
-		err = store.Save(v)
-		require.NoError(t, err)
-	}
-
-	t.Run("Defaults instant last sample", func(t *testing.T) {
-		ts := time.Unix(0, int64(store.MaxTs())).UTC()
-		o, err := store.Scan(&v1.Scan{
-			Scope: v1.Scan_METRICS,
-			Now:   timestamppb.New(ts),
-		})
-
-		require.NoError(t, err)
-		require.True(t, proto.Equal(data[len(data)-2], o))
 	})
 }

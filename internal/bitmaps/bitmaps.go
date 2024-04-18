@@ -8,7 +8,6 @@ import (
 )
 
 type Bitmap struct {
-	sync.RWMutex
 	key []byte
 	roaring64.Bitmap
 }
