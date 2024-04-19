@@ -12,6 +12,10 @@ type RBF struct {
 	db *rbf.DB
 }
 
+func New(db *rbf.DB) *RBF {
+	return &RBF{db: db}
+}
+
 func (r *RBF) Add(bm *roaring.Bitmap) error {
 	tx, err := r.db.Begin(true)
 	if err != nil {
@@ -26,4 +30,16 @@ func (r *RBF) Add(bm *roaring.Bitmap) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func (r *RBF) View() (*View, error) {
+	tx, err := r.db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	return &View{Tx: tx}, nil
+}
+
+type View struct {
+	*rbf.Tx
 }

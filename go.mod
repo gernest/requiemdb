@@ -13,6 +13,8 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/evanw/esbuild v0.20.2
 	github.com/gernest/rbf v0.22.3
+	github.com/gernest/roaring v0.22.2
+	github.com/gernest/translate v0.22.6
 	github.com/google/go-cmp v0.6.0
 	github.com/jinzhu/now v1.1.5
 	github.com/klauspost/compress v1.17.7
@@ -39,7 +41,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
-	github.com/gernest/roaring v0.22.2 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

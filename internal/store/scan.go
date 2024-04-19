@@ -7,7 +7,6 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/data"
@@ -15,6 +14,7 @@ import (
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/logger"
+	rdb "github.com/gernest/requiemdb/internal/rbf"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
 )
@@ -142,10 +142,11 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All)
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	resource := v1.RESOURCE(scan.Scope)
-	txn, err := s.bitmapDB.Begin(false)
+	txn, err := s.rdb.View()
 	if err != nil {
 		logger.Fail("Failed getting read transaction", "err", err)
 	}
+	defer txn.Commit()
 
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
@@ -196,7 +197,7 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All)
 	}
 }
 
-func (s *Storage) apply(txn *rbf.Tx, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
+func (s *Storage) apply(txn *rdb.View, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
 	c, err := txn.Cursor(lbl.String())
 	if err != nil {
 		slog.Error("failed getting cursor", "err", err)

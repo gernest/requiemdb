@@ -9,30 +9,26 @@ import (
 	"sync"
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
-	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/labels"
+	"github.com/gernest/requiemdb/internal/logger"
+	"github.com/gernest/requiemdb/internal/view"
+	"github.com/gernest/roaring"
+	"github.com/gernest/translate"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resource1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )
 
 type Context struct {
-	Resource v1.RESOURCE
-	Labels   labels.Labels
-	Bitmaps  map[string]*bitmaps.Bitmap
-	SampleID uint64
-	MinTs    uint64
-	MaxTs    uint64
+	sampleID  uint64
+	minTs     uint64
+	maxTs     uint64
+	Positions *roaring.Bitmap
+	translate *translate.Translate
+	label     labels.Label
 }
 
-func NewContext() *Context {
-	ctx := contextPool.Get().(*Context)
-	return ctx
-}
-
-func (c *Context) reset() {
-	c.Labels.Reset()
-	c.MinTs = 0
-	c.MaxTs = 0
+func NewContext(ns uint64, t *translate.Translate) *Context {
+	return pool.Get().(*Context).WithNS(ns).WithTranslate(t)
 }
 
 func (c *Context) ProcessSamples(ls ...*v1.Sample) {
@@ -42,11 +38,12 @@ func (c *Context) ProcessSamples(ls ...*v1.Sample) {
 }
 
 func (c *Context) processSample(sample *v1.Sample) {
-	c.reset()
-	c.SampleID = sample.Id
-	c.Process(sample.Data)
-	sample.MinTs = c.MinTs
-	sample.MaxTs = c.MaxTs
+	c.minTs = 0
+	c.maxTs = 0
+	c.WithSample(sample.Id).
+		Process(sample.Data)
+	sample.MinTs = c.minTs
+	sample.MaxTs = c.maxTs
 }
 
 func (c *Context) Process(data *v1.Data) {
@@ -71,7 +68,22 @@ func (c *Context) Process(data *v1.Data) {
 }
 
 func (c *Context) WithResource(r v1.RESOURCE) *Context {
-	c.Resource = r
+	c.label.Resource = r
+	return c
+}
+
+func (c *Context) WithSample(id uint64) *Context {
+	c.sampleID = id
+	return c
+}
+
+func (c *Context) WithNS(ns uint64) *Context {
+	c.label.Namespace = ns
+	return c
+}
+
+func (c *Context) WithTranslate(tr *translate.Translate) *Context {
+	c.translate = tr
 	return c
 }
 
@@ -124,15 +136,17 @@ func (c *Context) addScope(b scopeBase) {
 }
 
 func (c *Context) Label(f func(lbl *labels.Label)) {
-	lbl := c.Labels.New().WithResource(c.Resource)
-	f(lbl)
-	key := lbl.String()
-	b, ok := c.Bitmaps[key]
-	if !ok {
-		b = bitmaps.New()
-		c.Bitmaps[key] = b
+	c.label.Key = ""
+	c.label.Value = ""
+	f(&c.label)
+	key := c.label.String()
+	column, err := c.translate.TranslateKey(key)
+	if err != nil {
+		logger.Fail("failed to translate key", "key", c.label.String(), "err", err)
 	}
-	b.Add(c.SampleID)
+	c.Positions.Add(
+		view.Pos(c.sampleID, column),
+	)
 }
 
 func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
@@ -149,40 +163,38 @@ func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
 	}
 }
 
-func (c *Context) Reset() *Context {
-	c.MinTs = 0
-	c.MaxTs = 0
-	c.Resource = 0
-	c.Labels.Reset()
-	return c
-}
-
-func (c *Context) Release() {
-	for _, m := range c.Bitmaps {
-		m.Release()
+func (c *Context) Timestamp(ts uint64) {
+	if c.minTs == 0 {
+		c.minTs = ts
 	}
-	clear(c.Bitmaps)
-	contextPool.Put(c.Reset())
+	c.minTs = min(c.minTs, ts)
+	c.maxTs = max(c.maxTs, ts)
 }
 
-var contextPool = &sync.Pool{New: func() any {
+var pool = &sync.Pool{New: func() any {
 	return &Context{
-		Bitmaps: make(map[string]*bitmaps.Bitmap),
+		Positions: roaring.NewBitmap(),
 	}
 }}
 
-func (c *Context) Timestamp(ts uint64) {
-	if c.MinTs == 0 {
-		c.MinTs = ts
-	}
-	c.MinTs = min(c.MinTs, ts)
-	c.MaxTs = max(c.MaxTs, ts)
+func (c *Context) Release() {
+	c.Reset()
+	pool.Put(c)
+}
+
+func (c *Context) Reset() {
+	c.sampleID = 0
+	c.minTs = 0
+	c.maxTs = 0
+	c.Positions.Containers.Reset()
+	c.translate = nil
+	c.label = labels.Label{}
 }
 
 func (c *Context) Range(start, end uint64) {
-	if c.MinTs == 0 {
-		c.MinTs = start
+	if c.minTs == 0 {
+		c.minTs = start
 	}
-	c.MinTs = min(c.MinTs, start)
-	c.MaxTs = max(c.MaxTs, end)
+	c.minTs = min(c.minTs, start)
+	c.maxTs = max(c.maxTs, end)
 }

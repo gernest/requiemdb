@@ -12,15 +12,18 @@ import (
 	"github.com/gernest/requiemdb/internal/arena"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/lsm"
+	rdb "github.com/gernest/requiemdb/internal/rbf"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/transform"
+	"github.com/gernest/translate"
 )
 
 type Storage struct {
 	db        *badger.DB
+	translate *translate.Translate
 	dataCache *ristretto.Cache
-	bitmapDB  *rbf.DB
+	rdb       *rdb.RBF
 	tree      *lsm.Tree
 	seq       *seq.Seq
 	min, max  atomic.Uint64
@@ -31,7 +34,7 @@ const (
 	BitmapCacheSize = DataCacheSize * 2
 )
 
-func NewStore(db *badger.DB, bdb *rbf.DB, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
+func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -44,7 +47,8 @@ func NewStore(db *badger.DB, bdb *rbf.DB, seq *seq.Seq, tree *lsm.Tree) (*Storag
 	return &Storage{
 		db:        db,
 		dataCache: dataCache,
-		bitmapDB:  bdb,
+		translate: tr,
+		rdb:       rdb.New(bdb),
 		tree:      tree,
 		seq:       seq,
 	}, nil
@@ -52,7 +56,6 @@ func NewStore(db *badger.DB, bdb *rbf.DB, seq *seq.Seq, tree *lsm.Tree) (*Storag
 
 func (s *Storage) Close() error {
 	s.dataCache.Close()
-	s.bitmapDB.Close()
 	s.seq.Release()
 	return s.tree.Close()
 }
@@ -62,25 +65,14 @@ func (s *Storage) Start(ctx context.Context) {
 }
 
 func (s *Storage) SaveSamples(list *samples.List) error {
-	ctx := transform.NewContext()
+	ctx := transform.NewContext(0, s.translate)
 	defer ctx.Release()
 	ctx.ProcessSamples(list.Items...)
 	err := s.save(list.Items)
 	if err != nil {
 		return err
 	}
-	txn, err := s.bitmapDB.Begin(true)
-	if err != nil {
-		return err
-	}
-	for k, v := range ctx.Bitmaps {
-		_, err := txn.Add(k, v.ToArray()...)
-		if err != nil {
-			txn.Rollback()
-			return err
-		}
-	}
-	return txn.Commit()
+	return s.rdb.Add(ctx.Positions)
 }
 
 func (s *Storage) save(samples []*v1.Sample) error {

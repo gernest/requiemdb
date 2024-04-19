@@ -10,8 +10,7 @@ import (
 )
 
 func TestCollapse(t *testing.T) {
-	data, err := test.MetricsSamples()
-	require.NoError(t, err)
+	data := test.MetricsSamples(t)
 	r := Collapse(data)
 	b, err := protojson.MarshalOptions{Multiline: true}.Marshal(r)
 	require.NoError(t, err)

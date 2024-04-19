@@ -22,6 +22,7 @@ import (
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/service"
 	rversion "github.com/gernest/requiemdb/internal/version"
+	"github.com/gernest/translate"
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
@@ -80,6 +81,12 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		return err
 	}
 	defer db.Close()
+	tr, err := translate.New(db)
+	if err != nil {
+		return err
+	}
+	defer tr.Close()
+
 	indexPath := commands.Index(data)
 
 	idx := rbf.NewDB(indexPath, nil)
@@ -96,7 +103,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	defer sequence.Release()
 
 	lsn := cmd.String("listen")
-	api, err := service.NewService(ctx, db, sequence, idx, lsn, cmd.Duration("retentionPeriod"))
+	api, err := service.NewService(ctx, db, tr, sequence, idx, lsn, cmd.Duration("retentionPeriod"))
 	if err != nil {
 		return err
 	}

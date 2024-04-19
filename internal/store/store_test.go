@@ -9,6 +9,7 @@ import (
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/test"
+	"github.com/gernest/translate"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +17,7 @@ func BenchmarkStore(b *testing.B) {
 
 	store := testStore(b)
 
-	data, err := test.MetricsSamples()
+	data := test.MetricsSamples(b)
 	ls := samples.Get()
 	defer ls.Release()
 
@@ -27,7 +28,6 @@ func BenchmarkStore(b *testing.B) {
 		})
 	}
 
-	require.NoError(b, err)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		err := store.SaveSamples(ls)
@@ -39,12 +39,12 @@ func BenchmarkStore(b *testing.B) {
 
 func testStore(t testing.TB) *Storage {
 	t.Helper()
-	db, err := test.DB()
+	db := test.DB(t)
+	tr, err := translate.New(db)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		db.Close()
+		tr.Close()
 	})
-
 	seq, err := seq.New(db)
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -57,7 +57,7 @@ func testStore(t testing.TB) *Storage {
 	})
 	tree, err := lsm.New(db, seq)
 	require.NoError(t, err)
-	store, err := NewStore(db, rb, seq, tree)
+	store, err := NewStore(db, rb, tr, seq, tree)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		store.Close()
