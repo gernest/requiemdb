@@ -75,7 +75,7 @@ func (r *RBF) Search(start, end time.Time, columns *bitmaps.Bitmap) (*bitmaps.Bi
 		}
 	}
 	if len(result) == 0 {
-		return nil, err
+		return bitmaps.New(), nil
 	}
 	o := result[0]
 	if len(result) > 1 {
