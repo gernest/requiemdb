@@ -21,6 +21,32 @@ func Std(t time.Time) []string {
 	)
 }
 
+const (
+	hour  = time.Hour
+	day   = 24 * hour
+	month = 30 * day
+	year  = 12 * month
+)
+
+// Chooses which quantum to use
+func chooseQuantum(duration time.Duration) quantum.TimeQuantum {
+	if duration >= year {
+		return quantum.TimeQuantum("Y")
+	}
+	if duration >= month {
+		return quantum.TimeQuantum("M")
+	}
+	if duration >= day {
+		return quantum.TimeQuantum("D")
+	}
+	return quantum.TimeQuantum("H")
+}
+
+func Search(start, end time.Time) []string {
+	return quantum.ViewsByTimeRange(stdView, start, end,
+		chooseQuantum(end.Sub(start)))
+}
+
 // Pos generates position in a bitmap
 func Pos(rowID, columnID uint64) uint64 {
 	return (rowID * shardwidth.ShardWidth) + (columnID % shardwidth.ShardWidth)

@@ -14,7 +14,7 @@ require (
 	github.com/evanw/esbuild v0.20.2
 	github.com/gernest/rbf v0.22.4
 	github.com/gernest/roaring v0.22.2
-	github.com/gernest/translate v0.22.6
+	github.com/gernest/translate v0.22.7
 	github.com/google/go-cmp v0.6.0
 	github.com/jinzhu/now v1.1.5
 	github.com/klauspost/compress v1.17.7

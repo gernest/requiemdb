@@ -1,7 +1,7 @@
 package store
 
 import (
-	"log/slog"
+	"errors"
 	"time"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
@@ -10,11 +10,8 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/data"
-	dataOps "github.com/gernest/requiemdb/internal/data"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
-	"github.com/gernest/requiemdb/internal/logger"
-	rdb "github.com/gernest/requiemdb/internal/rbf"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
 )
@@ -29,25 +26,35 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 
 	// Instant scans have no time range.
 	isInstant := scan.TimeRange == nil
-	samples, err := s.tree.Scan(resource, start, end)
-	if err != nil {
-		return nil, err
-	}
-	defer samples.Release()
-	if samples.IsEmpty() {
-		return data.Zero(resource), nil
-	}
+
 	key := keys.New()
 	defer key.Release()
+
 	all := visit.New()
 	defer all.Release()
 	all.SetTimeRange(start, end)
 
-	s.CompileFilters(scan, samples, all)
-	if samples.IsEmpty() {
+	columns := bitmaps.New()
+	defer columns.Release()
+
+	err = s.CompileFilters(scan, columns, all)
+	if err != nil {
+		return nil, err
+	}
+	if columns.IsEmpty() {
 		result = data.Zero(resource)
 		return
 	}
+	samples, err := s.rdb.Search(
+		time.Unix(0, int64(start)).UTC(),
+		time.Unix(0, int64(end)).UTC(),
+		columns,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer samples.Release()
+
 	err = s.db.View(func(txn *badger.Txn) error {
 		var it roaring64.IntIterable64 = samples.Iterator()
 		if isInstant || scan.Reverse {
@@ -56,7 +63,6 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 			// observed is the first we choose to process.
 			it = samples.ReverseIterator()
 		}
-		noFilters := len(scan.Filters) == 0
 
 		if isInstant {
 			// We only choose the first sample matching the scan
@@ -64,7 +70,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 			result, err = s.read(txn,
 				key.WithResource(resource).
 					WithID(next).
-					Encode(), all, noFilters)
+					Encode(), all)
 			return err
 		}
 		rs := make([]*v1.Data, 0, samples.GetCardinality())
@@ -73,13 +79,13 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 				key.Reset().
 					WithResource(resource).
 					WithID(it.Next()).
-					Encode(), all, noFilters)
+					Encode(), all)
 			if err != nil {
 				return err
 			}
 			rs = append(rs, data)
 		}
-		result = dataOps.Collapse(rs)
+		result = data.Collapse(rs)
 		return nil
 	})
 	return
@@ -111,13 +117,10 @@ func timeBounds(now func() time.Time, scan *v1.Scan) (start, end uint64) {
 	return
 }
 
-func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool) (*v1.Data, error) {
+func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All) (*v1.Data, error) {
 	hash := xxhash.Sum64(key)
 	if d, ok := s.dataCache.Get(hash); ok {
 		data := d.(*v1.Data)
-		if noFilters {
-			return data, nil
-		}
 		return visit.VisitData(data, a), nil
 	}
 	it, err := txn.Get(key)
@@ -132,31 +135,29 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All, noFilters bool
 	}
 	// cache data before returning it
 	s.dataCache.Set(hash, data, cost)
-	if noFilters {
-		return data, nil
-	}
 	return visit.VisitData(data, a), nil
 }
 
-func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All) {
+func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All) error {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	resource := v1.RESOURCE(scan.Scope)
-	txn, err := s.rdb.View()
-	if err != nil {
-		logger.Fail("Failed getting read transaction", "err", err)
-	}
-	defer txn.Commit()
-
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
 		case *v1.Scan_Filter_Base:
-			if !s.apply(txn, lbl.Reset().
+			ls := lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Base.Prop)).
 				WithKey(e.Base.Value).
-				WithResource(resource), r) {
-				return
+				WithResource(resource)
+			col, err := s.translate.Find(ls.String())
+			if err != nil {
+				if errors.Is(err, badger.ErrKeyNotFound) {
+					r.Clear()
+					return nil
+				}
+				return err
 			}
+			r.Add(col)
 			switch e.Base.Prop {
 			case v1.Scan_RESOURCE_SCHEMA:
 				o.SetResourceSchema(e.Base.Value)
@@ -178,13 +179,20 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All)
 				o.SetLogLevel(e.Base.Value)
 			}
 		case *v1.Scan_Filter_Attr:
-			if !s.apply(txn, lbl.Reset().
+			ls := lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Attr.Prop)).
 				WithKey(e.Attr.Key).
 				WithValue(e.Attr.Value).
-				WithResource(resource), r) {
-				return
+				WithResource(resource)
+			col, err := s.translate.Find(ls.String())
+			if err != nil {
+				if errors.Is(err, badger.ErrKeyNotFound) {
+					r.Clear()
+					return nil
+				}
+				return err
 			}
+			r.Add(col)
 			switch e.Attr.Prop {
 			case v1.Scan_RESOURCE_ATTRIBUTES:
 				o.SetResourceAttr(e.Attr.Key, e.Attr.Value)
@@ -195,27 +203,5 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All)
 			}
 		}
 	}
-}
-
-func (s *Storage) apply(txn *rdb.View, lbl *labels.Label, o *bitmaps.Bitmap) (ok bool) {
-	c, err := txn.Cursor(lbl.String())
-	if err != nil {
-		slog.Error("failed getting cursor", "err", err)
-		o.Clear()
-		return
-	}
-	it := o.Iterator()
-	for it.HasNext() {
-		v := it.Next()
-		ok, err = c.Contains(v)
-		if err != nil {
-			slog.Error("failed checking if bit is set", "err", err)
-			o.Clear()
-			return
-		}
-		if !ok {
-			o.Remove(v)
-		}
-	}
-	return !o.IsEmpty()
+	return nil
 }
