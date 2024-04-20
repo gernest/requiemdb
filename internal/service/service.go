@@ -9,7 +9,6 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
-	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/seq"
@@ -52,11 +51,8 @@ func NewService(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	tree, err := lsm.New(db, seq)
-	if err != nil {
-		return nil, err
-	}
-	storage, err := store.NewStore(db, idx, tr, seq, tree)
+
+	storage, err := store.NewStore(db, idx, tr, seq)
 	if err != nil {
 		return nil, err
 	}

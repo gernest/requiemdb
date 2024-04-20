@@ -32,17 +32,3 @@ message Sample {
   // Maximum timestamp observed in this sample in milliseconds
   uint64 max_ts = 4;
 }
-
-// Meta stores sample metaddata.
-message Meta {
-  repeated uint64 id = 1;
-
-  // Minimum timetamp observed in this sample in milliseconds
-  repeated uint64 min_ts = 2;
-}
-
-message MetaInfo {
-  uint64 min_ts = 1;
-  uint64 max_ts = 2;
-  uint64 id = 3;
-}

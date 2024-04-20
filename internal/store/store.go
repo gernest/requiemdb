@@ -11,7 +11,6 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/arena"
 	"github.com/gernest/requiemdb/internal/keys"
-	"github.com/gernest/requiemdb/internal/lsm"
 	rdb "github.com/gernest/requiemdb/internal/rbf"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
@@ -24,7 +23,6 @@ type Storage struct {
 	translate *translate.Translate
 	dataCache *ristretto.Cache
 	rdb       *rdb.RBF
-	tree      *lsm.Tree
 	seq       *seq.Seq
 	min, max  atomic.Uint64
 }
@@ -34,7 +32,7 @@ const (
 	BitmapCacheSize = DataCacheSize * 2
 )
 
-func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq, tree *lsm.Tree) (*Storage, error) {
+func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -49,7 +47,6 @@ func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq,
 		dataCache: dataCache,
 		translate: tr,
 		rdb:       rdb.New(bdb),
-		tree:      tree,
 		seq:       seq,
 	}, nil
 }
@@ -57,11 +54,11 @@ func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq,
 func (s *Storage) Close() error {
 	s.dataCache.Close()
 	s.seq.Release()
-	return s.tree.Close()
+	return nil
 }
 
 func (s *Storage) Start(ctx context.Context) {
-	s.tree.Start(ctx)
+
 }
 
 func (s *Storage) SaveSamples(list *samples.List) error {
@@ -100,9 +97,6 @@ func (s *Storage) save(samples []*v1.Sample) error {
 	err := batch.Flush()
 	if err != nil {
 		return err
-	}
-	for _, sample := range samples {
-		s.tree.Append(resourceFrom(sample.Data), sample.Id, sample.MinTs, sample.MaxTs)
 	}
 	return nil
 }

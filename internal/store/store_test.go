@@ -5,7 +5,6 @@ import (
 
 	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
-	"github.com/gernest/requiemdb/internal/lsm"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/test"
@@ -55,9 +54,8 @@ func testStore(t testing.TB) *Storage {
 	t.Cleanup(func() {
 		rb.Close()
 	})
-	tree, err := lsm.New(db, seq)
 	require.NoError(t, err)
-	store, err := NewStore(db, rb, tr, seq, tree)
+	store, err := NewStore(db, rb, tr, seq)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		store.Close()
