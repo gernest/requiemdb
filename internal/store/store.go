@@ -28,8 +28,7 @@ type Storage struct {
 }
 
 const (
-	DataCacheSize   = 256 << 20
-	BitmapCacheSize = DataCacheSize * 2
+	DataCacheSize = 256 << 20
 )
 
 func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq) (*Storage, error) {
@@ -57,9 +56,7 @@ func (s *Storage) Close() error {
 	return nil
 }
 
-func (s *Storage) Start(ctx context.Context) {
-
-}
+func (s *Storage) Start(ctx context.Context) {}
 
 func (s *Storage) SaveSamples(list *samples.List) error {
 	ctx := transform.NewContext(0, s.translate)
