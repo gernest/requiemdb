@@ -21,6 +21,7 @@ import (
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/service"
+	"github.com/gernest/requiemdb/internal/store"
 	rversion "github.com/gernest/requiemdb/internal/version"
 	"github.com/gernest/translate"
 	"github.com/urfave/cli/v3"
@@ -67,6 +68,9 @@ func main() {
 }
 
 func run(ctx context.Context, cmd *cli.Command) (exit error) {
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+
 	data := cmd.Args().First()
 	dbPath := commands.DB(data)
 	o := badger.DefaultOptions(dbPath).
@@ -128,8 +132,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	}
 	defer providers.Shutdown(context.Background())
 
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
-	defer cancel()
+	store.MonitorSize(ctx, db, idx)
 
 	go api.Start(ctx)
 
