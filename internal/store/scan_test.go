@@ -14,9 +14,9 @@ import (
 func TestTimeBound(t *testing.T) {
 	t.Run("defaults to last 15 mins", func(t *testing.T) {
 		start, end := timeBounds(test.Now, &v1.Scan{})
-		to := uint64(test.UTC.UnixNano())
+		to := test.UTC
 		// we hard code here to ensure we detect any changes in default time range
-		from := uint64(test.UTC.Add(-15 * time.Minute).UnixNano())
+		from := test.UTC.Add(-15 * time.Minute)
 		require.Equal(t, from, start)
 		require.Equal(t, to, end)
 	})
@@ -25,9 +25,9 @@ func TestTimeBound(t *testing.T) {
 		start, end := timeBounds(nil, &v1.Scan{
 			Now: timestamppb.New(test.UTC),
 		})
-		to := uint64(test.UTC.UnixNano())
+		to := test.UTC
 		// we hard code here to ensure we detect any changes in default time range
-		from := uint64(test.UTC.Add(-15 * time.Minute).UnixNano())
+		from := test.UTC.Add(-15 * time.Minute)
 		require.Equal(t, from, start)
 		require.Equal(t, to, end)
 	})
@@ -37,9 +37,9 @@ func TestTimeBound(t *testing.T) {
 			Now:    timestamppb.New(test.UTC),
 			Offset: durationpb.New(time.Minute),
 		})
-		to := uint64(test.UTC.Add(-time.Minute).UnixNano())
+		to := test.UTC.Add(-time.Minute)
 		// we hard code here to ensure we detect any changes in default time range
-		from := uint64(test.UTC.Add(-time.Minute).Add(-15 * time.Minute).UnixNano())
+		from := test.UTC.Add(-time.Minute).Add(-15 * time.Minute)
 		require.Equal(t, from, start)
 		require.Equal(t, to, end)
 	})

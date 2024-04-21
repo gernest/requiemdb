@@ -64,7 +64,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 
 	all := visit.New()
 	defer all.Release()
-	all.SetTimeRange(start, end)
+	all.SetTimeRange(uint64(start.UnixNano()), uint64(end.UnixNano()))
 
 	columns := bitmaps.New()
 	defer columns.Release()
@@ -77,11 +77,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 		result = data.Zero(resource)
 		return
 	}
-	samples, err := s.rdb.Search(
-		time.Unix(0, int64(start)).UTC(),
-		time.Unix(0, int64(end)).UTC(),
-		columns,
-	)
+	samples, err := s.rdb.Search(start, end, columns)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +124,7 @@ func utc() time.Time {
 }
 
 // finds time boundary for the scan
-func timeBounds(now func() time.Time, scan *v1.Scan) (start, end uint64) {
+func timeBounds(now func() time.Time, scan *v1.Scan) (start, end time.Time) {
 	var ts time.Time
 	if scan.Now != nil {
 		ts = scan.Now.AsTime()
@@ -139,12 +135,12 @@ func timeBounds(now func() time.Time, scan *v1.Scan) (start, end uint64) {
 		ts = ts.Add(-scan.Offset.AsDuration())
 	}
 	if scan.TimeRange != nil {
-		start = uint64(scan.TimeRange.Start.AsTime().UnixNano())
-		end = uint64(scan.TimeRange.End.AsTime().UnixNano())
+		start = scan.TimeRange.Start.AsTime()
+		end = scan.TimeRange.End.AsTime()
 	} else {
 		begin := ts.Add(-DefaultTimeRange)
-		start = uint64(begin.UnixNano())
-		end = uint64(ts.UnixNano())
+		start = begin
+		end = ts
 	}
 	return
 }
