@@ -40,7 +40,7 @@ func AcceptDataPoint(tsn BaseDataPoint, a *All) bool {
 		a.AcceptAttributes(tsn.GetAttributes())
 }
 
-func VisitData(data *v1.Data, a *All) *v1.Data {
+func (a *All) Visit(data *v1.Data) *v1.Data {
 	if a == nil {
 		return data
 	}
@@ -83,6 +83,43 @@ func New() *All {
 }
 
 var allPool = &sync.Pool{New: func() any { return new(All) }}
+
+func (o *All) Compile(filters ...*v1.Scan_Filter) {
+	for _, f := range filters {
+		switch e := f.Value.(type) {
+		case *v1.Scan_Filter_Base:
+			switch e.Base.Prop {
+			case v1.Scan_RESOURCE_SCHEMA:
+				o.SetResourceSchema(e.Base.Value)
+			case v1.Scan_SCOPE_SCHEMA:
+				o.SetScopeSchema(e.Base.Value)
+			case v1.Scan_SCOPE_NAME:
+				o.SetScopeName(e.Base.Value)
+			case v1.Scan_SCOPE_VERSION:
+				o.SetScopVersion(e.Base.Value)
+			case v1.Scan_NAME:
+				o.SetName(e.Base.Value)
+			case v1.Scan_TRACE_ID:
+				o.SetTraceID(e.Base.Value)
+			case v1.Scan_SPAN_ID:
+				o.SetSpanID(e.Base.Value)
+			case v1.Scan_PARENT_SPAN_ID:
+				o.SetParentSpanID(e.Base.Value)
+			case v1.Scan_LOGS_LEVEL:
+				o.SetLogLevel(e.Base.Value)
+			}
+		case *v1.Scan_Filter_Attr:
+			switch e.Attr.Prop {
+			case v1.Scan_RESOURCE_ATTRIBUTES:
+				o.SetResourceAttr(e.Attr.Key, e.Attr.Value)
+			case v1.Scan_SCOPE_ATTRIBUTES:
+				o.SetScopeAttr(e.Attr.Key, e.Attr.Value)
+			case v1.Scan_ATTRIBUTES:
+				o.SetScopeAttr(e.Attr.Key, e.Attr.Value)
+			}
+		}
+	}
+}
 
 func (a *All) Reset() {
 	reset(

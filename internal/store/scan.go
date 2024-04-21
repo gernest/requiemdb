@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cespare/xxhash/v2"
@@ -15,14 +14,9 @@ import (
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/self"
-	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
-)
-
-const (
-	DefaultTimeRange = 15 * time.Minute
 )
 
 func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
@@ -54,7 +48,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 		})
 		return
 	}
-	start, end := timeBounds(utc, scan)
+	start, end := x.TimeBounds(x.UTC, scan)
 
 	// Instant scans have no time range.
 	isInstant := scan.TimeRange == nil
@@ -62,14 +56,10 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	key := keys.New()
 	defer key.Release()
 
-	all := visit.New()
-	defer all.Release()
-	all.SetTimeRange(uint64(start.UnixNano()), uint64(end.UnixNano()))
-
 	columns := bitmaps.New()
 	defer columns.Release()
 
-	err = s.CompileFilters(scan, columns, all)
+	err = s.CompileFilters(scan, columns)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +88,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 			result, err = s.read(txn,
 				key.WithResource(resource).
 					WithID(next).
-					Encode(), all)
+					Encode())
 			return err
 		}
 		rs := make([]*v1.Data, 0, samples.GetCardinality())
@@ -107,7 +97,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 				key.Reset().
 					WithResource(resource).
 					WithID(it.Next()).
-					Encode(), all)
+					Encode())
 			if err != nil {
 				return err
 			}
@@ -119,37 +109,11 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	return
 }
 
-func utc() time.Time {
-	return time.Now().UTC()
-}
-
-// finds time boundary for the scan
-func timeBounds(now func() time.Time, scan *v1.Scan) (start, end time.Time) {
-	var ts time.Time
-	if scan.Now != nil {
-		ts = scan.Now.AsTime()
-	} else {
-		ts = now()
-	}
-	if scan.Offset != nil {
-		ts = ts.Add(-scan.Offset.AsDuration())
-	}
-	if scan.TimeRange != nil {
-		start = scan.TimeRange.Start.AsTime()
-		end = scan.TimeRange.End.AsTime()
-	} else {
-		begin := ts.Add(-DefaultTimeRange)
-		start = begin
-		end = ts
-	}
-	return
-}
-
-func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All) (*v1.Data, error) {
+func (s *Storage) read(txn *badger.Txn, key []byte) (*v1.Data, error) {
 	hash := xxhash.Sum64(key)
 	if d, ok := s.dataCache.Get(hash); ok {
 		data := d.(*v1.Data)
-		return visit.VisitData(data, a), nil
+		return data, nil
 	}
 	it, err := txn.Get(key)
 	if err != nil {
@@ -162,10 +126,10 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All) (*v1.Data, err
 	}
 	// cache data before returning it
 	s.dataCache.Set(hash, data, int64(proto.Size(data)))
-	return visit.VisitData(data, a), nil
+	return data, nil
 }
 
-func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All) error {
+func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	resource := v1.RESOURCE(scan.Scope)
@@ -185,26 +149,6 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All)
 				return err
 			}
 			r.Add(col)
-			switch e.Base.Prop {
-			case v1.Scan_RESOURCE_SCHEMA:
-				o.SetResourceSchema(e.Base.Value)
-			case v1.Scan_SCOPE_SCHEMA:
-				o.SetScopeSchema(e.Base.Value)
-			case v1.Scan_SCOPE_NAME:
-				o.SetScopeName(e.Base.Value)
-			case v1.Scan_SCOPE_VERSION:
-				o.SetScopVersion(e.Base.Value)
-			case v1.Scan_NAME:
-				o.SetName(e.Base.Value)
-			case v1.Scan_TRACE_ID:
-				o.SetTraceID(e.Base.Value)
-			case v1.Scan_SPAN_ID:
-				o.SetSpanID(e.Base.Value)
-			case v1.Scan_PARENT_SPAN_ID:
-				o.SetParentSpanID(e.Base.Value)
-			case v1.Scan_LOGS_LEVEL:
-				o.SetLogLevel(e.Base.Value)
-			}
 		case *v1.Scan_Filter_Attr:
 			ls := lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Attr.Prop)).
@@ -220,14 +164,6 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap, o *visit.All)
 				return err
 			}
 			r.Add(col)
-			switch e.Attr.Prop {
-			case v1.Scan_RESOURCE_ATTRIBUTES:
-				o.SetResourceAttr(e.Attr.Key, e.Attr.Value)
-			case v1.Scan_SCOPE_ATTRIBUTES:
-				o.SetScopeAttr(e.Attr.Key, e.Attr.Value)
-			case v1.Scan_ATTRIBUTES:
-				o.SetScopeAttr(e.Attr.Key, e.Attr.Value)
-			}
 		}
 	}
 	return nil

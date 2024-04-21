@@ -11,6 +11,8 @@ import (
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/render"
+	"github.com/gernest/requiemdb/internal/visit"
+	"github.com/gernest/requiemdb/internal/x"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
 
@@ -76,7 +78,22 @@ var jsPool = &sync.Pool{New: func() any { return newJS() }}
 func (r *JS) Scan(a *v1.Scan) (*v1.Data, error) {
 	r.ScanRequest = a
 	if r.ScanFn != nil {
-		return r.ScanFn(a)
+		data, err := r.ScanFn(a)
+		if err != nil {
+			return nil, err
+		}
+		// Trim down the sample to desired  output
+		if a.TimeRange == nil && len(a.Filters) == 0 {
+			// We are looking for the full sample
+			return data, nil
+		}
+		vs := visit.New()
+		defer vs.Release()
+
+		start, end := x.TimeBounds(x.UTC, a)
+		vs.SetTimeRange(uint64(start.UnixNano()), uint64(end.UnixNano()))
+		vs.Compile(a.Filters...)
+		return vs.Visit(data), nil
 	}
 	return nil, errors.New("RQ.Scan is not implemented")
 }
