@@ -3,7 +3,6 @@ package store
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -68,7 +67,6 @@ func (s *Storage) SaveSamples(list *samples.List) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(ctx.Positions.Count())
 	return s.rdb.Add(ctx.Positions)
 }
 
