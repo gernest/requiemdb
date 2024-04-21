@@ -12,11 +12,12 @@ import (
 )
 
 type RBF struct {
-	db *rbf.DB
+	db  *rbf.DB
+	now func() time.Time
 }
 
-func New(db *rbf.DB) *RBF {
-	return &RBF{db: db}
+func New(db *rbf.DB, now func() time.Time) *RBF {
+	return &RBF{db: db, now: now}
 }
 
 func (r *RBF) Add(bm *roaring.Bitmap) error {
@@ -24,7 +25,7 @@ func (r *RBF) Add(bm *roaring.Bitmap) error {
 	if err != nil {
 		return err
 	}
-	now := time.Now()
+	now := r.now()
 	for _, v := range view.Std(now) {
 		_, err := tx.AddRoaring(v, bm)
 		if err != nil {

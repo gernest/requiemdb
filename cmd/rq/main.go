@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -85,7 +86,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		return err
 	}
 	defer db.Close()
-	tr, err := translate.New(db)
+	tr, err := translate.New(db, []byte(strconv.FormatUint(uint64(v1.RESOURCE_TRANSLATE_ID), 10)))
 	if err != nil {
 		return err
 	}
@@ -107,7 +108,10 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	defer sequence.Release()
 
 	lsn := cmd.String("listen")
-	api, err := service.NewService(ctx, db, tr, sequence, idx, lsn, cmd.Duration("retentionPeriod"))
+	now := func() time.Time {
+		return time.Now().UTC()
+	}
+	api, err := service.NewService(ctx, db, tr, sequence, idx, now, lsn, cmd.Duration("retentionPeriod"))
 	if err != nil {
 		return err
 	}

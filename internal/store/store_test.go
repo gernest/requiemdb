@@ -1,6 +1,7 @@
 package store
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/gernest/rbf"
@@ -10,7 +11,33 @@ import (
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/gernest/translate"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
+
+func TestSave(t *testing.T) {
+
+	store := testStore(t)
+
+	data := test.MetricsSamples(t)
+	ls := samples.Get()
+	defer ls.Release()
+
+	for n, v := range data {
+		ls.Items = append(ls.Items, &v1.Sample{
+			Id:   uint64(n),
+			Data: v,
+		})
+	}
+	require.NoError(t, store.SaveSamples(ls))
+
+	t.Run("instant without compile filters", func(t *testing.T) {
+		r, err := store.Scan(&v1.Scan{
+			Scope: v1.Scan_METRICS,
+		})
+		require.NoError(t, err)
+		require.True(t, proto.Equal(data[len(data)-1], r))
+	})
+}
 
 func BenchmarkStore(b *testing.B) {
 
@@ -39,7 +66,7 @@ func BenchmarkStore(b *testing.B) {
 func testStore(t testing.TB) *Storage {
 	t.Helper()
 	db := test.DB(t)
-	tr, err := translate.New(db)
+	tr, err := translate.New(db, []byte(strconv.FormatUint(uint64(v1.RESOURCE_TRANSLATE_ID), 10)))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		tr.Close()
@@ -55,7 +82,7 @@ func testStore(t testing.TB) *Storage {
 		rb.Close()
 	})
 	require.NoError(t, err)
-	store, err := NewStore(db, rb, tr, seq)
+	store, err := NewStore(db, rb, tr, seq, test.Now)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		store.Close()

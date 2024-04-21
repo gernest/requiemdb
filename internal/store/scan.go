@@ -35,17 +35,18 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 		// retrieve the sample without any prior knowledge of its contents.
 		key := keys.New()
 		defer key.Release()
-		key.WithResource(resource).
-			WithPrefix(v1.PREFIX_DATA)
+		key.WithResource(resource)
+		prefix := key.Prefix()
+
 		err = s.db.View(func(txn *badger.Txn) error {
 			// We iterate in reverse and avoid preloading values
 			o := badger.IteratorOptions{
 				Reverse: true,
-				Prefix:  key.Prefix(),
+				Prefix:  prefix,
 			}
 			it := txn.NewIterator(o)
 			defer it.Close()
-			for it.Rewind(); it.Valid(); it.Next() {
+			for it.Seek(append(prefix, 0xff)); it.Valid(); it.Next() {
 				result = &v1.Data{}
 				return it.Item().Value(x.Decompress(result))
 			}

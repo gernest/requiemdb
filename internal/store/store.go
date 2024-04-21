@@ -3,7 +3,8 @@ package store
 import (
 	"bytes"
 	"context"
-	"sync/atomic"
+	"fmt"
+	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
@@ -24,14 +25,14 @@ type Storage struct {
 	dataCache *ristretto.Cache
 	rdb       *rdb.RBF
 	seq       *seq.Seq
-	min, max  atomic.Uint64
+	now       func() time.Time
 }
 
 const (
 	DataCacheSize = 256 << 20
 )
 
-func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq) (*Storage, error) {
+func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq, now func() time.Time) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -45,8 +46,9 @@ func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq)
 		db:        db,
 		dataCache: dataCache,
 		translate: tr,
-		rdb:       rdb.New(bdb),
+		rdb:       rdb.New(bdb, now),
 		seq:       seq,
+		now:       now,
 	}, nil
 }
 
@@ -66,6 +68,7 @@ func (s *Storage) SaveSamples(list *samples.List) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(ctx.Positions.Count())
 	return s.rdb.Add(ctx.Positions)
 }
 
@@ -82,8 +85,9 @@ func (s *Storage) save(samples []*v1.Sample) error {
 			batch.Cancel()
 			return err
 		}
-		sampleKey := key.WithResource(meta).
+		sampleKey := key.Reset().WithResource(meta).
 			WithID(sample.Id)
+		fmt.Println("=> save", sampleKey)
 		sk := bytes.Clone(sampleKey.Encode())
 		err = batch.Set(sk, compressedData)
 		if err != nil {
@@ -96,14 +100,6 @@ func (s *Storage) save(samples []*v1.Sample) error {
 		return err
 	}
 	return nil
-}
-
-func (s *Storage) MinTs() uint64 {
-	return s.min.Load()
-}
-
-func (s *Storage) MaxTs() uint64 {
-	return s.max.Load()
 }
 
 func resourceFrom(data *v1.Data) v1.RESOURCE {

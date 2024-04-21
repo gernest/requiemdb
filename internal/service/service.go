@@ -46,13 +46,14 @@ func NewService(ctx context.Context,
 	tr *translate.Translate,
 	seq *seq.Seq,
 	idx *rbf.DB,
+	now func() time.Time,
 	listen string, retention time.Duration) (*Service, error) {
 	sn, err := snippets.New()
 	if err != nil {
 		return nil, err
 	}
 
-	storage, err := store.NewStore(db, idx, tr, seq)
+	storage, err := store.NewStore(db, idx, tr, seq, now)
 	if err != nil {
 		return nil, err
 	}

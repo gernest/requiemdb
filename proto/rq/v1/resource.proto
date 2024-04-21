@@ -7,7 +7,5 @@ enum RESOURCE {
   TRACES = 2;
   LOGS = 3;
   SAMPLE_ID = 4;
-  META = 5;
-  META_ID = 6;
-  META_INFO = 8;
+  TRANSLATE_ID = 5;
 }
