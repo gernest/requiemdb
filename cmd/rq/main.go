@@ -121,6 +121,8 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 	defer otelGRPC.Close()
 
 	oSvr := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	defer oSvr.Stop()
+
 	v1.RegisterRQServer(oSvr, api)
 	collector_metrics.RegisterMetricsServiceServer(oSvr, api.Metrics())
 	collector_logs.RegisterLogsServiceServer(oSvr, api.Logs())
@@ -145,7 +147,6 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		}
 	}()
 	<-ctx.Done()
-	oSvr.GracefulStop()
 	return
 }
 
