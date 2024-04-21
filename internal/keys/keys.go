@@ -53,6 +53,13 @@ func (s *Sample) WithPrefix(r v1.PREFIX) *Sample {
 	return s
 }
 
+// Prefix returns the key without the id part. Useful for iterating on sample
+// key space.
+// [NS,RESOURCE,PREFIX]
+func (s *Sample) Prefix() []byte {
+	return s[:8+4+4]
+}
+
 func (s *Sample) WithID(id uint64) *Sample {
 	binary.LittleEndian.PutUint64(s[8+4+4:], id)
 	return s

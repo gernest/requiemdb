@@ -11,7 +11,9 @@ func Decompress(msg proto.Message, size *int64) func(data []byte) error {
 		if err != nil {
 			return err
 		}
-		*size = int64(len(data))
+		if size != nil {
+			*size = int64(len(data))
+		}
 		return proto.Unmarshal(data, msg)
 	}
 }

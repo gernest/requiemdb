@@ -22,6 +22,32 @@ const (
 
 func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 	resource := v1.RESOURCE(scan.Scope)
+	if scan.TimeRange == nil && len(scan.Filters) == 0 {
+		// Fast path, when only resource is set and it is instant, we are asking for
+		// the most recent sample for that particular resource.
+		//
+		// Taking advantage of the contiguous nature of the sample ID we can safely
+		// retrieve the sample without any prior knowledge of its contents.
+		key := keys.New()
+		defer key.Release()
+		key.WithResource(resource).
+			WithPrefix(v1.PREFIX_DATA)
+		err = s.db.View(func(txn *badger.Txn) error {
+			// We iterate in reverse and avoid preloading values
+			o := badger.IteratorOptions{
+				Reverse: true,
+				Prefix:  key.Prefix(),
+			}
+			it := txn.NewIterator(o)
+			defer it.Close()
+			for it.Rewind(); it.Valid(); it.Next() {
+				result = &v1.Data{}
+				return it.Item().Value(x.Decompress(result, nil))
+			}
+			return nil
+		})
+		return
+	}
 	start, end := timeBounds(utc, scan)
 
 	// Instant scans have no time range.
