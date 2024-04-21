@@ -14,6 +14,7 @@ import (
 	"github.com/gernest/requiemdb/internal/labels"
 	"github.com/gernest/requiemdb/internal/visit"
 	"github.com/gernest/requiemdb/internal/x"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -42,7 +43,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 			defer it.Close()
 			for it.Rewind(); it.Valid(); it.Next() {
 				result = &v1.Data{}
-				return it.Item().Value(x.Decompress(result, nil))
+				return it.Item().Value(x.Decompress(result))
 			}
 			return nil
 		})
@@ -154,13 +155,12 @@ func (s *Storage) read(txn *badger.Txn, key []byte, a *visit.All) (*v1.Data, err
 		return nil, err
 	}
 	data := &v1.Data{}
-	var cost int64
-	err = it.Value(x.Decompress(data, &cost))
+	err = it.Value(x.Decompress(data))
 	if err != nil {
 		return nil, err
 	}
 	// cache data before returning it
-	s.dataCache.Set(hash, data, cost)
+	s.dataCache.Set(hash, data, int64(proto.Size(data)))
 	return visit.VisitData(data, a), nil
 }
 
