@@ -87,7 +87,6 @@ func (s *Storage) save(samples []*v1.Sample) error {
 		}
 		sampleKey := key.Reset().WithResource(meta).
 			WithID(sample.Id)
-		fmt.Println("=> save", sampleKey)
 		sk := bytes.Clone(sampleKey.Encode())
 		err = batch.Set(sk, compressedData)
 		if err != nil {
