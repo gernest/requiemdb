@@ -10,25 +10,25 @@ import (
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/labels"
-	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/view"
 	"github.com/gernest/roaring"
-	"github.com/gernest/translate"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resource1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )
+
+type TranslateFunc func(k []byte) uint64
 
 type Context struct {
 	sampleID  uint64
 	minTs     uint64
 	maxTs     uint64
 	Positions *roaring.Bitmap
-	translate *translate.Translate
+	translate TranslateFunc
 	label     labels.Label
 }
 
-func NewContext(ns uint64, t *translate.Translate) *Context {
-	return pool.Get().(*Context).WithNS(ns).WithTranslate(t)
+func NewContext(t TranslateFunc) *Context {
+	return pool.Get().(*Context).WithTranslate(t)
 }
 
 func (c *Context) ProcessSamples(ls ...*v1.Sample) {
@@ -77,12 +77,7 @@ func (c *Context) WithSample(id uint64) *Context {
 	return c
 }
 
-func (c *Context) WithNS(ns uint64) *Context {
-	c.label.Namespace = ns
-	return c
-}
-
-func (c *Context) WithTranslate(tr *translate.Translate) *Context {
+func (c *Context) WithTranslate(tr TranslateFunc) *Context {
 	c.translate = tr
 	return c
 }
@@ -139,11 +134,7 @@ func (c *Context) Label(f func(lbl *labels.Label)) {
 	c.label.Key = ""
 	c.label.Value = ""
 	f(&c.label)
-	key := c.label.String()
-	column, err := c.translate.TranslateKey(key)
-	if err != nil {
-		logger.Fail("failed to translate key", "key", c.label.String(), "err", err)
-	}
+	column := c.translate(c.label.Encode())
 	c.Positions.Add(
 		view.Pos(c.sampleID, column),
 	)

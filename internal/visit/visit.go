@@ -8,7 +8,6 @@ import (
 	"github.com/cespare/xxhash/v2"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
-	"github.com/gernest/requiemdb/internal/labels"
 	commonV1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resourceV1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )
@@ -122,10 +121,12 @@ func (a *All) SetResourceAttr(k, v string) {
 	a.resource_attr.Add(attr(k, v))
 }
 
+var sep = []byte("=")
+
 func attr(k, v string) uint64 {
 	var h xxhash.Digest
 	h.WriteString(k)
-	h.Write(labels.ValueSep)
+	h.Write(sep)
 	h.WriteString(v)
 	return h.Sum64()
 }
@@ -257,7 +258,7 @@ func matchAttr(a *roaring64.Bitmap, ls []*commonV1.KeyValue) bool {
 		case *commonV1.AnyValue_StringValue:
 			h.Reset()
 			h.WriteString(k.Key)
-			h.Write(labels.ValueSep)
+			h.Write(sep)
 			h.WriteString(e.StringValue)
 			b.Add(h.Sum64())
 		}
