@@ -1,7 +1,6 @@
 package batch
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -37,17 +36,4 @@ func TestBatch(t *testing.T) {
 			t.Errorf("expected =>\n%s \ngot=> %v", want, got)
 		}
 	})
-}
-
-type testTranslator map[string]uint64
-
-func (t testTranslator) Translate(column uint64, key []byte) uint64 {
-	k := fmt.Sprintf("%d:%x", column, key)
-	a, ok := t[k]
-	if !ok {
-		a = uint64(len(t)) + 1
-		t[k] = a
-	}
-	return a
-
 }
