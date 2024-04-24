@@ -14,7 +14,7 @@ import (
 	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
-	"github.com/gernest/translate"
+	"github.com/gernest/requiemdb/internal/translate"
 	"go.opentelemetry.io/otel/metric"
 	collector_logs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	collector_metrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"

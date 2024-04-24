@@ -135,11 +135,10 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
 		case *v1.Scan_Filter_Base:
-			ls := lbl.Reset().
+			col, err := s.translate.Find(lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Base.Prop)).
 				WithKey(e.Base.Value).
-				WithResource(resource)
-			col, err := s.translate.Find(ls.String())
+				WithResource(resource).Encode())
 			if err != nil {
 				if errors.Is(err, badger.ErrKeyNotFound) {
 					r.Clear()
@@ -149,12 +148,11 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 			}
 			r.Add(col)
 		case *v1.Scan_Filter_Attr:
-			ls := lbl.Reset().
+			col, err := s.translate.Find(lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Attr.Prop)).
 				WithKey(e.Attr.Key).
 				WithValue(e.Attr.Value).
-				WithResource(resource)
-			col, err := s.translate.Find(ls.String())
+				WithResource(resource).Encode())
 			if err != nil {
 				if errors.Is(err, badger.ErrKeyNotFound) {
 					r.Clear()

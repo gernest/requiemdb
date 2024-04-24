@@ -9,7 +9,7 @@ import (
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/test"
-	"github.com/gernest/translate"
+	"github.com/gernest/requiemdb/internal/translate"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )

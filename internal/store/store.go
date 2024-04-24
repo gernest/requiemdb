@@ -17,7 +17,7 @@ import (
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/transform"
-	"github.com/gernest/translate"
+	"github.com/gernest/requiemdb/internal/translate"
 )
 
 type Storage struct {
@@ -70,7 +70,7 @@ func (s *Storage) Translate(key []byte) uint64 {
 	if v, ok := s.columnsCache.Get(h); ok {
 		return v.(uint64)
 	}
-	v, err := s.translate.TranslateKey(string(key))
+	v, err := s.translate.TranslateKey(key)
 	if err != nil {
 		logger.Fail("BUG: failed tp translate column")
 	}
