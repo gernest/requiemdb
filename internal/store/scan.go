@@ -66,7 +66,7 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 		result = data.Zero(resource)
 		return
 	}
-	samples, err := s.rdb.Search(start, end, columns)
+	samples, err := s.rdb.Rows(start, end, columns)
 	if err != nil {
 		return nil, err
 	}

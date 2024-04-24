@@ -5,14 +5,18 @@ import (
 	"io"
 	"log/slog"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gernest/rbf"
 	"github.com/gernest/rbf/cfg"
+	"github.com/gernest/rbf/quantum"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/rows"
+	"github.com/gernest/requiemdb/internal/view"
+	"github.com/gernest/roaring"
 	"github.com/gernest/roaring/shardwidth"
 )
 
@@ -32,10 +36,6 @@ func New(path string, config *cfg.Config) *Shards {
 		dir:    path,
 		config: *config,
 	}
-}
-
-func (s *Shards) Search(start, end time.Time, filter *bitmaps.Bitmap) (*bitmaps.Bitmap, error) {
-	return nil, nil
 }
 
 func (s *Shards) View(shard uint64, f func(tx *rbf.Tx) error) error {
@@ -91,6 +91,74 @@ func (s *Shards) AllShards(f func(tx *rbf.Tx, shard uint64) error) error {
 		tx.Rollback()
 	}
 	return nil
+}
+
+func (s *Shards) Rows(start, end time.Time, columns *bitmaps.Bitmap) (*bitmaps.Bitmap, error) {
+	// divide columns by shard
+	m := make(map[uint64][]uint64)
+	it := columns.Iterator()
+	for it.HasNext() {
+		col := it.Next()
+		shard := col / shardwidth.ShardWidth
+		m[shard] = append(m[shard], col)
+	}
+	views := quantum.ViewsByTimeRange("", start, end, view.ChooseQuantum(
+		end.Sub(start),
+	))
+	return s.rows(views, m)
+}
+
+func (s *Shards) rows(views []string, columns map[uint64][]uint64) (r *bitmaps.Bitmap, err error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var tx *rbf.Tx
+	var fs []roaring.BitmapFilter
+	for k, f := range columns {
+		db, ok := s.db[k]
+		if !ok {
+			// Matches should be true for all filters.
+			r.Clear()
+			return
+		}
+		tx, err = db.Begin(false)
+		if err != nil {
+			return
+		}
+		fs = slices.Grow(fs, len(f))[:0]
+		for i := range f {
+			fs = append(fs, roaring.NewBitmapColumnFilter(f[i]))
+		}
+		b := bitmaps.New()
+		for _, view := range views {
+			err = tx.ApplyFilter(view, 0, roaring.NewBitmapRowFilter(func(u uint64) error {
+				b.Add(u)
+				return nil
+			}, fs...))
+			if err != nil {
+				tx.Rollback()
+				return
+			}
+		}
+		tx.Rollback()
+		if !b.IsEmpty() {
+			if r == nil {
+				// first column set
+				r = bitmaps.New()
+				b.Or(&b.Bitmap)
+			} else {
+				some := !r.IsEmpty()
+				r.And(&b.Bitmap)
+				if r.IsEmpty() && some {
+					// this shard resulted in no match. No need to keep searching
+					b.Release()
+					return
+				}
+			}
+		}
+		b.Release()
+	}
+	return
 }
 
 func (s *Shards) Row(view string, rowID uint64) (*rows.Row, error) {

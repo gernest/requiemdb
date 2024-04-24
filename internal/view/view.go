@@ -29,7 +29,7 @@ const (
 )
 
 // Chooses which quantum to use
-func chooseQuantum(duration time.Duration) quantum.TimeQuantum {
+func ChooseQuantum(duration time.Duration) quantum.TimeQuantum {
 	if duration >= year {
 		return quantum.TimeQuantum("Y")
 	}
@@ -44,7 +44,7 @@ func chooseQuantum(duration time.Duration) quantum.TimeQuantum {
 
 func Search(start, end time.Time) []string {
 	return quantum.ViewsByTimeRange(stdView, start, end,
-		chooseQuantum(end.Sub(start)))
+		ChooseQuantum(end.Sub(start)))
 }
 
 // Pos generates position in a bitmap
