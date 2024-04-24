@@ -7,7 +7,6 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/data"
@@ -170,7 +169,7 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 }
 
 // MonitorSize observe database and index sizes..
-func MonitorSize(ctx context.Context, db *badger.DB, rbf *rbf.DB) error {
+func MonitorSize(ctx context.Context, db *badger.DB) error {
 	m := self.Meter()
 	dbSize, err := m.Int64ObservableUpDownCounter("rq.db.size",
 		metric.WithDescription("Database size in bytes"),
@@ -179,22 +178,10 @@ func MonitorSize(ctx context.Context, db *badger.DB, rbf *rbf.DB) error {
 	if err != nil {
 		return err
 	}
-	rbfSize, err := m.Int64ObservableUpDownCounter("rq.rbf.size",
-		metric.WithDescription("Index size in bytes"),
-		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return err
-	}
 	_, err = m.RegisterCallback(func(ctx context.Context, o metric.Observer) error {
 		lsm, vlg := db.Size()
-		rsize, err := rbf.Size()
-		if err != nil {
-			return err
-		}
 		o.ObserveInt64(dbSize, lsm+vlg)
-		o.ObserveInt64(rbfSize, rsize)
 		return nil
-	}, dbSize, rbfSize)
+	}, dbSize)
 	return err
 }

@@ -40,6 +40,12 @@ func (b *Batch) Reset() {
 	}
 	clear(b.times)
 	b.times = b.times[:0]
+
+	for _, t := range b.labels {
+		t.Release()
+	}
+	clear(b.labels)
+	b.labels = b.labels[:0]
 }
 
 func (b *Batch) addTs(ts time.Time) {
@@ -60,7 +66,7 @@ func (b *Batch) Build() (Fragments, error) {
 	if err != nil {
 		return nil, err
 	}
-	b.frags = make(Fragments)
+	b.Reset()
 	return o, nil
 }
 

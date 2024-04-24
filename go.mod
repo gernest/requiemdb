@@ -18,6 +18,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/jinzhu/now v1.1.5
 	github.com/klauspost/compress v1.17.7
+	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v3 v3.0.0-alpha9
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
@@ -62,7 +63,6 @@ require (
 	github.com/molecula/apophenia v0.0.0-20190827192002-68b7a14a478b // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shirou/gopsutil/v3 v3.24.1 // indirect

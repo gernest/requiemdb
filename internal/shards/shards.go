@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gernest/rbf"
 	"github.com/gernest/rbf/cfg"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 )
 
 type Shards struct {
@@ -27,6 +29,10 @@ func New(path string, config *cfg.Config) *Shards {
 		dir:    path,
 		config: *config,
 	}
+}
+
+func (s *Shards) Search(start, end time.Time, filter *bitmaps.Bitmap) (*bitmaps.Bitmap, error) {
+	return nil, nil
 }
 
 func (s *Shards) View(shard uint64, f func(tx *rbf.Tx) error) error {

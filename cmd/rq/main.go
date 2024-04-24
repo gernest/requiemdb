@@ -12,7 +12,6 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
-	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/commands"
 	"github.com/gernest/requiemdb/internal/commands/query"
@@ -22,6 +21,7 @@ import (
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/seq"
 	"github.com/gernest/requiemdb/internal/service"
+	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/store"
 	rversion "github.com/gernest/requiemdb/internal/version"
 	"github.com/gernest/translate"
@@ -94,13 +94,11 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 
 	indexPath := commands.Index(data)
 
-	idx := rbf.NewDB(indexPath, nil)
-	slog.Info("Setup index", "path", indexPath)
-	err = idx.Open()
-	if err != nil {
-		return err
-	}
+	idx := shards.New(indexPath, nil)
 	defer idx.Close()
+
+	slog.Info("Setup index", "path", indexPath)
+
 	sequence, err := seq.New(db)
 	if err != nil {
 		return err
@@ -137,7 +135,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		return err
 	}
 
-	store.MonitorSize(ctx, db, idx)
+	store.MonitorSize(ctx, db)
 
 	go api.Start(ctx)
 

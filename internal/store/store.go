@@ -13,9 +13,9 @@ import (
 	"github.com/gernest/requiemdb/internal/arena"
 	"github.com/gernest/requiemdb/internal/keys"
 	"github.com/gernest/requiemdb/internal/logger"
-	rdb "github.com/gernest/requiemdb/internal/rbf"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
+	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/transform"
 	"github.com/gernest/translate"
 )
@@ -25,16 +25,17 @@ type Storage struct {
 	translate    *translate.Translate
 	dataCache    *ristretto.Cache
 	columnsCache *ristretto.Cache
-	rdb          *rdb.RBF
+	rdb          *shards.Shards
 	seq          *seq.Seq
 	now          func() time.Time
+	ctx          *transform.Context
 }
 
 const (
 	DataCacheSize = 256 << 20
 )
 
-func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq, now func() time.Time) (*Storage, error) {
+func NewStore(db *badger.DB, bdb *shards.Shards, tr *translate.Translate, seq *seq.Seq, now func() time.Time) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -52,15 +53,16 @@ func NewStore(db *badger.DB, bdb *rbf.DB, tr *translate.Translate, seq *seq.Seq,
 		return nil, err
 	}
 
-	return &Storage{
+	s := &Storage{
 		db:           db,
 		dataCache:    dataCache,
 		columnsCache: columns,
 		translate:    tr,
-		rdb:          rdb.New(bdb, now),
 		seq:          seq,
 		now:          now,
-	}, nil
+	}
+	s.ctx = transform.NewContext(s.Translate)
+	return s, nil
 }
 
 func (s *Storage) Translate(key []byte) uint64 {
@@ -79,21 +81,36 @@ func (s *Storage) Translate(key []byte) uint64 {
 func (s *Storage) Close() error {
 	s.dataCache.Close()
 	s.columnsCache.Close()
-	s.seq.Release()
 	return nil
 }
 
 func (s *Storage) Start(ctx context.Context) {}
 
 func (s *Storage) SaveSamples(list *samples.List) error {
-	ctx := transform.NewContext(s.Translate)
-	defer ctx.Release()
-	ctx.ProcessSamples(list.Items...)
-	err := s.save(list.Items)
+	f, err := s.ctx.ProcessSamples(list.Items...)
 	if err != nil {
 		return err
 	}
-	return s.rdb.Add(ctx.Positions)
+	err = s.save(list.Items)
+	if err != nil {
+		return err
+	}
+	for shard, view := range f {
+		err = s.rdb.Update(shard, func(tx *rbf.Tx) error {
+			for name, bm := range view {
+				_, err := tx.AddRoaring(name, bm)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			//TODO: delete sample ?
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Storage) save(samples []*v1.Sample) error {

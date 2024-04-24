@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/seq"
+	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/snippets"
 	"github.com/gernest/requiemdb/internal/store"
 	"github.com/gernest/translate"
@@ -45,7 +45,7 @@ func NewService(ctx context.Context,
 	db *badger.DB,
 	tr *translate.Translate,
 	seq *seq.Seq,
-	idx *rbf.DB,
+	idx *shards.Shards,
 	now func() time.Time,
 	listen string, retention time.Duration) (*Service, error) {
 	sn, err := snippets.New()

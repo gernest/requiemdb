@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gernest/rbf"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
+	"github.com/gernest/requiemdb/internal/shards"
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/gernest/translate"
 	"github.com/stretchr/testify/require"
@@ -76,8 +76,7 @@ func testStore(t testing.TB) *Storage {
 	t.Cleanup(func() {
 		seq.Release()
 	})
-	rb := rbf.NewDB(t.TempDir(), nil)
-	require.NoError(t, rb.Open())
+	rb := shards.New(t.TempDir(), nil)
 	t.Cleanup(func() {
 		rb.Close()
 	})

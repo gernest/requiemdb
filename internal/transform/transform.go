@@ -6,12 +6,12 @@
 package transform
 
 import (
-	"sync"
+	"time"
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
+	"github.com/gernest/requiemdb/internal/batch"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/labels"
-	"github.com/gernest/requiemdb/internal/view"
-	"github.com/gernest/roaring"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	resource1 "go.opentelemetry.io/proto/otlp/resource/v1"
 )
@@ -22,31 +22,43 @@ type Context struct {
 	sampleID  uint64
 	minTs     uint64
 	maxTs     uint64
-	Positions *roaring.Bitmap
+	batch     *batch.Batch
+	positions *bitmaps.Bitmap
 	translate TranslateFunc
 	label     labels.Label
 }
 
 func NewContext(t TranslateFunc) *Context {
-	return pool.Get().(*Context).WithTranslate(t)
+	return &Context{
+		batch:     batch.New(),
+		translate: t,
+	}
 }
 
-func (c *Context) ProcessSamples(ls ...*v1.Sample) {
+func (c *Context) ProcessSamples(ls ...*v1.Sample) (batch.Fragments, error) {
 	for _, v := range ls {
 		c.processSample(v)
 	}
+	return c.batch.Build()
 }
 
 func (c *Context) processSample(sample *v1.Sample) {
 	c.minTs = 0
 	c.maxTs = 0
+	c.positions = bitmaps.New()
 	c.WithSample(sample.Id).
-		Process(sample.Data)
+		data(sample.Data)
 	sample.MinTs = c.minTs
 	sample.MaxTs = c.maxTs
+	c.batch.Add(
+		sample.Id,
+		time.Unix(0, int64(c.minTs)).UTC(),
+		c.positions,
+	)
+	c.positions = nil
 }
 
-func (c *Context) Process(data *v1.Data) {
+func (c *Context) data(data *v1.Data) {
 	switch e := data.Data.(type) {
 	case *v1.Data_Metrics:
 		c.WithResource(v1.RESOURCE_METRICS)
@@ -79,6 +91,11 @@ func (c *Context) WithSample(id uint64) *Context {
 
 func (c *Context) WithTranslate(tr TranslateFunc) *Context {
 	c.translate = tr
+	return c
+}
+
+func (c *Context) WithBatch(b *batch.Batch) *Context {
+	c.batch = b
 	return c
 }
 
@@ -134,10 +151,7 @@ func (c *Context) Label(f func(lbl *labels.Label)) {
 	c.label.Key = ""
 	c.label.Value = ""
 	f(&c.label)
-	column := c.translate(c.label.Encode())
-	c.Positions.Add(
-		view.Pos(c.sampleID, column),
-	)
+	c.positions.Add(c.translate(c.label.Encode()))
 }
 
 func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
@@ -162,22 +176,10 @@ func (c *Context) Timestamp(ts uint64) {
 	c.maxTs = max(c.maxTs, ts)
 }
 
-var pool = &sync.Pool{New: func() any {
-	return &Context{
-		Positions: roaring.NewBitmap(),
-	}
-}}
-
-func (c *Context) Release() {
-	c.Reset()
-	pool.Put(c)
-}
-
 func (c *Context) Reset() {
 	c.sampleID = 0
 	c.minTs = 0
 	c.maxTs = 0
-	c.Positions.Containers.Reset()
 	c.translate = nil
 	c.label = labels.Label{}
 }
