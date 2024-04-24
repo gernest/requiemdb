@@ -35,7 +35,7 @@ const (
 	DataCacheSize = 256 << 20
 )
 
-func NewStore(db *badger.DB, bdb *shards.Shards, tr *translate.Translate, seq *seq.Seq, now func() time.Time) (*Storage, error) {
+func NewStore(db *badger.DB, rdb *shards.Shards, tr *translate.Translate, seq *seq.Seq, now func() time.Time) (*Storage, error) {
 	dataCache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     DataCacheSize,
@@ -60,6 +60,7 @@ func NewStore(db *badger.DB, bdb *shards.Shards, tr *translate.Translate, seq *s
 		translate:    tr,
 		seq:          seq,
 		now:          now,
+		rdb:          rdb,
 	}
 	s.ctx = transform.NewContext(s.Translate)
 	return s, nil
@@ -72,7 +73,7 @@ func (s *Storage) Translate(key []byte) uint64 {
 	}
 	v, err := s.translate.TranslateKey(key)
 	if err != nil {
-		logger.Fail("BUG: failed tp translate column")
+		logger.Fail("BUG: failed tp translate column", "err", err)
 	}
 	s.columnsCache.Set(h, v, 8)
 	return v

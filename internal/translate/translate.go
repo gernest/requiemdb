@@ -1,8 +1,10 @@
 package translate
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
+	"sync"
 
 	"github.com/dgraph-io/badger/v4"
 )
@@ -31,7 +33,11 @@ func (t *Translate) Close() error {
 
 func (b *Translate) TranslateID(id uint64) (k string, err error) {
 	err = b.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get(append(b.ids, u64tob(id)...))
+		g := get()
+		g.Write(b.ids)
+		g.Write(u64tob(id))
+		defer put(g)
+		it, err := txn.Get(g.Bytes())
 		if err != nil {
 			return err
 		}
@@ -45,8 +51,11 @@ func (b *Translate) TranslateID(id uint64) (k string, err error) {
 
 func (b *Translate) TranslateKey(key []byte) (n uint64, err error) {
 	err = b.db.Update(func(txn *badger.Txn) error {
-		k := append(b.keys, key...)
-		it, err := txn.Get(k)
+		g := get()
+		g.Write(b.keys)
+		g.Write(key)
+		defer put(g)
+		it, err := txn.Get(g.Bytes())
 		if err != nil {
 			if errors.Is(err, badger.ErrKeyNotFound) {
 				n, err = b.seq.Next()
@@ -54,9 +63,14 @@ func (b *Translate) TranslateKey(key []byte) (n uint64, err error) {
 					return err
 				}
 				x := u64tob(n)
+				k := bytes.Clone(g.Bytes())
+				g.Reset()
+				g.Write(b.ids)
+				g.Write(x)
+				ik := bytes.Clone(g.Bytes())
 				return errors.Join(
 					txn.Set(k, x),
-					txn.Set(append(b.ids, x...), []byte(key)),
+					txn.Set(ik, key),
 				)
 			}
 			return err
@@ -68,6 +82,17 @@ func (b *Translate) TranslateKey(key []byte) (n uint64, err error) {
 	})
 	return
 }
+
+func get() *bytes.Buffer {
+	return kb.Get().(*bytes.Buffer)
+}
+
+func put(b *bytes.Buffer) {
+	b.Reset()
+	kb.Put(b)
+}
+
+var kb = &sync.Pool{New: func() any { return new(bytes.Buffer) }}
 
 // Find finds translated key. Returns 0 if no key was found
 func (b *Translate) Find(key []byte) (n uint64, err error) {

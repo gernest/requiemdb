@@ -40,7 +40,7 @@ func (l *Label) WithValue(v string) *Label {
 }
 
 func (l *Label) Encode() []byte {
-	l.buf = fmt.Appendf(l.buf, "%d:%d:%s", l.Resource, l.Prefix, l.Key)
+	l.buf = fmt.Appendf(l.buf[:0], "%d:%d:%s", l.Resource, l.Prefix, l.Key)
 	if l.Value != "" {
 		l.buf = fmt.Appendf(l.buf, "=%s", l.Value)
 	}
