@@ -49,6 +49,30 @@ func (b *Translate) TranslateID(id uint64) (k string, err error) {
 	return
 }
 
+func (b *Translate) TranslateBulkID(ids []uint64, f func(key []byte) error) (err error) {
+	err = b.db.View(func(txn *badger.Txn) error {
+		g := get()
+		defer put(g)
+		var buf [8]byte
+		for _, id := range ids {
+			g.Reset()
+			g.Write(b.ids)
+			binary.BigEndian.PutUint64(buf[:], id)
+			g.Write(buf[:])
+			it, err := txn.Get(g.Bytes())
+			if err != nil {
+				return err
+			}
+			err = it.Value(f)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return
+}
+
 func (b *Translate) TranslateKey(key []byte) (n uint64, err error) {
 	err = b.db.Update(func(txn *badger.Txn) error {
 		g := get()

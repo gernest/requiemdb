@@ -37,6 +37,22 @@ func TestSave(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, proto.Equal(data[len(data)-1], r))
 	})
+	t.Run("Labels", func(t *testing.T) {
+		view := "2024040314"
+		labels, err := store.Labels(view, ls.Items[len(ls.Items)-1].Id)
+		require.NoError(t, err)
+		want := []string{"1:0:https://opentelemetry.io/schemas/1.24.0", "1:1:service.name=requiemdb",
+			"1:3:go.opentelemetry.io/contrib/instrumentation/runtime", "1:4:0.49.0", "1:6:runtime.uptime", "1:6:process.runtime.go.goroutines", "1:6:process.runtime.go.cgo.calls", "1:6:process.runtime.go.mem.heap_alloc",
+			"1:6:process.runtime.go.mem.heap_idle", "1:6:process.runtime.go.mem.heap_inuse",
+			"1:6:process.runtime.go.mem.heap_objects", "1:6:process.runtime.go.mem.heap_released",
+			"1:6:process.runtime.go.mem.heap_sys", "1:6:process.runtime.go.mem.lookups",
+			"1:6:process.runtime.go.mem.live_objects", "1:6:process.runtime.go.gc.count", "1:6:process.runtime.go.gc.pause_total_ns",
+			"1:6:process.runtime.go.gc.pause_ns", "1:3:go.opentelemetry.io/contrib/instrumentation/host",
+			"1:6:process.cpu.time", "1:7:state=user", "1:7:state=system", "1:6:system.cpu.time", "1:7:state=other",
+			"1:7:state=idle", "1:6:system.memory.usage", "1:7:state=used", "1:7:state=available",
+			"1:6:system.memory.utilization", "1:6:system.network.io", "1:7:direction=transmit", "1:7:direction=receive"}
+		require.Equal(t, want, labels)
+	})
 }
 
 func BenchmarkStore(b *testing.B) {

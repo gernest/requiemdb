@@ -2,6 +2,7 @@ package shards
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 	"path/filepath"
 	"strconv"
@@ -11,6 +12,8 @@ import (
 	"github.com/gernest/rbf"
 	"github.com/gernest/rbf/cfg"
 	"github.com/gernest/requiemdb/internal/bitmaps"
+	"github.com/gernest/requiemdb/internal/rows"
+	"github.com/gernest/roaring/shardwidth"
 )
 
 type Shards struct {
@@ -64,6 +67,63 @@ func (s *Shards) Update(shard uint64, f func(tx *rbf.Tx) error) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// AllShards iterate on all active shards and calling f with the database
+// transaction. If f returns io.EOF it signals end of iterations which will
+// return a nil error.
+func (s *Shards) AllShards(f func(tx *rbf.Tx, shard uint64) error) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for shard, db := range s.db {
+		tx, err := db.Begin(false)
+		if err != nil {
+			return err
+		}
+		err = f(tx, shard)
+		if err != nil {
+			tx.Rollback()
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
+		}
+		tx.Rollback()
+	}
+	return nil
+}
+
+func (s *Shards) Row(view string, rowID uint64) (*rows.Row, error) {
+	r := rows.NewRow()
+	err := s.AllShards(func(tx *rbf.Tx, shard uint64) error {
+		o, err := row(tx, view, shard, rowID)
+		if err != nil {
+			return err
+		}
+		r.Merge(o)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func row(tx *rbf.Tx, view string, shard, rowID uint64) (*rows.Row, error) {
+	data, err := tx.OffsetRange(view,
+		shard*shardwidth.ShardWidth,
+		rowID*shardwidth.ShardWidth,
+		(rowID+1)*shardwidth.ShardWidth,
+	)
+	if err != nil {
+		return nil, err
+	}
+	r := rows.NewRow()
+	r.Segments = append(r.Segments, *rows.NewSegment(
+		data, shard, true,
+	))
+	r.InvalidateCount()
+	return r, nil
 }
 
 func (s *Shards) get(shard uint64) (*rbf.DB, error) {

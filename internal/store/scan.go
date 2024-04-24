@@ -183,3 +183,17 @@ func MonitorSize(ctx context.Context, db *badger.DB) error {
 	}, dbSize)
 	return err
 }
+
+func (s *Storage) Labels(view string, sample uint64) (labels []string, err error) {
+	row, err := s.rdb.Row(view, sample)
+	if err != nil {
+		return nil, err
+	}
+	cols := row.Columns()
+	labels = make([]string, 0, len(cols))
+	err = s.translate.TranslateBulkID(row.Columns(), func(key []byte) error {
+		labels = append(labels, string(key))
+		return nil
+	})
+	return
+}
