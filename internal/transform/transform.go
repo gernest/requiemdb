@@ -151,7 +151,9 @@ func (c *Context) Label(f func(lbl *labels.Label)) {
 	c.label.Key = ""
 	c.label.Value = ""
 	f(&c.label)
-	c.positions.Add(c.translate(c.label.Encode()))
+	e := c.label.Encode()
+	column := c.translate(e)
+	c.positions.Add(column)
 }
 
 func (c *Context) attributes(prefix v1.PREFIX, kv []*commonv1.KeyValue) {
