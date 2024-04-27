@@ -75,7 +75,16 @@ func (qt *QuantizedTime) Views(q quantum.TimeQuantum) ([]string, error) {
 	if qt == nil {
 		return nil, nil
 	}
-	views := make([]string, 0, len(q))
+	return qt.ViewsBuf(nil, q)
+}
+
+func (qt *QuantizedTime) ViewsBuf(views []string, q quantum.TimeQuantum) ([]string, error) {
+	if qt == nil {
+		return nil, nil
+	}
+	if views == nil {
+		views = make([]string, 0, len(q))
+	}
 	for _, unit := range q {
 		switch unit {
 		case 'Y':
