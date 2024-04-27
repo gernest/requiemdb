@@ -18,7 +18,15 @@ import (
 )
 
 type DataFrame struct {
+	*Columns
 	db *badger.DB
+}
+
+func New(db *badger.DB) *DataFrame {
+	return &DataFrame{
+		db:      db,
+		Columns: NewColumns(),
+	}
 }
 
 func (df *DataFrame) Append(ctx context.Context, samples ...*v1.Sample) error {
@@ -69,6 +77,8 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 				return err
 			}
 		}
+		// Sample ID == Row ID, for each view we need to store a contiguous rows
+		// starting from 0
 		var lastId uint64
 		if r != nil {
 			lastId = uint64(r.NumRows()) - 1
