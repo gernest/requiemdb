@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"slices"
 	"sync"
 	"time"
 
@@ -11,22 +12,121 @@ import (
 	"github.com/apache/arrow/go/v17/arrow/memory"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/gernest/arrow3"
+	"github.com/gernest/rbf/quantum"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/arena"
 	"github.com/gernest/requiemdb/internal/batch"
+	"github.com/gernest/requiemdb/internal/bitmaps"
 	"github.com/gernest/requiemdb/internal/logger"
+	"github.com/gernest/requiemdb/internal/view"
+)
+
+const (
+	std  = "std"
+	sets = "sets"
 )
 
 type DataFrame struct {
-	*Columns
-	db *badger.DB
+	columns *Columns
+	db      *badger.DB
 }
+
+type ViewFn func(r arrow.Record, rowsSet *bitmaps.Bitmap) error
 
 func New(db *badger.DB) *DataFrame {
 	return &DataFrame{
 		db:      db,
-		Columns: NewColumns(),
+		columns: NewColumns(),
 	}
+}
+
+func (df *DataFrame) Metrics(ctx context.Context, start, end time.Time, samples *bitmaps.Bitmap) ([]*v1.Data, error) {
+	return df.Unmarshal(ctx, start, end, df.columns.all.metrics, samples)
+}
+
+func (df *DataFrame) Traces(ctx context.Context, start, end time.Time, samples *bitmaps.Bitmap) ([]*v1.Data, error) {
+	return df.Unmarshal(ctx, start, end, df.columns.all.traces, samples)
+}
+
+func (df *DataFrame) Logs(ctx context.Context, start, end time.Time, samples *bitmaps.Bitmap) ([]*v1.Data, error) {
+	return df.Unmarshal(ctx, start, end, df.columns.all.logs, samples)
+}
+
+func (df *DataFrame) Unmarshal(ctx context.Context, start, end time.Time, columns []int,
+	rows *bitmaps.Bitmap) ([]*v1.Data, error) {
+	o := make([]*v1.Data, 0, rows.GetCardinality())
+	buf := make([]int, 0, len(o))
+	err := df.View(ctx, start, end, columns, rows, func(r arrow.Record, rowsSet *bitmaps.Bitmap) error {
+		buf = slices.Grow(buf, int(rowsSet.GetCardinality()))[:0]
+		it := rowsSet.Iterator()
+		for it.HasNext() {
+			buf = append(buf, int(it.Next()))
+		}
+		o = append(o, readRows(r, buf)...)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
+func readRows(r arrow.Record, rows []int) []*v1.Data {
+	g := get()
+	defer put(g)
+	return g.Proto(r, rows)
+}
+
+func (df *DataFrame) View(ctx context.Context, start, end time.Time, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
+	all := quantum.ViewsByTimeRange("", start, end, view.ChooseQuantum(end.Sub(start)))
+
+	for _, v := range all {
+		a := v[1:] // remove the _
+		err := df.read(ctx, a, columns, rows, f)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (df *DataFrame) read(ctx context.Context, view string, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
+	return df.db.View(func(txn *badger.Txn) error {
+		it, err := txn.Get([]byte(std + "_" + view))
+		if err != nil {
+			if errors.Is(err, badger.ErrKeyNotFound) {
+				return nil
+			}
+			return err
+		}
+		b := bitmaps.New()
+		defer b.Release()
+		bt, err := txn.Get([]byte(sets + "_" + view))
+		if err != nil {
+			return err
+		}
+		err = bt.Value(b.UnmarshalBinary)
+		if err != nil {
+			return err
+		}
+		if rows != nil {
+			b.And(&rows.Bitmap)
+		}
+		if b.IsEmpty() {
+			// Return early , the rows we are interested in are not found in this view.
+			return nil
+		}
+		return it.Value(func(val []byte) error {
+			g := get()
+			defer put(g)
+			r, err := g.Read(ctx, bytes.NewReader(val), columns)
+			if err != nil {
+				return err
+			}
+			defer r.Release()
+			return f(r, b)
+		})
+	})
 }
 
 func (df *DataFrame) Append(ctx context.Context, samples ...*v1.Sample) error {
@@ -56,7 +156,10 @@ func (df *DataFrame) Append(ctx context.Context, samples ...*v1.Sample) error {
 func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.Sample) error {
 	a := arena.New()
 	defer a.Release()
-	key := []byte(view)
+	key := []byte(std + "_" + view)
+	setKey := []byte(sets + "_" + view)
+	rowsSet := bitmaps.New()
+	defer rowsSet.Release()
 	return df.db.Update(func(txn *badger.Txn) error {
 		// Try to read existing record
 		schema := get()
@@ -76,6 +179,15 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 			if err != nil {
 				return err
 			}
+			// load set bitmap
+			it, err = txn.Get(setKey)
+			if err != nil {
+				return err
+			}
+			err = it.Value(rowsSet.UnmarshalBinary)
+			if err != nil {
+				return err
+			}
 		}
 		// Sample ID == Row ID, for each view we need to store a contiguous rows
 		// starting from 0
@@ -86,6 +198,7 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 		}
 		empty := &v1.Data{}
 		for _, s := range samples {
+			rowsSet.Add(s.Id)
 			for i := lastId; i < s.Id; i++ {
 				// we fill the blanks with empty data. All records in all views have the
 				// same number of columns
@@ -103,7 +216,15 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 		if err != nil {
 			return err
 		}
-		return txn.Set(key, a.Bytes())
+		rowsSet.RunOptimize()
+		rowsSetData, err := rowsSet.MarshalBinary()
+		if err != nil {
+			return err
+		}
+		return errors.Join(
+			txn.Set(key, a.Bytes()),
+			txn.Set(setKey, rowsSetData),
+		)
 	})
 }
 
