@@ -26,20 +26,25 @@ const (
 	day   = 24 * hour
 	month = 30 * day
 	year  = 12 * month
+
+	QY = quantum.TimeQuantum("Y")
+	QM = quantum.TimeQuantum("M")
+	QD = quantum.TimeQuantum("D")
+	QH = quantum.TimeQuantum("H")
 )
 
 // Chooses which quantum to use
 func ChooseQuantum(duration time.Duration) quantum.TimeQuantum {
 	if duration >= year {
-		return quantum.TimeQuantum("Y")
+		return QY
 	}
 	if duration >= month {
-		return quantum.TimeQuantum("M")
+		return QM
 	}
 	if duration >= day {
-		return quantum.TimeQuantum("D")
+		return QD
 	}
-	return quantum.TimeQuantum("H")
+	return QH
 }
 
 func Search(start, end time.Time) []string {
