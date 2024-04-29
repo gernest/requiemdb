@@ -41,6 +41,9 @@ func (s *Storage) Scan(ctx context.Context, scan *v1.Scan) (result *v1.Data, err
 	if err != nil {
 		return nil, err
 	}
+	if samples == nil {
+		return data.Zero(resource), nil
+	}
 	defer samples.Release()
 	if samples.IsEmpty() {
 		return data.Zero(resource), nil
