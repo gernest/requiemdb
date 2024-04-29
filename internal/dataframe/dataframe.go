@@ -205,6 +205,7 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 				schema.Append(empty)
 			}
 			schema.Append(s.Data)
+			lastId = s.Id
 		}
 		if r != nil {
 			b := schema.NewRecord()
