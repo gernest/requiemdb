@@ -20,7 +20,6 @@ import (
 type Storage struct {
 	db           *badger.DB
 	translate    *translate.Translate
-	dataCache    *ristretto.Cache
 	columnsCache *ristretto.Cache
 	rdb          *shards.Shards
 	frame        *dataframe.DataFrame
@@ -34,14 +33,6 @@ const (
 )
 
 func NewStore(db *badger.DB, rdb *shards.Shards, tr *translate.Translate, seq *seq.Seq, now func() time.Time) (*Storage, error) {
-	dataCache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e7,
-		MaxCost:     DataCacheSize,
-		BufferItems: 64,
-	})
-	if err != nil {
-		return nil, err
-	}
 	columns, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     1 << 20,
@@ -53,7 +44,6 @@ func NewStore(db *badger.DB, rdb *shards.Shards, tr *translate.Translate, seq *s
 
 	s := &Storage{
 		db:           db,
-		dataCache:    dataCache,
 		columnsCache: columns,
 		translate:    tr,
 		seq:          seq,
@@ -79,7 +69,6 @@ func (s *Storage) Translate(key []byte) uint64 {
 }
 
 func (s *Storage) Close() error {
-	s.dataCache.Close()
 	s.columnsCache.Close()
 	return nil
 }
