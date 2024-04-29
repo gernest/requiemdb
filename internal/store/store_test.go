@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/samples"
@@ -12,6 +13,7 @@ import (
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/gernest/requiemdb/internal/translate"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestSave(t *testing.T) {
@@ -29,7 +31,25 @@ func TestSave(t *testing.T) {
 		})
 	}
 	require.NoError(t, store.SaveSamples(context.Background(), ls))
-
+	t.Run("instant", func(t *testing.T) {
+		now, err := time.Parse("2006010215", "2024040314")
+		require.NoError(t, err)
+		res, err := store.Scan(context.Background(), &v1.Scan{
+			Scope: v1.Scan_METRICS,
+			Filters: []*v1.Scan_Filter{
+				{Value: &v1.Scan_Filter_Attr{
+					Attr: &v1.Scan_AttrFilter{
+						Prop:  v1.Scan_RESOURCE_ATTRIBUTES,
+						Key:   "service.name",
+						Value: "requiemdb",
+					},
+				}},
+			},
+			Now: timestamppb.New(now.Add(20 * time.Minute)),
+		})
+		require.NoError(t, err)
+		require.NotNil(t, res)
+	})
 	t.Run("Labels", func(t *testing.T) {
 		view := "2024040314"
 		labels, err := store.Labels(view, ls.Items[len(ls.Items)-1].Id)
