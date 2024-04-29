@@ -20,6 +20,8 @@ import (
 	"github.com/gernest/roaring/shardwidth"
 )
 
+const stdView = view.StdView
+
 type Shards struct {
 	config cfg.Config
 	mu     sync.RWMutex
@@ -102,13 +104,9 @@ func (s *Shards) Rows(start, end time.Time, columns *bitmaps.Bitmap) (*bitmaps.B
 		shard := col / shardwidth.ShardWidth
 		m[shard] = append(m[shard], col)
 	}
-	views := quantum.ViewsByTimeRange("", start, end, view.ChooseQuantum(
+	views := quantum.ViewsByTimeRange(stdView, start, end, view.ChooseQuantum(
 		end.Sub(start),
 	))
-	// adjust the view by removing the _
-	for i := range views {
-		views[i] = views[i][1:]
-	}
 	return s.rows(views, m)
 }
 

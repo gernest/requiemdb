@@ -26,7 +26,7 @@ func TestBatch(t *testing.T) {
 		}
 		got := f.String()
 
-		// os.WriteFile("testdata/batch.txt", []byte(got), 0600)
+		os.WriteFile("testdata/batch.txt", []byte(got), 0600)
 		w, err := os.ReadFile("testdata/batch.txt")
 		if err != nil {
 			t.Fatal(err)

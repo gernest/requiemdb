@@ -52,7 +52,7 @@ func TestSave(t *testing.T) {
 		require.True(t, proto.Equal(res, data[len(data)-1]))
 	})
 	t.Run("Labels", func(t *testing.T) {
-		view := "2024040314"
+		view := "std_2024040314"
 		labels, err := store.Labels(view, ls.Items[len(ls.Items)-1].Id)
 		require.NoError(t, err)
 		want := []string{"1:0:https://opentelemetry.io/schemas/1.24.0", "1:1:service.name=requiemdb",

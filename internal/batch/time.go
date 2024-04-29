@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"github.com/gernest/rbf/quantum"
+	"github.com/gernest/requiemdb/internal/view"
 )
+
+const Prefix = view.StdView + "_"
 
 // QuantizedTime represents a moment in time down to some granularity
 // (year, month, day, or hour).
@@ -91,12 +94,12 @@ func (qt *QuantizedTime) ViewsBuf(views []string, q quantum.TimeQuantum) ([]stri
 			if qt.ymdh[0] == 0 {
 				return nil, errors.New("no data set for year")
 			}
-			views = append(views, string(qt.ymdh[:4]))
+			views = append(views, Prefix+string(qt.ymdh[:4]))
 		case 'M':
 			if qt.ymdh[4] == 0 {
 				return nil, errors.New("no data set for month")
 			}
-			views = append(views, string(qt.ymdh[:6]))
+			views = append(views, Prefix+string(qt.ymdh[:6]))
 		case 'D':
 			if qt.ymdh[6] == 0 {
 				return nil, errors.New("no data set for day")
@@ -106,7 +109,7 @@ func (qt *QuantizedTime) ViewsBuf(views []string, q quantum.TimeQuantum) ([]stri
 			if qt.ymdh[8] == 0 {
 				return nil, errors.New("no data set for hour")
 			}
-			views = append(views, string(qt.ymdh[:10]))
+			views = append(views, Prefix+string(qt.ymdh[:10]))
 		}
 	}
 	return views, nil

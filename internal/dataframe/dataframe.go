@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	std  = "std"
 	sets = "sets"
 )
 
@@ -78,11 +77,10 @@ func readRows(r arrow.Record, rows []int) []*v1.Data {
 }
 
 func (df *DataFrame) View(ctx context.Context, start, end time.Time, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
-	all := quantum.ViewsByTimeRange("", start, end, view.ChooseQuantum(end.Sub(start)))
+	all := quantum.ViewsByTimeRange(view.StdView, start, end, view.ChooseQuantum(end.Sub(start)))
 
 	for _, v := range all {
-		a := v[1:] // remove the _
-		err := df.read(ctx, a, columns, rows, f)
+		err := df.read(ctx, v, columns, rows, f)
 		if err != nil {
 			return err
 		}
@@ -92,7 +90,7 @@ func (df *DataFrame) View(ctx context.Context, start, end time.Time, columns []i
 
 func (df *DataFrame) read(ctx context.Context, view string, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
 	return df.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get([]byte(std + "_" + view))
+		it, err := txn.Get([]byte(view))
 		if err != nil {
 			if errors.Is(err, badger.ErrKeyNotFound) {
 				return nil
@@ -156,7 +154,7 @@ func (df *DataFrame) Append(ctx context.Context, samples ...*v1.Sample) error {
 func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.Sample) error {
 	a := arena.New()
 	defer a.Release()
-	key := []byte(std + "_" + view)
+	key := []byte(view)
 	setKey := []byte(sets + "_" + view)
 	rowsSet := bitmaps.New()
 	defer rowsSet.Release()

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	stdView = "std"
+	StdView = "std"
 
 	// keep views for year, month, day and hour.
 	stdQuantum = quantum.TimeQuantum("YMDH")
@@ -17,7 +17,7 @@ const (
 
 func Std(t time.Time) []string {
 	return quantum.ViewsByTime(
-		stdView, t, stdQuantum,
+		StdView, t, stdQuantum,
 	)
 }
 
@@ -48,7 +48,7 @@ func ChooseQuantum(duration time.Duration) quantum.TimeQuantum {
 }
 
 func Search(start, end time.Time) []string {
-	return quantum.ViewsByTimeRange(stdView, start, end,
+	return quantum.ViewsByTimeRange(StdView, start, end,
 		ChooseQuantum(end.Sub(start)))
 }
 
