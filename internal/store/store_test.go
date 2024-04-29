@@ -13,6 +13,7 @@ import (
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/gernest/requiemdb/internal/translate"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -48,7 +49,7 @@ func TestSave(t *testing.T) {
 			Now: timestamppb.New(now.Add(20 * time.Minute)),
 		})
 		require.NoError(t, err)
-		require.NotNil(t, res)
+		require.True(t, proto.Equal(res, data[len(data)-1]))
 	})
 	t.Run("Labels", func(t *testing.T) {
 		view := "2024040314"

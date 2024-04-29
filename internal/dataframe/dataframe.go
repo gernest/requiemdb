@@ -199,7 +199,7 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 		empty := &v1.Data{}
 		for _, s := range samples {
 			rowsSet.Add(s.Id)
-			for i := lastId; i < s.Id; i++ {
+			for i := lastId + 1; i < s.Id; i++ {
 				// we fill the blanks with empty data. All records in all views have the
 				// same number of columns
 				schema.Append(empty)
