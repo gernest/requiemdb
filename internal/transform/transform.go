@@ -46,6 +46,7 @@ func (c *Context) processSample(sample *v1.Sample) {
 	c.minTs = 0
 	c.maxTs = 0
 	c.positions = bitmaps.New()
+	c.init()
 	c.WithSample(sample.Id).
 		data(sample.Data)
 	sample.MinTs = c.minTs
@@ -151,6 +152,15 @@ func (c *Context) Label(f func(lbl *labels.Label)) {
 	c.label.Key = ""
 	c.label.Value = ""
 	f(&c.label)
+	e := c.label.Encode()
+	column := c.translate(e)
+	c.positions.Add(column)
+}
+
+func (c *Context) init() {
+	c.label.Key = ""
+	c.label.Value = ""
+	c.label.Prefix = v1.PREFIX_UNKNOWN
 	e := c.label.Encode()
 	column := c.translate(e)
 	c.positions.Add(column)

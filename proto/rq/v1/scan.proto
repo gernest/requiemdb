@@ -37,7 +37,8 @@ message Scan {
   }
 
   enum BaseProp {
-    RESOURCE_SCHEMA = 0;
+    UNKNOWN = 0;
+    RESOURCE_SCHEMA = 13;
     SCOPE_SCHEMA = 2;
     SCOPE_NAME = 3;
     SCOPE_VERSION = 4;
