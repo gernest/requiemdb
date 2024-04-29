@@ -22,7 +22,9 @@ import (
 )
 
 const (
-	sets = "sets"
+	setsMetrics = "sets_metrics_"
+	setsTraces  = "sets_traces_"
+	setsLogs    = "sets_logs_"
 )
 
 type DataFrame struct {
@@ -40,22 +42,22 @@ func New(db *badger.DB) *DataFrame {
 }
 
 func (df *DataFrame) Metrics(ctx context.Context, start, end time.Time, samples *bitmaps.Bitmap) ([]*v1.Data, error) {
-	return df.Unmarshal(ctx, start, end, df.columns.all.metrics, samples)
+	return df.Unmarshal(ctx, v1.Scan_METRICS, start, end, df.columns.all.metrics, samples)
 }
 
 func (df *DataFrame) Traces(ctx context.Context, start, end time.Time, samples *bitmaps.Bitmap) ([]*v1.Data, error) {
-	return df.Unmarshal(ctx, start, end, df.columns.all.traces, samples)
+	return df.Unmarshal(ctx, v1.Scan_TRACES, start, end, df.columns.all.traces, samples)
 }
 
 func (df *DataFrame) Logs(ctx context.Context, start, end time.Time, samples *bitmaps.Bitmap) ([]*v1.Data, error) {
-	return df.Unmarshal(ctx, start, end, df.columns.all.logs, samples)
+	return df.Unmarshal(ctx, v1.Scan_LOGS, start, end, df.columns.all.logs, samples)
 }
 
-func (df *DataFrame) Unmarshal(ctx context.Context, start, end time.Time, columns []int,
+func (df *DataFrame) Unmarshal(ctx context.Context, resource v1.Scan_SCOPE, start, end time.Time, columns []int,
 	rows *bitmaps.Bitmap) ([]*v1.Data, error) {
 	o := make([]*v1.Data, 0, rows.GetCardinality())
 	buf := make([]int, 0, len(o))
-	err := df.View(ctx, start, end, columns, rows, func(r arrow.Record, rowsSet *bitmaps.Bitmap) error {
+	err := df.View(ctx, resource, start, end, columns, rows, func(r arrow.Record, rowsSet *bitmaps.Bitmap) error {
 		buf = slices.Grow(buf, int(rowsSet.GetCardinality()))[:0]
 		it := rowsSet.Iterator()
 		for it.HasNext() {
@@ -76,11 +78,19 @@ func readRows(r arrow.Record, rows []int) []*v1.Data {
 	return g.Proto(r, rows)
 }
 
-func (df *DataFrame) View(ctx context.Context, start, end time.Time, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
+func (df *DataFrame) View(ctx context.Context, resource v1.Scan_SCOPE, start, end time.Time, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
 	all := quantum.ViewsByTimeRange(view.StdView, start, end, view.ChooseQuantum(end.Sub(start)))
-
+	var set string
+	switch resource {
+	case v1.Scan_METRICS:
+		set = setsMetrics
+	case v1.Scan_TRACES:
+		set = setsTraces
+	case v1.Scan_LOGS:
+		set = setsLogs
+	}
 	for _, v := range all {
-		err := df.read(ctx, v, columns, rows, f)
+		err := df.read(ctx, v, set+v, columns, rows, f)
 		if err != nil {
 			return err
 		}
@@ -88,7 +98,7 @@ func (df *DataFrame) View(ctx context.Context, start, end time.Time, columns []i
 	return nil
 }
 
-func (df *DataFrame) read(ctx context.Context, view string, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
+func (df *DataFrame) read(ctx context.Context, view, set string, columns []int, rows *bitmaps.Bitmap, f ViewFn) error {
 	return df.db.View(func(txn *badger.Txn) error {
 		it, err := txn.Get([]byte(view))
 		if err != nil {
@@ -99,7 +109,7 @@ func (df *DataFrame) read(ctx context.Context, view string, columns []int, rows 
 		}
 		b := bitmaps.New()
 		defer b.Release()
-		bt, err := txn.Get([]byte(sets + "_" + view))
+		bt, err := txn.Get([]byte(set))
 		if err != nil {
 			return err
 		}
@@ -153,11 +163,30 @@ func (df *DataFrame) Append(ctx context.Context, samples ...*v1.Sample) error {
 
 func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.Sample) error {
 	a := arena.New()
-	defer a.Release()
+	metrics := bitmaps.New()
+	logs := bitmaps.New()
+	traces := bitmaps.New()
+	defer func() {
+		a.Release()
+		metrics.Release()
+		logs.Release()
+		traces.Release()
+	}()
 	key := []byte(view)
-	setKey := []byte(sets + "_" + view)
-	rowsSet := bitmaps.New()
-	defer rowsSet.Release()
+	mk := []byte(setsMetrics + view)
+	lk := []byte(setsLogs + view)
+	tk := []byte(setsTraces + view)
+
+	setSample := func(s *v1.Sample) {
+		switch s.Data.Data.(type) {
+		case *v1.Data_Metrics:
+			metrics.Add(s.Id)
+		case *v1.Data_Traces:
+			traces.Add(s.Id)
+		case *v1.Data_Logs:
+			logs.Add(s.Id)
+		}
+	}
 	return df.db.Update(func(txn *badger.Txn) error {
 		// Try to read existing record
 		schema := get()
@@ -177,12 +206,16 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 			if err != nil {
 				return err
 			}
-			// load set bitmap
-			it, err = txn.Get(setKey)
+			// load sets for all resources
+			err = txnValue(txn, mk, metrics.UnmarshalBinary)
 			if err != nil {
 				return err
 			}
-			err = it.Value(rowsSet.UnmarshalBinary)
+			err = txnValue(txn, lk, logs.UnmarshalBinary)
+			if err != nil {
+				return err
+			}
+			err = txnValue(txn, tk, traces.UnmarshalBinary)
 			if err != nil {
 				return err
 			}
@@ -196,7 +229,7 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 		}
 		empty := &v1.Data{}
 		for _, s := range samples {
-			rowsSet.Add(s.Id)
+			setSample(s)
 			for i := lastId + 1; i < s.Id; i++ {
 				// we fill the blanks with empty data. All records in all views have the
 				// same number of columns
@@ -215,16 +248,29 @@ func (df *DataFrame) appendView(ctx context.Context, view string, samples []*v1.
 		if err != nil {
 			return err
 		}
-		rowsSet.RunOptimize()
-		rowsSetData, err := rowsSet.MarshalBinary()
-		if err != nil {
-			return err
-		}
 		return errors.Join(
 			txn.Set(key, a.Bytes()),
-			txn.Set(setKey, rowsSetData),
+			txnBitmap(txn, mk, metrics),
+			txnBitmap(txn, tk, traces),
+			txnBitmap(txn, lk, logs),
 		)
 	})
+}
+
+func txnValue(tx *badger.Txn, key []byte, f func([]byte) error) error {
+	it, err := tx.Get(key)
+	if err != nil {
+		return err
+	}
+	return it.Value(f)
+}
+func txnBitmap(tx *badger.Txn, key []byte, b *bitmaps.Bitmap) error {
+	b.RunOptimize()
+	data, err := b.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	return tx.Set(key, data)
 }
 
 func get() *arrow3.Schema[*v1.Data] {
