@@ -3,9 +3,8 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 
-	"github.com/RoaringBitmap/roaring/roaring64"
-	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
 	"github.com/gernest/requiemdb/internal/bitmaps"
@@ -15,38 +14,10 @@ import (
 	"github.com/gernest/requiemdb/internal/self"
 	"github.com/gernest/requiemdb/internal/x"
 	"go.opentelemetry.io/otel/metric"
-	"google.golang.org/protobuf/proto"
 )
 
-func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
+func (s *Storage) Scan(ctx context.Context, scan *v1.Scan) (result *v1.Data, err error) {
 	resource := v1.RESOURCE(scan.Scope)
-	if scan.TimeRange == nil && len(scan.Filters) == 0 {
-		// Fast path, when only resource is set and it is instant, we are asking for
-		// the most recent sample for that particular resource.
-		//
-		// Taking advantage of the contiguous nature of the sample ID we can safely
-		// retrieve the sample without any prior knowledge of its contents.
-		key := keys.New()
-		defer key.Release()
-		key.WithResource(resource)
-		prefix := key.Prefix()
-
-		err = s.db.View(func(txn *badger.Txn) error {
-			// We iterate in reverse and avoid preloading values
-			o := badger.IteratorOptions{
-				Reverse: true,
-				Prefix:  prefix,
-			}
-			it := txn.NewIterator(o)
-			defer it.Close()
-			for it.Seek(append(prefix, 0xff)); it.Valid(); it.Next() {
-				result = &v1.Data{}
-				return it.Item().Value(x.Decompress(result))
-			}
-			return nil
-		})
-		return
-	}
 	start, end := x.TimeBounds(x.UTC, scan)
 
 	// Instant scans have no time range.
@@ -71,61 +42,27 @@ func (s *Storage) Scan(scan *v1.Scan) (result *v1.Data, err error) {
 		return nil, err
 	}
 	defer samples.Release()
-
-	err = s.db.View(func(txn *badger.Txn) error {
-		var it roaring64.IntIterable64 = samples.Iterator()
-		if isInstant || scan.Reverse {
-			// For instant vectors we are only interested in the latest matching sample,
-			// since samples are sorted we use reverse iterator to ensure the last sample
-			// observed is the first we choose to process.
-			it = samples.ReverseIterator()
-		}
-
-		if isInstant {
-			// We only choose the first sample matching the scan
-			next := it.Next()
-			result, err = s.read(txn,
-				key.WithResource(resource).
-					WithID(next).
-					Encode())
-			return err
-		}
-		rs := make([]*v1.Data, 0, samples.GetCardinality())
-		for it.HasNext() {
-			data, err := s.read(txn,
-				key.Reset().
-					WithResource(resource).
-					WithID(it.Next()).
-					Encode())
-			if err != nil {
-				return err
-			}
-			rs = append(rs, data)
-		}
-		result = data.Collapse(rs)
-		return nil
-	})
-	return
-}
-
-func (s *Storage) read(txn *badger.Txn, key []byte) (*v1.Data, error) {
-	hash := xxhash.Sum64(key)
-	if d, ok := s.dataCache.Get(hash); ok {
-		data := d.(*v1.Data)
-		return data, nil
+	if samples.IsEmpty() {
+		return data.Zero(resource), nil
 	}
-	it, err := txn.Get(key)
-	if err != nil {
-		return nil, err
+	if isInstant {
+		// choose the last matching sample
+		last := samples.ReverseIterator().Next()
+		samples.Clear()
+		samples.Add(last)
 	}
-	data := &v1.Data{}
-	err = it.Value(x.Decompress(data))
-	if err != nil {
-		return nil, err
+	var rs []*v1.Data
+	switch resource {
+	case v1.RESOURCE_METRICS:
+		rs, err = s.frame.Metrics(ctx, start, end, samples)
+	case v1.RESOURCE_LOGS:
+		rs, err = s.frame.Logs(ctx, start, end, samples)
+	case v1.RESOURCE_TRACES:
+		rs, err = s.frame.Traces(ctx, start, end, samples)
+	default:
+		return nil, fmt.Errorf("%d is not a supported resource", resource)
 	}
-	// cache data before returning it
-	s.dataCache.Set(hash, data, int64(proto.Size(data)))
-	return data, nil
+	return data.Collapse(rs), nil
 }
 
 func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {

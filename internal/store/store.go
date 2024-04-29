@@ -1,7 +1,6 @@
 package store
 
 import (
-	"bytes"
 	"context"
 	"time"
 
@@ -9,9 +8,7 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/ristretto"
 	"github.com/gernest/rbf"
-	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
-	"github.com/gernest/requiemdb/internal/arena"
-	"github.com/gernest/requiemdb/internal/keys"
+	"github.com/gernest/requiemdb/internal/dataframe"
 	"github.com/gernest/requiemdb/internal/logger"
 	"github.com/gernest/requiemdb/internal/samples"
 	"github.com/gernest/requiemdb/internal/seq"
@@ -26,6 +23,7 @@ type Storage struct {
 	dataCache    *ristretto.Cache
 	columnsCache *ristretto.Cache
 	rdb          *shards.Shards
+	frame        *dataframe.DataFrame
 	seq          *seq.Seq
 	now          func() time.Time
 	ctx          *transform.Context
@@ -61,6 +59,7 @@ func NewStore(db *badger.DB, rdb *shards.Shards, tr *translate.Translate, seq *s
 		seq:          seq,
 		now:          now,
 		rdb:          rdb,
+		frame:        dataframe.New(db),
 	}
 	s.ctx = transform.NewContext(s.Translate)
 	return s, nil
@@ -87,12 +86,12 @@ func (s *Storage) Close() error {
 
 func (s *Storage) Start(ctx context.Context) {}
 
-func (s *Storage) SaveSamples(list *samples.List) error {
+func (s *Storage) SaveSamples(ctx context.Context, list *samples.List) error {
 	f, err := s.ctx.ProcessSamples(list.Items...)
 	if err != nil {
 		return err
 	}
-	err = s.save(list.Items)
+	err = s.frame.Append(ctx, list.Items...)
 	if err != nil {
 		return err
 	}
@@ -112,44 +111,4 @@ func (s *Storage) SaveSamples(list *samples.List) error {
 		}
 	}
 	return nil
-}
-
-func (s *Storage) save(samples []*v1.Sample) error {
-	batch := s.db.NewWriteBatch()
-	txnData := arena.New()
-	defer txnData.Release()
-	key := keys.New()
-	defer key.Release()
-	for _, sample := range samples {
-		meta := resourceFrom(sample.Data)
-		compressedData, err := txnData.Compress(sample.Data)
-		if err != nil {
-			batch.Cancel()
-			return err
-		}
-		sampleKey := key.Reset().WithResource(meta).
-			WithID(sample.Id)
-		sk := bytes.Clone(sampleKey.Encode())
-		err = batch.Set(sk, compressedData)
-		if err != nil {
-			batch.Cancel()
-			return err
-		}
-	}
-	err := batch.Flush()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func resourceFrom(data *v1.Data) v1.RESOURCE {
-	switch data.Data.(type) {
-	case *v1.Data_Logs:
-		return v1.RESOURCE_LOGS
-	case *v1.Data_Traces:
-		return v1.RESOURCE_TRACES
-	default:
-		return v1.RESOURCE_METRICS
-	}
 }

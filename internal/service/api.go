@@ -9,8 +9,8 @@ import (
 
 var _ v1.RQServer = (*Service)(nil)
 
-func (s *Service) ScanSamples(_ context.Context, req *v1.Scan) (*v1.Data, error) {
-	return s.store.Scan(req)
+func (s *Service) ScanSamples(ctx context.Context, req *v1.Scan) (*v1.Data, error) {
+	return s.store.Scan(ctx, req)
 }
 
 func (*Service) GetVersion(_ context.Context, _ *v1.GetVersionRequest) (*v1.Version, error) {

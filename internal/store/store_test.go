@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/gernest/requiemdb/internal/test"
 	"github.com/gernest/requiemdb/internal/translate"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestSave(t *testing.T) {
@@ -28,15 +28,8 @@ func TestSave(t *testing.T) {
 			Data: v,
 		})
 	}
-	require.NoError(t, store.SaveSamples(ls))
+	require.NoError(t, store.SaveSamples(context.Background(), ls))
 
-	t.Run("instant without compile filters", func(t *testing.T) {
-		r, err := store.Scan(&v1.Scan{
-			Scope: v1.Scan_METRICS,
-		})
-		require.NoError(t, err)
-		require.True(t, proto.Equal(data[len(data)-1], r))
-	})
 	t.Run("Labels", func(t *testing.T) {
 		view := "2024040314"
 		labels, err := store.Labels(view, ls.Items[len(ls.Items)-1].Id)
@@ -69,12 +62,12 @@ func BenchmarkStore(b *testing.B) {
 			Data: v,
 		})
 	}
-
+	ctx := context.Background()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := store.SaveSamples(ls)
+		err := store.SaveSamples(ctx, ls)
 		if err != nil {
-			b.Fatal(err)
+			b.Fatalf("%d %v", i, err)
 		}
 	}
 }

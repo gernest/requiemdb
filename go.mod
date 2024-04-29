@@ -13,7 +13,7 @@ require (
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/dustin/go-humanize v1.0.1
 	github.com/evanw/esbuild v0.20.2
-	github.com/gernest/arrow3 v0.0.2
+	github.com/gernest/arrow3 v0.0.3
 	github.com/gernest/rbf v0.22.4
 	github.com/gernest/roaring v0.22.2
 	github.com/google/go-cmp v0.6.0

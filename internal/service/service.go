@@ -91,7 +91,7 @@ func (s *Service) start(ctx context.Context) {
 			ls := s.data
 			s.data = samples.Get()
 			s.dataMu.Unlock()
-			err := s.store.SaveSamples(ls)
+			err := s.store.SaveSamples(ctx, ls)
 			if err != nil {
 				slog.Error("Failed to save samples", "err", err)
 			}
