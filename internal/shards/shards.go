@@ -105,6 +105,10 @@ func (s *Shards) Rows(start, end time.Time, columns *bitmaps.Bitmap) (*bitmaps.B
 	views := quantum.ViewsByTimeRange("", start, end, view.ChooseQuantum(
 		end.Sub(start),
 	))
+	// adjust the view by removing the _
+	for i := range views {
+		views[i] = views[i][1:]
+	}
 	return s.rows(views, m)
 }
 
@@ -118,7 +122,9 @@ func (s *Shards) rows(views []string, columns map[uint64][]uint64) (r *bitmaps.B
 		db, ok := s.db[k]
 		if !ok {
 			// Matches should be true for all filters.
-			r.Clear()
+			if r != nil {
+				r.Clear()
+			}
 			return
 		}
 		tx, err = db.Begin(false)
@@ -145,7 +151,7 @@ func (s *Shards) rows(views []string, columns map[uint64][]uint64) (r *bitmaps.B
 			if r == nil {
 				// first column set
 				r = bitmaps.New()
-				b.Or(&b.Bitmap)
+				r.Or(&b.Bitmap)
 			} else {
 				some := !r.IsEmpty()
 				r.And(&b.Bitmap)
