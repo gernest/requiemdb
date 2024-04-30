@@ -53,6 +53,17 @@ func TestSave(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, proto.Equal(res, data[len(data)-1]))
 	})
+	t.Run("instantNoFilters", func(t *testing.T) {
+		now, err := time.Parse("2006010215", "2024040314")
+		require.NoError(t, err)
+		res, err := store.Scan(context.Background(), &v1.Scan{
+			Scope: v1.Scan_METRICS,
+			Now:   timestamppb.New(now.Add(20 * time.Minute)),
+		})
+		require.NoError(t, err)
+		require.True(t, proto.Equal(res, data[len(data)-1]))
+	})
+
 	t.Run("Labels", func(t *testing.T) {
 		view := "std_2024040314"
 		labels, err := store.Labels(view, ls.Items[len(ls.Items)-1].Id)

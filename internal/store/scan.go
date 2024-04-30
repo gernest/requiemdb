@@ -72,6 +72,20 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 	lbl := labels.NewLabel()
 	defer lbl.Release()
 	resource := v1.RESOURCE(scan.Scope)
+	if len(scan.Filters) == 0 {
+		// select by resource
+		col, err := s.translate.Find(
+			lbl.Reset().
+				WithResource(resource).
+				WithPrefix(v1.PREFIX_UNKNOWN).
+				Encode(),
+		)
+		if err != nil {
+			return err
+		}
+		r.Add(col)
+		return nil
+	}
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
 		case *v1.Scan_Filter_Base:
