@@ -135,6 +135,7 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		return err
 	}
 
+	defer providers.Shutdown(ctx)
 	store.MonitorSize(ctx, db)
 
 	go api.Start(ctx)
@@ -148,7 +149,6 @@ func run(ctx context.Context, cmd *cli.Command) (exit error) {
 		}
 	}()
 	<-ctx.Done()
-	providers.Shutdown(ctx)
 	return
 }
 
