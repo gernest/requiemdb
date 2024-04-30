@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/rq/v1"
@@ -74,13 +75,18 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 	resource := v1.RESOURCE(scan.Scope)
 	if len(scan.Filters) == 0 {
 		// select by resource
+		key := lbl.Reset().
+			WithResource(resource).
+			WithPrefix(v1.PREFIX_UNKNOWN).
+			Encode()
 		col, err := s.translate.Find(
-			lbl.Reset().
-				WithResource(resource).
-				WithPrefix(v1.PREFIX_UNKNOWN).
-				Encode(),
+			key,
 		)
 		if err != nil {
+			slog.Error("failed translating key", "key", string(key), "err", err)
+			if errors.Is(err, badger.ErrKeyNotFound) {
+				return nil
+			}
 			return err
 		}
 		r.Add(col)
@@ -89,11 +95,13 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 	for _, f := range scan.Filters {
 		switch e := f.Value.(type) {
 		case *v1.Scan_Filter_Base:
-			col, err := s.translate.Find(lbl.Reset().
+			key := lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Base.Prop)).
 				WithKey(e.Base.Value).
-				WithResource(resource).Encode())
+				WithResource(resource).Encode()
+			col, err := s.translate.Find(key)
 			if err != nil {
+				slog.Error("failed translating key", "key", string(key), "err", err)
 				if errors.Is(err, badger.ErrKeyNotFound) {
 					r.Clear()
 					return nil
@@ -102,12 +110,14 @@ func (s *Storage) CompileFilters(scan *v1.Scan, r *bitmaps.Bitmap) error {
 			}
 			r.Add(col)
 		case *v1.Scan_Filter_Attr:
-			col, err := s.translate.Find(lbl.Reset().
+			key := lbl.Reset().
 				WithPrefix(v1.PREFIX(e.Attr.Prop)).
 				WithKey(e.Attr.Key).
 				WithValue(e.Attr.Value).
-				WithResource(resource).Encode())
+				WithResource(resource).Encode()
+			col, err := s.translate.Find(key)
 			if err != nil {
+				slog.Error("failed translating key", "key", string(key), "err", err)
 				if errors.Is(err, badger.ErrKeyNotFound) {
 					r.Clear()
 					return nil
