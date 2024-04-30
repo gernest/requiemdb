@@ -102,6 +102,7 @@ func (s *Service) start(ctx context.Context) {
 
 func (s *Service) Save(data *v1.Data) error {
 	s.dataMu.Lock()
+	defer s.dataMu.Unlock()
 	s.data.Items = append(s.data.Items, &v1.Sample{
 		Id:   s.seq.SampleID(),
 		Data: data,
