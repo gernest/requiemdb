@@ -104,7 +104,7 @@ func (qt *QuantizedTime) ViewsBuf(views []string, q quantum.TimeQuantum) ([]stri
 			if qt.ymdh[6] == 0 {
 				return nil, errors.New("no data set for day")
 			}
-			views = append(views, string(qt.ymdh[:8]))
+			views = append(views, Prefix+string(qt.ymdh[:8]))
 		case 'H':
 			if qt.ymdh[8] == 0 {
 				return nil, errors.New("no data set for hour")
