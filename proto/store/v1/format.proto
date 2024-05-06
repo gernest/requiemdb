@@ -17,17 +17,19 @@ message Format {
 }
 
 message Span {
-  string resource_schema = 1;
-  opentelemetry.proto.resource.v1.Resource resource = 2;
-
-  string scope_schema = 3;
-  opentelemetry.proto.common.v1.InstrumentationScope scope = 4;
-
-  uint64 resource_hash = 5;
-  uint64 scope_hash = 6;
-  uint64 hash = 7;
-
-  opentelemetry.proto.trace.v1.Span span = 8;
+  bytes trace_id = 1;
+  bytes span_id = 2;
+  string trace_state = 3;
+  bytes parent_span_id = 4;
+  fixed32 flags = 16;
+  string name = 5;
+  opentelemetry.proto.trace.v1.Span.SpanKind kind = 6;
+  fixed64 start_time_unix_nano = 7;
+  fixed64 end_time_unix_nano = 8;
+  repeated opentelemetry.proto.common.v1.KeyValue attributes = 9;
+  repeated opentelemetry.proto.trace.v1.Span.Event events = 11;
+  repeated opentelemetry.proto.trace.v1.Span.Link links = 12;
+  repeated opentelemetry.proto.trace.v1.Status status = 13;
 }
 
 message LogRecord {
