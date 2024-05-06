@@ -67,6 +67,11 @@ message Metric {
   HistogramDataPoint historgam = 13;
   ExponentialHistogramDataPoint exponential_historgam = 14;
   SummaryDataPoint summary = 15;
+  uint64 hash = 16;
+  uint64 id = 17;
+  opentelemetry.proto.metrics.v1.AggregationTemporality
+      aggregation_temporality = 18;
+  bool is_monotonic = 19;
 }
 
 message HistogramDataPoint {
