@@ -17,6 +17,7 @@ message Format {
 }
 
 message Span {
+  uint64 row_id = 50;
   bytes trace_id = 1;
   bytes span_id = 2;
   string trace_state = 3;
@@ -33,17 +34,15 @@ message Span {
 }
 
 message LogRecord {
-  string resource_schema = 1;
-  opentelemetry.proto.resource.v1.Resource resource = 2;
-
-  string scope_schema = 3;
-  opentelemetry.proto.common.v1.InstrumentationScope scope = 4;
-
-  uint64 resource_hash = 5;
-  uint64 scope_hash = 6;
-  uint64 hash = 7;
-
-  opentelemetry.proto.logs.v1.LogRecord log_record = 8;
+  uint64 row_id = 50;
+  fixed64 time_unix_nano = 1;
+  fixed64 observed_time_unix_nano = 11;
+  opentelemetry.proto.logs.v1.SeverityNumber severity_number = 2;
+  string severity_text = 3;
+  opentelemetry.proto.common.v1.AnyValue body = 5;
+  repeated opentelemetry.proto.common.v1.KeyValue attributes = 6;
+  bytes trace_id = 9;
+  bytes span_id = 10;
 }
 
 message Metric {
