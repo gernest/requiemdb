@@ -53,7 +53,7 @@ message Metric {
   enum Kind {
     GAUGE = 0;
     SUM = 1;
-    HISTORGRAM = 2;
+    HISTOGRAM = 2;
     EXPONENTIAL_HISTOGRAM = 3;
     SUMMARY = 4;
   }
