@@ -30,7 +30,7 @@ type Metrics struct {
 }
 
 func (m *Metrics) Append(data *metricsv1.MetricsData) {
-	a := newAttr()
+	a := newAttr().Reset(m.tr)
 	defer a.Release()
 
 	for _, rs := range data.ResourceMetrics {
@@ -55,12 +55,15 @@ func (m *Metrics) Append(data *metricsv1.MetricsData) {
 				}
 				if v := ms.GetHistogram(); v != nil {
 					mx.Kind = v1.Metric_HISTOGRAM
+					m.hist(mx, a, v)
 				}
 				if v := ms.GetExponentialHistogram(); v != nil {
 					mx.Kind = v1.Metric_EXPONENTIAL_HISTOGRAM
+					m.expHist(mx, a, v)
 				}
 				if v := ms.GetSummary(); v != nil {
 					mx.Kind = v1.Metric_SUMMARY
+					m.summary(mx, a, v)
 				}
 				metricPool.Put(mx)
 			}
@@ -109,6 +112,84 @@ func (m *Metrics) sum(mx *v1.Metric, a *Attr, g *metricsv1.Sum) {
 		case *metricsv1.NumberDataPoint_AsInt:
 			f := float64(e.AsInt)
 			mx.Gauge = &f
+		}
+		mx.Attributes, columns, mx.Hash = a.Attr(name, dp.Attributes)
+		id := m.id.Next()
+		mx.Id = id
+		it := columns.Iterator()
+		for it.HasNext() {
+			m.positions.Add(pos(id, it.Next()))
+		}
+		m.build.Append(mx)
+	}
+}
+func (m *Metrics) summary(mx *v1.Metric, a *Attr, g *metricsv1.Summary) {
+	name := []byte(mx.Name)
+	var columns *roaring64.Bitmap
+	for _, dp := range g.DataPoints {
+		mx.StartTimeUnixNano = dp.StartTimeUnixNano
+		mx.TimeUnixNano = dp.TimeUnixNano
+		mx.Summary = &v1.SummaryDataPoint{
+			Count:          dp.Count,
+			Sum:            dp.Sum,
+			QuantileValues: dp.QuantileValues,
+		}
+		mx.Attributes, columns, mx.Hash = a.Attr(name, dp.Attributes)
+		id := m.id.Next()
+		mx.Id = id
+		it := columns.Iterator()
+		for it.HasNext() {
+			m.positions.Add(pos(id, it.Next()))
+		}
+		m.build.Append(mx)
+	}
+}
+
+func (m *Metrics) hist(mx *v1.Metric, a *Attr, g *metricsv1.Histogram) {
+	name := []byte(mx.Name)
+	mx.AggregationTemporality = g.AggregationTemporality
+	var columns *roaring64.Bitmap
+	for _, dp := range g.DataPoints {
+		mx.StartTimeUnixNano = dp.StartTimeUnixNano
+		mx.TimeUnixNano = dp.TimeUnixNano
+		mx.Exemplars = dp.Exemplars
+		mx.Histogram = &v1.HistogramDataPoint{
+			Count:          dp.Count,
+			Sum:            dp.Sum,
+			BucketCounts:   dp.BucketCounts,
+			ExplicitBounds: dp.ExplicitBounds,
+			Min:            dp.Min,
+			Max:            dp.Max,
+		}
+		mx.Attributes, columns, mx.Hash = a.Attr(name, dp.Attributes)
+		id := m.id.Next()
+		mx.Id = id
+		it := columns.Iterator()
+		for it.HasNext() {
+			m.positions.Add(pos(id, it.Next()))
+		}
+		m.build.Append(mx)
+	}
+}
+
+func (m *Metrics) expHist(mx *v1.Metric, a *Attr, g *metricsv1.ExponentialHistogram) {
+	name := []byte(mx.Name)
+	mx.AggregationTemporality = g.AggregationTemporality
+	var columns *roaring64.Bitmap
+	for _, dp := range g.DataPoints {
+		mx.StartTimeUnixNano = dp.StartTimeUnixNano
+		mx.TimeUnixNano = dp.TimeUnixNano
+		mx.Exemplars = dp.Exemplars
+		mx.ExponentialHistogram = &v1.ExponentialHistogramDataPoint{
+			Count:         dp.Count,
+			Sum:           dp.Sum,
+			Scale:         dp.Scale,
+			ZeroCount:     dp.ZeroCount,
+			Positive:      dp.Positive,
+			Negative:      dp.Negative,
+			Min:           dp.Min,
+			Max:           dp.Max,
+			ZeroThreshold: dp.ZeroThreshold,
 		}
 		mx.Attributes, columns, mx.Hash = a.Attr(name, dp.Attributes)
 		id := m.id.Next()

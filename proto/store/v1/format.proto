@@ -64,8 +64,8 @@ message Metric {
 
   optional double gauge = 11;
   optional double counter = 12;
-  HistogramDataPoint historgam = 13;
-  ExponentialHistogramDataPoint exponential_historgam = 14;
+  HistogramDataPoint histogram = 13;
+  ExponentialHistogramDataPoint exponential_histogram = 14;
   SummaryDataPoint summary = 15;
   uint64 hash = 16;
   uint64 id = 17;
