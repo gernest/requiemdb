@@ -1,6 +1,8 @@
 package f2
 
 import (
+	"errors"
+
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/apache/arrow/go/v17/arrow/memory"
 	"github.com/dgraph-io/badger/v4"
@@ -27,18 +29,25 @@ var (
 
 type Metrics struct {
 	build     *arrow3.Schema[*v1.Metric]
-	id        ID
+	id        *idGen
 	tr        *cacheTr
 	positions roaring64.Bitmap
 }
 
-func NewMetrics(db *badger.DB, id ID) (*Metrics, error) {
+func NewMetrics(db *badger.DB) (*Metrics, error) {
 	tr, err := newCacheTr(db, metrics)
 	if err != nil {
 		return nil, err
 	}
 	s, err := arrow3.New[*v1.Metric](memory.DefaultAllocator)
 	if err != nil {
+		tr.Close()
+		return nil, err
+	}
+	id, err := newID(db, metrics)
+	if err != nil {
+		s.Release()
+		tr.Close()
 		return nil, err
 	}
 	return &Metrics{
@@ -49,7 +58,9 @@ func NewMetrics(db *badger.DB, id ID) (*Metrics, error) {
 }
 
 func (m *Metrics) Close() error {
-	return m.tr.Close()
+	return errors.Join(
+		m.tr.Close(), m.id.Close(),
+	)
 }
 
 func (m *Metrics) Append(data *metricsv1.MetricsData) {

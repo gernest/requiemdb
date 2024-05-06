@@ -89,7 +89,6 @@ func (a *Attr) do(b *roaring64.Bitmap, kv []*v1.KeyValue) {
 func toString(b *bytes.Buffer, a *v1.AnyValue) bool {
 	switch e := a.Value.(type) {
 	case *v1.AnyValue_StringValue:
-
 		b.WriteString(e.StringValue)
 		return true
 	default:

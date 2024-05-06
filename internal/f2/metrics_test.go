@@ -28,8 +28,7 @@ func setupMetrics(t testing.TB) *Metrics {
 	t.Cleanup(func() {
 		db.Close()
 	})
-	var i testID
-	m, err := NewMetrics(db, &i)
+	m, err := NewMetrics(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,11 +36,4 @@ func setupMetrics(t testing.TB) *Metrics {
 		m.Close()
 	})
 	return m
-}
-
-type testID uint64
-
-func (t *testID) Next() uint64 {
-	*t++
-	return uint64(*t)
 }
