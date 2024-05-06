@@ -8,14 +8,6 @@ import "opentelemetry/proto/metrics/v1/metrics.proto";
 import "opentelemetry/proto/logs/v1/logs.proto";
 import "opentelemetry/proto/trace/v1/trace.proto";
 
-message Format {
-  oneof data {
-    Metric metric = 1;
-    LogRecord log = 2;
-    Span span = 3;
-  }
-}
-
 message Span {
   uint64 row_id = 50;
   bytes trace_id = 1;
@@ -56,47 +48,53 @@ message Metric {
   // described by http://unitsofmeasure.org/ucum.html.
   string unit = 3;
 
-  string resource_schema = 4;
-  opentelemetry.proto.resource.v1.Resource resource = 5;
+  Kind kind = 4;
 
-  string scope_schema = 6;
-  opentelemetry.proto.common.v1.InstrumentationScope scope = 7;
-
-  uint64 resource_hash = 8;
-  uint64 scope_hash = 9;
-  uint64 hash = 10;
-
-  oneof data {
-    Gauge gauge = 11;
-    Sum sum = 12;
-    Histogram histogram = 13;
-    ExponentialHistogram exponential_histogram = 14;
-    Summary summary = 15;
+  enum Kind {
+    GAUGE = 0;
+    SUM = 1;
+    HISTORGRAM = 2;
+    EXPONENTIAL_HISTOGRAM = 3;
+    SUMMARY = 4;
   }
-  repeated opentelemetry.proto.common.v1.KeyValue metadata = 16;
+  repeated opentelemetry.proto.common.v1.KeyValue attributes = 5;
+  fixed64 start_time_unix_nano = 6;
+  fixed64 time_unix_nano = 7;
+  repeated opentelemetry.proto.metrics.v1.Exemplar exemplars = 10;
+
+  optional double gauge = 11;
+  optional double counter = 12;
+  HistogramDataPoint historgam = 13;
+  ExponentialHistogramDataPoint exponential_historgam = 14;
+  SummaryDataPoint summary = 15;
 }
 
-message Gauge { opentelemetry.proto.metrics.v1.NumberDataPoint data_point = 1; }
-
-message Sum {
-  opentelemetry.proto.metrics.v1.NumberDataPoint data_point = 1;
-  opentelemetry.proto.metrics.v1.AggregationTemporality
-      aggregation_temporality = 2;
-  bool is_monotonic = 3;
+message HistogramDataPoint {
+  fixed64 count = 4;
+  optional double sum = 5;
+  repeated fixed64 bucket_counts = 6;
+  repeated double explicit_bounds = 7;
+  optional double min = 11;
+  optional double max = 12;
 }
 
-message Histogram {
-  opentelemetry.proto.metrics.v1.HistogramDataPoint data_point = 1;
-  opentelemetry.proto.metrics.v1.AggregationTemporality
-      aggregation_temporality = 2;
+message ExponentialHistogramDataPoint {
+  fixed64 count = 4;
+  optional double sum = 5;
+  sint32 scale = 6;
+  fixed64 zero_count = 7;
+  opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint.Buckets
+      positive = 8;
+  opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint.Buckets
+      negative = 9;
+  optional double min = 12;
+  optional double max = 13;
+  double zero_threshold = 14;
 }
 
-message ExponentialHistogram {
-  opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint data_point = 1;
-  opentelemetry.proto.metrics.v1.AggregationTemporality
-      aggregation_temporality = 2;
-}
-
-message Summary {
-  opentelemetry.proto.metrics.v1.SummaryDataPoint data_point = 1;
+message SummaryDataPoint {
+  fixed64 count = 4;
+  double sum = 5;
+  repeated opentelemetry.proto.metrics.v1.SummaryDataPoint.ValueAtQuantile
+      quantile_values = 6;
 }
