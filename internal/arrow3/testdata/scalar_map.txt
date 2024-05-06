@@ -1,0 +1,4 @@
+schema:
+  fields: 1
+    - labels: type=map<utf8, utf8, items_nullable>
+        metadata: ["PARQUET:field_id": "1", "path": "labels"]

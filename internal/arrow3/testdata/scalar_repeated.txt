@@ -1,0 +1,32 @@
+schema:
+  fields: 15
+    - double: type=list<item: float64, nullable>
+        metadata: ["PARQUET:field_id": "1", "path": "double"]
+    - float: type=list<item: float32, nullable>
+       metadata: ["PARQUET:field_id": "2", "path": "float"]
+    - int32: type=list<item: int32, nullable>
+       metadata: ["PARQUET:field_id": "3", "path": "int32"]
+    - int64: type=list<item: int64, nullable>
+       metadata: ["PARQUET:field_id": "4", "path": "int64"]
+    - uint32: type=list<item: uint32, nullable>
+        metadata: ["PARQUET:field_id": "5", "path": "uint32"]
+    - uint64: type=list<item: uint64, nullable>
+        metadata: ["PARQUET:field_id": "6", "path": "uint64"]
+    - sint32: type=list<item: int32, nullable>
+        metadata: ["PARQUET:field_id": "7", "path": "sint32"]
+    - sint64: type=list<item: int64, nullable>
+        metadata: ["PARQUET:field_id": "8", "path": "sint64"]
+    - fixed32: type=list<item: uint32, nullable>
+         metadata: ["PARQUET:field_id": "9", "path": "fixed32"]
+    - fixed64: type=list<item: uint64, nullable>
+         metadata: ["PARQUET:field_id": "10", "path": "fixed64"]
+    - sfixed32: type=list<item: int32, nullable>
+          metadata: ["PARQUET:field_id": "11", "path": "sfixed32"]
+    - sfixed64: type=list<item: int64, nullable>
+          metadata: ["PARQUET:field_id": "12", "path": "sfixed64"]
+    - bool: type=list<item: bool, nullable>
+      metadata: ["PARQUET:field_id": "13", "path": "bool"]
+    - string: type=list<item: utf8, nullable>
+        metadata: ["PARQUET:field_id": "14", "path": "string"]
+    - bytes: type=list<item: binary, nullable>, nullable
+       metadata: ["PARQUET:field_id": "15", "path": "bytes"]

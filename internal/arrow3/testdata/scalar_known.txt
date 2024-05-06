@@ -1,0 +1,10 @@
+schema:
+  fields: 4
+    - ts: type=struct<seconds: int64, nanos: int32>, nullable
+    metadata: ["PARQUET:field_id": "1", "path": "ts"]
+    - duration: type=struct<seconds: int64, nanos: int32>, nullable
+          metadata: ["PARQUET:field_id": "2", "path": "duration"]
+    - ts_rep: type=list<item: struct<seconds: int64, nanos: int32>, nullable>, nullable
+        metadata: ["PARQUET:field_id": "3", "path": "ts_rep"]
+    - duration_rep: type=list<item: struct<seconds: int64, nanos: int32>, nullable>, nullable
+              metadata: ["PARQUET:field_id": "4", "path": "duration_rep"]

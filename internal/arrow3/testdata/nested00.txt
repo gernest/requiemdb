@@ -1,0 +1,8 @@
+schema:
+  fields: 3
+    - nested_scalar: type=struct<double: float64, float: float32, int32: int32, int64: int64, uint32: uint32, uint64: uint64, sint32: int32, sint64: int64, fixed32: uint32, fixed64: uint64, sfixed32: int32, sfixed64: int64, bool: bool, string: utf8, bytes: binary>, nullable
+               metadata: ["PARQUET:field_id": "1", "path": "nested_scalar"]
+    - nested_repeated_scalar: type=list<item: struct<double: float64, float: float32, int32: int32, int64: int64, uint32: uint32, uint64: uint64, sint32: int32, sint64: int64, fixed32: uint32, fixed64: uint64, sfixed32: int32, sfixed64: int64, bool: bool, string: utf8, bytes: binary>, nullable>, nullable
+                        metadata: ["PARQUET:field_id": "2", "path": "nested_repeated_scalar"]
+    - deep: type=struct<two: struct<three: struct<value: uint64>>>, nullable
+      metadata: ["PARQUET:field_id": "3", "path": "deep"]

@@ -1,0 +1,4 @@
+schema:
+  fields: 1
+    - resource_logs: type=list<item: struct<resource: struct<attributes: list<item: struct<key: utf8, value: binary>, nullable>, dropped_attributes_count: uint32>, scope_logs: list<item: struct<scope: struct<name: utf8, version: utf8, attributes: list<item: struct<key: utf8, value: binary>, nullable>, dropped_attributes_count: uint32>, log_records: list<item: struct<time_unix_nano: uint64, observed_time_unix_nano: uint64, severity_number: int32, severity_text: utf8, body: binary, attributes: list<item: struct<key: utf8, value: binary>, nullable>, dropped_attributes_count: uint32, flags: uint32, trace_id: binary, span_id: binary>, nullable>, schema_url: utf8>, nullable>, schema_url: utf8>, nullable>, nullable
+               metadata: ["PARQUET:field_id": "1", "path": "resource_logs"]

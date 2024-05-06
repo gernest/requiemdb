@@ -2,8 +2,10 @@ package f2
 
 import (
 	"github.com/RoaringBitmap/roaring/roaring64"
-	"github.com/gernest/arrow3"
+	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/dgraph-io/badger/v4"
 	v1 "github.com/gernest/requiemdb/gen/go/store/v1"
+	"github.com/gernest/requiemdb/internal/arrow3"
 	"github.com/gernest/roaring/shardwidth"
 	metricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
@@ -20,13 +22,34 @@ var (
 	attrPrefix = []byte("0:")
 	equal      = []byte("=")
 	nameKey    = []byte("__name__")
+	metrics    = []byte("metrics/")
 )
 
 type Metrics struct {
 	build     *arrow3.Schema[*v1.Metric]
 	id        ID
-	tr        Translate
+	tr        *cacheTr
 	positions roaring64.Bitmap
+}
+
+func NewMetrics(db *badger.DB, id ID) (*Metrics, error) {
+	tr, err := newCacheTr(db, metrics)
+	if err != nil {
+		return nil, err
+	}
+	s, err := arrow3.New[*v1.Metric](memory.DefaultAllocator)
+	if err != nil {
+		return nil, err
+	}
+	return &Metrics{
+		build: s,
+		tr:    tr,
+		id:    id,
+	}, nil
+}
+
+func (m *Metrics) Close() error {
+	return m.tr.Close()
 }
 
 func (m *Metrics) Append(data *metricsv1.MetricsData) {

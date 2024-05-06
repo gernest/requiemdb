@@ -1,0 +1,8 @@
+schema:
+  fields: 3
+    - k: type=utf8, nullable
+   metadata: ["PARQUET:field_id": "1", "path": "k"]
+    - v: type=utf8, nullable
+   metadata: ["PARQUET:field_id": "2", "path": "v"]
+    - one: type=struct<two: struct<three: struct<value: uint64>>>, nullable
+     metadata: ["PARQUET:field_id": "3", "path": "one"]

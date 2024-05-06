@@ -1,0 +1,106 @@
+repeated group field_id=-1 schema {
+  optional group field_id=-1 resource_spans (List) {
+    repeated group field_id=-1 list {
+      optional group field_id=-1 element {
+        optional group field_id=-1 resource {
+          optional group field_id=-1 attributes (List) {
+            repeated group field_id=-1 list {
+              optional group field_id=-1 element {
+                required byte_array field_id=1 key (String);
+                optional byte_array field_id=2 value;
+              }
+            }
+          }
+          required int32 field_id=2 dropped_attributes_count (Int(bitWidth=32, isSigned=false));
+        }
+        optional group field_id=-1 scope_spans (List) {
+          repeated group field_id=-1 list {
+            optional group field_id=-1 element {
+              optional group field_id=-1 scope {
+                required byte_array field_id=1 name (String);
+                required byte_array field_id=2 version (String);
+                optional group field_id=-1 attributes (List) {
+                  repeated group field_id=-1 list {
+                    optional group field_id=-1 element {
+                      required byte_array field_id=1 key (String);
+                      optional byte_array field_id=2 value;
+                    }
+                  }
+                }
+                required int32 field_id=4 dropped_attributes_count (Int(bitWidth=32, isSigned=false));
+              }
+              optional group field_id=-1 spans (List) {
+                repeated group field_id=-1 list {
+                  optional group field_id=-1 element {
+                    optional byte_array field_id=1 trace_id;
+                    optional byte_array field_id=2 span_id;
+                    required byte_array field_id=3 trace_state (String);
+                    optional byte_array field_id=4 parent_span_id;
+                    required int32 field_id=16 flags (Int(bitWidth=32, isSigned=false));
+                    required byte_array field_id=5 name (String);
+                    required int32 field_id=6 kind (Int(bitWidth=32, isSigned=true));
+                    required int64 field_id=7 start_time_unix_nano (Int(bitWidth=64, isSigned=false));
+                    required int64 field_id=8 end_time_unix_nano (Int(bitWidth=64, isSigned=false));
+                    optional group field_id=-1 attributes (List) {
+                      repeated group field_id=-1 list {
+                        optional group field_id=-1 element {
+                          required byte_array field_id=1 key (String);
+                          optional byte_array field_id=2 value;
+                        }
+                      }
+                    }
+                    required int32 field_id=10 dropped_attributes_count (Int(bitWidth=32, isSigned=false));
+                    optional group field_id=-1 events (List) {
+                      repeated group field_id=-1 list {
+                        optional group field_id=-1 element {
+                          required int64 field_id=1 time_unix_nano (Int(bitWidth=64, isSigned=false));
+                          required byte_array field_id=2 name (String);
+                          optional group field_id=-1 attributes (List) {
+                            repeated group field_id=-1 list {
+                              optional group field_id=-1 element {
+                                required byte_array field_id=1 key (String);
+                                optional byte_array field_id=2 value;
+                              }
+                            }
+                          }
+                          required int32 field_id=4 dropped_attributes_count (Int(bitWidth=32, isSigned=false));
+                        }
+                      }
+                    }
+                    required int32 field_id=12 dropped_events_count (Int(bitWidth=32, isSigned=false));
+                    optional group field_id=-1 links (List) {
+                      repeated group field_id=-1 list {
+                        optional group field_id=-1 element {
+                          optional byte_array field_id=1 trace_id;
+                          optional byte_array field_id=2 span_id;
+                          required byte_array field_id=3 trace_state (String);
+                          optional group field_id=-1 attributes (List) {
+                            repeated group field_id=-1 list {
+                              optional group field_id=-1 element {
+                                required byte_array field_id=1 key (String);
+                                optional byte_array field_id=2 value;
+                              }
+                            }
+                          }
+                          required int32 field_id=5 dropped_attributes_count (Int(bitWidth=32, isSigned=false));
+                          required int32 field_id=6 flags (Int(bitWidth=32, isSigned=false));
+                        }
+                      }
+                    }
+                    required int32 field_id=14 dropped_links_count (Int(bitWidth=32, isSigned=false));
+                    optional group field_id=-1 status {
+                      required byte_array field_id=2 message (String);
+                      required int32 field_id=3 code (Int(bitWidth=32, isSigned=true));
+                    }
+                  }
+                }
+              }
+              required byte_array field_id=3 schema_url (String);
+            }
+          }
+        }
+        required byte_array field_id=3 schema_url (String);
+      }
+    }
+  }
+}

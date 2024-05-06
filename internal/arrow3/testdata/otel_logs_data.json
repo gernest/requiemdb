@@ -1,0 +1,3 @@
+[{"resource_logs":null}
+,{"resource_logs":[{"resource":null,"schema_url":"","scope_logs":[{"log_records":[{"attributes":null,"body":"CgVoZWxsbw==","dropped_attributes_count":0,"flags":0,"observed_time_unix_nano":0,"severity_number":0,"severity_text":"DEBUG","span_id":null,"time_unix_nano":0,"trace_id":null}],"schema_url":"","scope":null}]}]}
+]

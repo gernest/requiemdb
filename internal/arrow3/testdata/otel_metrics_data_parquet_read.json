@@ -1,0 +1,3 @@
+[{"resource_metrics":null}
+,{"resource_metrics":[{"resource":null,"schema_url":"","scope_metrics":[{"metrics":[{"description":"","exponential_histogram":null,"gauge":{"data_points":[{"as_double":null,"as_int":18,"attributes":[{"key":"key","value":"CgV2YWx1ZQ=="}],"exemplars":null,"flags":0,"start_time_unix_nano":0,"time_unix_nano":16}]},"histogram":null,"metadata":null,"name":"check","sum":null,"summary":null,"unit":""}],"schema_url":"","scope":null}]}]}
+]

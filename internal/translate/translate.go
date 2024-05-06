@@ -17,7 +17,7 @@ type Translate struct {
 }
 
 func New(db *badger.DB, prefix []byte) (*Translate, error) {
-	seq, err := db.GetSequence(append(prefix, []byte("seq")...), 1<<10)
+	seq, err := db.GetSequence(append(prefix, []byte("seq")...), 4<<10)
 	if err != nil {
 		return nil, err
 	}

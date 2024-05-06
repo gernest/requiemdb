@@ -1,0 +1,6 @@
+schema:
+  fields: 2
+    - key: type=utf8
+     metadata: ["PARQUET:field_id": "1", "path": "key"]
+    - value: type=binary, nullable
+       metadata: ["PARQUET:field_id": "2", "path": "value"]

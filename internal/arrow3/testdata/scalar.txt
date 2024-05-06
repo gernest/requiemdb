@@ -1,0 +1,32 @@
+schema:
+  fields: 15
+    - double: type=float64
+        metadata: ["PARQUET:field_id": "1", "path": "double"]
+    - float: type=float32
+       metadata: ["PARQUET:field_id": "2", "path": "float"]
+    - int32: type=int32
+       metadata: ["PARQUET:field_id": "3", "path": "int32"]
+    - int64: type=int64
+       metadata: ["PARQUET:field_id": "4", "path": "int64"]
+    - uint32: type=uint32
+        metadata: ["PARQUET:field_id": "5", "path": "uint32"]
+    - uint64: type=uint64
+        metadata: ["PARQUET:field_id": "6", "path": "uint64"]
+    - sint32: type=int32
+        metadata: ["PARQUET:field_id": "7", "path": "sint32"]
+    - sint64: type=int64
+        metadata: ["PARQUET:field_id": "8", "path": "sint64"]
+    - fixed32: type=uint32
+         metadata: ["PARQUET:field_id": "9", "path": "fixed32"]
+    - fixed64: type=uint64
+         metadata: ["PARQUET:field_id": "10", "path": "fixed64"]
+    - sfixed32: type=int32
+          metadata: ["PARQUET:field_id": "11", "path": "sfixed32"]
+    - sfixed64: type=int64
+          metadata: ["PARQUET:field_id": "12", "path": "sfixed64"]
+    - bool: type=bool
+      metadata: ["PARQUET:field_id": "13", "path": "bool"]
+    - string: type=utf8
+        metadata: ["PARQUET:field_id": "14", "path": "string"]
+    - bytes: type=binary, nullable
+       metadata: ["PARQUET:field_id": "15", "path": "bytes"]
