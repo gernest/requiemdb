@@ -1,0 +1,101 @@
+syntax = "proto3";
+package v1;
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "opentelemetry/proto/resource/v1/resource.proto";
+import "opentelemetry/proto/common/v1/common.proto";
+import "opentelemetry/proto/metrics/v1/metrics.proto";
+import "opentelemetry/proto/logs/v1/logs.proto";
+import "opentelemetry/proto/trace/v1/trace.proto";
+
+message Format {
+  oneof data {
+    Metric metric = 1;
+    LogRecord log = 2;
+    Span span = 3;
+  }
+}
+
+message Span {
+  string resource_schema = 1;
+  opentelemetry.proto.resource.v1.Resource resource = 2;
+
+  string scope_schema = 3;
+  opentelemetry.proto.common.v1.InstrumentationScope scope = 4;
+
+  uint64 resource_hash = 5;
+  uint64 scope_hash = 6;
+  uint64 hash = 7;
+
+  opentelemetry.proto.trace.v1.Span span = 8;
+}
+
+message LogRecord {
+  string resource_schema = 1;
+  opentelemetry.proto.resource.v1.Resource resource = 2;
+
+  string scope_schema = 3;
+  opentelemetry.proto.common.v1.InstrumentationScope scope = 4;
+
+  uint64 resource_hash = 5;
+  uint64 scope_hash = 6;
+  uint64 hash = 7;
+
+  opentelemetry.proto.logs.v1.LogRecord log_record = 8;
+}
+
+message Metric {
+  // name of the metric.
+  string name = 1;
+
+  // description of the metric, which can be used in documentation.
+  string description = 2;
+
+  // unit in which the metric value is reported. Follows the format
+  // described by http://unitsofmeasure.org/ucum.html.
+  string unit = 3;
+
+  string resource_schema = 4;
+  opentelemetry.proto.resource.v1.Resource resource = 5;
+
+  string scope_schema = 6;
+  opentelemetry.proto.common.v1.InstrumentationScope scope = 7;
+
+  uint64 resource_hash = 8;
+  uint64 scope_hash = 9;
+  uint64 hash = 10;
+
+  oneof data {
+    Gauge gauge = 11;
+    Sum sum = 12;
+    Histogram histogram = 13;
+    ExponentialHistogram exponential_histogram = 14;
+    Summary summary = 15;
+  }
+  repeated opentelemetry.proto.common.v1.KeyValue metadata = 16;
+}
+
+message Gauge { opentelemetry.proto.metrics.v1.NumberDataPoint data_point = 1; }
+
+message Sum {
+  opentelemetry.proto.metrics.v1.NumberDataPoint data_point = 1;
+  opentelemetry.proto.metrics.v1.AggregationTemporality
+      aggregation_temporality = 2;
+  bool is_monotonic = 3;
+}
+
+message Histogram {
+  opentelemetry.proto.metrics.v1.HistogramDataPoint data_point = 1;
+  opentelemetry.proto.metrics.v1.AggregationTemporality
+      aggregation_temporality = 2;
+}
+
+message ExponentialHistogram {
+  opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint data_point = 1;
+  opentelemetry.proto.metrics.v1.AggregationTemporality
+      aggregation_temporality = 2;
+}
+
+message Summary {
+  opentelemetry.proto.metrics.v1.SummaryDataPoint data_point = 1;
+}
